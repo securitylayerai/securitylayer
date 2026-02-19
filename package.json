@@ -1,10 +1,22 @@
 {
   "name": "securitylayer",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "test": "bun test",
     "build": "bun run --filter '*' build",
-    "typecheck": "bun run --filter '*' typecheck"
+    "typecheck": "bun run --filter '*' typecheck",
+    "lint": "bunx biome check .",
+    "lint:fix": "bunx biome check --write .",
+    "format": "bunx biome format --write .",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.3",
+    "@commitlint/cli": "^20.4.2",
+    "@commitlint/config-conventional": "^20.4.2",
+    "lefthook": "^2.1.1"
   }
 }

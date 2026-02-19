@@ -1,1 +1,1 @@
-// config module
+export {};

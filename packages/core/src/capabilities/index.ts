@@ -1,1 +1,1 @@
-// capabilities module
+export {};

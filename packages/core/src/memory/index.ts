@@ -1,1 +1,1 @@
-// memory module
+export {};
