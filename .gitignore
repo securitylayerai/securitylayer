@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+
+# output
+dist/
+out/
+
+# environment
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# bun
+bun.lockb
+
+# notes
+notes/
+
+# debug
+*.pid
+*.seed
