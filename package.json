@@ -5,7 +5,8 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "bun test",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "build": "bun run --filter '*' build",
     "typecheck": "bun run --filter '*' typecheck",
     "lint": "bunx biome check .",
@@ -17,6 +18,7 @@
     "@biomejs/biome": "^2.4.3",
     "@commitlint/cli": "^20.4.2",
     "@commitlint/config-conventional": "^20.4.2",
-    "lefthook": "^2.1.1"
+    "lefthook": "^2.1.1",
+    "vitest": "^4.0.18"
   }
 }

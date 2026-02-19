@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun",
+    "test": "vitest run",
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
