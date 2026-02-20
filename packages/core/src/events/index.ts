@@ -1,4 +1,4 @@
-export { EventBus, eventBus } from "./bus";
+export { createEventBus, type EventBus, eventBus } from "./bus";
 export type {
   ActionEvaluatedEvent,
   ApprovalRequestedEvent,

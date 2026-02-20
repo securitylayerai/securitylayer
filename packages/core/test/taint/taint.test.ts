@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { EventBus, eventBus } from "@/events/bus";
+import { createEventBus, eventBus } from "@/events/bus";
 import type { TaintElevatedEvent } from "@/events/types";
 import { isTaintSufficient, TaintLevel, worstOf } from "@/taint/index";
-import { SessionTaintTracker } from "@/taint/tracker";
+import { createTaintTracker, type TaintTracker } from "@/taint/tracker";
 import type { TaintedData } from "@/taint/types";
 
 function makeData(taint: TaintLevel, channel = "test"): TaintedData {
@@ -34,11 +34,11 @@ describe("isTaintSufficient", () => {
   });
 });
 
-describe("SessionTaintTracker", () => {
-  let tracker: SessionTaintTracker;
+describe("TaintTracker", () => {
+  let tracker: TaintTracker;
 
   beforeEach(() => {
-    tracker = new SessionTaintTracker();
+    tracker = createTaintTracker();
     eventBus.clear();
   });
 
@@ -90,17 +90,17 @@ describe("SessionTaintTracker", () => {
   });
 });
 
-// M7: Injectable EventBus in SessionTaintTracker
-describe("SessionTaintTracker — injectable EventBus", () => {
+// M7: Injectable EventBus in TaintTracker
+describe("TaintTracker — injectable EventBus", () => {
   it("uses injected bus instead of singleton", () => {
-    const customBus = new EventBus();
+    const customBus = createEventBus();
     const customEvents: TaintElevatedEvent[] = [];
     const singletonEvents: TaintElevatedEvent[] = [];
 
     customBus.on("taint.elevated", (e) => customEvents.push(e));
     eventBus.on("taint.elevated", (e) => singletonEvents.push(e));
 
-    const tracker = new SessionTaintTracker(customBus);
+    const tracker = createTaintTracker(customBus);
     tracker.onContentIngested(makeData("web"));
 
     expect(customEvents).toHaveLength(1);
@@ -117,7 +117,7 @@ describe("SessionTaintTracker — injectable EventBus", () => {
     const singletonEvents: TaintElevatedEvent[] = [];
     eventBus.on("taint.elevated", (e) => singletonEvents.push(e));
 
-    const tracker = new SessionTaintTracker(); // no bus argument
+    const tracker = createTaintTracker(); // no bus argument
     tracker.onContentIngested(makeData("web"));
 
     expect(singletonEvents).toHaveLength(1);

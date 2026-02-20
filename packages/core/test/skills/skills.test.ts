@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { EventBus, eventBus } from "@/events/bus";
+import { createEventBus, eventBus } from "@/events/bus";
 import type { SkillIntegrityViolationEvent } from "@/events/types";
 import { checkSkillCapability } from "@/skills/enforcer";
 import { computeSkillHash, verifySkillIntegrity } from "@/skills/integrity";
@@ -41,7 +41,7 @@ describe("checkSkillCapability", () => {
 
   // M7: injectable EventBus
   it("uses injected event bus for violations", () => {
-    const customBus = new EventBus();
+    const customBus = createEventBus();
     const customEvents: SkillIntegrityViolationEvent[] = [];
     const singletonEvents: SkillIntegrityViolationEvent[] = [];
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { EventBus } from "@/events/bus";
+import { createEventBus, type EventBus } from "@/events/bus";
 import type { ActionEvaluatedEvent, SecurityEvent } from "@/events/types";
 import { SecurityEventSchema } from "@/events/types";
 
@@ -7,7 +7,7 @@ describe("EventBus", () => {
   let bus: EventBus;
 
   beforeEach(() => {
-    bus = new EventBus();
+    bus = createEventBus();
   });
 
   it("emits and receives a typed event", () => {

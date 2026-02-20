@@ -1,13 +1,13 @@
 import type { LoadedConfig } from "@/config/types";
 import type { CapabilityStore } from "./gate";
-import { CapabilitySet } from "./set";
+import { type CapabilitySet, createCapabilitySet } from "./set";
 import { BASE_CAPABILITIES } from "./types";
 
 /** Minimum capabilities for unknown skills: only channel.send. */
-const MINIMUM_SKILL_CAPS = new CapabilitySet(["channel.send"]);
+const MINIMUM_SKILL_CAPS = createCapabilitySet(["channel.send"]);
 
 /** Full capability set (all 14 base capabilities, unrestricted). */
-const FULL_CAPS = new CapabilitySet(BASE_CAPABILITIES.slice());
+const FULL_CAPS = createCapabilitySet(BASE_CAPABILITIES.slice());
 
 /**
  * Pre-compute all CapabilitySets from loaded config.
@@ -16,12 +16,12 @@ const FULL_CAPS = new CapabilitySet(BASE_CAPABILITIES.slice());
 export function buildCapabilityStore(config: LoadedConfig): CapabilityStore {
   const sessions = new Map<string, CapabilitySet>();
   for (const [id, session] of Object.entries(config.sessions.sessions)) {
-    sessions.set(id, new CapabilitySet(session.capabilities));
+    sessions.set(id, createCapabilitySet(session.capabilities));
   }
 
   const skills = new Map<string, CapabilitySet>();
   for (const [id, skill] of Object.entries(config.skills.skills)) {
-    skills.set(id, new CapabilitySet(skill.capabilities));
+    skills.set(id, createCapabilitySet(skill.capabilities));
   }
 
   const channels = new Map<string, CapabilitySet>();
@@ -29,7 +29,7 @@ export function buildCapabilityStore(config: LoadedConfig): CapabilityStore {
     if (channel.max_capabilities === "ALL") {
       channels.set(id, FULL_CAPS);
     } else {
-      channels.set(id, new CapabilitySet(channel.max_capabilities));
+      channels.set(id, createCapabilitySet(channel.max_capabilities));
     }
   }
 

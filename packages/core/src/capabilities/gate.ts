@@ -1,5 +1,5 @@
 import type { TaintLevel } from "@/taint/index";
-import { CapabilitySet } from "./set";
+import { type CapabilitySet, intersectCapabilities } from "./set";
 import { actionToCapability, type CapabilityResult } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -57,7 +57,7 @@ export function checkCapability(
 
   if (context.skillId) {
     const skillCaps = store.getSkillCaps(context.skillId);
-    effective = CapabilitySet.intersect(effective, skillCaps);
+    effective = intersectCapabilities(effective, skillCaps);
   }
 
   if (context.channelId) {
@@ -65,7 +65,7 @@ export function checkCapability(
     if (!channelCaps) {
       return { allowed: false, reason: `Unknown channel: ${context.channelId}` };
     }
-    effective = CapabilitySet.intersect(effective, channelCaps);
+    effective = intersectCapabilities(effective, channelCaps);
   }
 
   // Check if effective set grants the capability

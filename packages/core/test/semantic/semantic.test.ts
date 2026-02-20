@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { normalizeExecAction } from "@/normalize/normalizer";
-import { BehavioralTracker } from "@/semantic/baseline";
-import { DefaultLLMJudge, JUDGE_SYSTEM_PROMPT, NoOpJudge } from "@/semantic/judge";
+import { createBehavioralTracker } from "@/semantic/baseline";
+import { createDefaultLLMJudge, createNoOpJudge, JUDGE_SYSTEM_PROMPT } from "@/semantic/judge";
 import { calculateRiskScore, TOOL_SEVERITIES } from "@/semantic/risk-score";
 
 describe("NoOpJudge", () => {
   it("returns NORMAL with high confidence", async () => {
-    const judge = new NoOpJudge();
+    const judge = createNoOpJudge();
     const result = await judge.classify({
       action: "exec",
       sessionHistory: [],
@@ -97,7 +97,7 @@ describe("calculateRiskScore", () => {
 // 1.1-#4: DefaultLLMJudge taint-based fallback
 describe("DefaultLLMJudge", () => {
   it("falls back to taint heuristic when no API key", async () => {
-    const judge = new DefaultLLMJudge(); // no API key
+    const judge = createDefaultLLMJudge(); // no API key
     const result = await judge.classify({
       action: "exec",
       sessionHistory: [],
@@ -108,7 +108,7 @@ describe("DefaultLLMJudge", () => {
   });
 
   it("flags elevated taint as ANOMALOUS when no API key", async () => {
-    const judge = new DefaultLLMJudge();
+    const judge = createDefaultLLMJudge();
     const result = await judge.classify({
       action: "exec",
       sessionHistory: [],
@@ -119,7 +119,7 @@ describe("DefaultLLMJudge", () => {
   });
 
   it("treats 'trusted' taint as low severity (NORMAL)", async () => {
-    const judge = new DefaultLLMJudge();
+    const judge = createDefaultLLMJudge();
     const result = await judge.classify({
       action: "exec",
       sessionHistory: [],
@@ -129,7 +129,7 @@ describe("DefaultLLMJudge", () => {
   });
 
   it("treats 'skill' taint as elevated (ANOMALOUS)", async () => {
-    const judge = new DefaultLLMJudge();
+    const judge = createDefaultLLMJudge();
     const result = await judge.classify({
       action: "exec",
       sessionHistory: [],
@@ -141,7 +141,7 @@ describe("DefaultLLMJudge", () => {
 
 describe("BehavioralTracker", () => {
   it("records actions", () => {
-    const tracker = new BehavioralTracker();
+    const tracker = createBehavioralTracker();
     tracker.recordAction("exec");
     tracker.recordAction("file.read");
     tracker.endSession();
@@ -152,7 +152,7 @@ describe("BehavioralTracker", () => {
   });
 
   it("detects anomalous spike", () => {
-    const tracker = new BehavioralTracker();
+    const tracker = createBehavioralTracker();
     // Normal usage
     tracker.recordAction("exec");
     tracker.recordAction("file.read");
@@ -166,7 +166,7 @@ describe("BehavioralTracker", () => {
   });
 
   it("tracks paths and domains", () => {
-    const tracker = new BehavioralTracker();
+    const tracker = createBehavioralTracker();
     tracker.recordAction("exec", ["/tmp/foo"], ["example.com"]);
     tracker.endSession();
     const baseline = tracker.getBaseline();

@@ -33,6 +33,6 @@ export function isTaintSufficient(actual: TaintLevel, required: TaintLevel): boo
   return TAINT_SEVERITY[actual] <= TAINT_SEVERITY[required];
 }
 
-export { SessionTaintTracker } from "./tracker";
+export { createTaintTracker, type TaintTracker } from "./tracker";
 // Re-export new files
 export type { TaintedData, TaintOrigin } from "./types";

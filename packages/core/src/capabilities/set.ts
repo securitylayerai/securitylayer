@@ -36,97 +36,99 @@ export function parseCapabilityString(s: string): ParsedCapability {
  * - qualified overrides unrestricted
  * - among qualifications, lower severity (more trusted) wins
  */
-export class CapabilitySet {
+export function createCapabilitySet(capStrings: string[] = []) {
   /** `undefined` value = unrestricted (no taint requirement). */
-  private caps = new Map<BaseCapability, TaintLevel | undefined>();
+  const caps = new Map<BaseCapability, TaintLevel | undefined>();
 
-  constructor(capStrings: string[] = []) {
-    for (const s of capStrings) {
-      const parsed = parseCapabilityString(s);
-      this.addParsed(parsed);
-    }
-  }
+  function addParsed(parsed: ParsedCapability): void {
+    const existing = caps.get(parsed.base);
 
-  private addParsed(parsed: ParsedCapability): void {
-    const existing = this.caps.get(parsed.base);
-
-    if (existing === undefined && this.caps.has(parsed.base)) {
+    if (existing === undefined && caps.has(parsed.base)) {
       // Already unrestricted — nothing more permissive.
       return;
     }
 
     if (parsed.taint === undefined) {
       // Unrestricted grant overrides any qualification.
-      this.caps.set(parsed.base, undefined);
+      caps.set(parsed.base, undefined);
       return;
     }
 
-    if (existing === undefined && !this.caps.has(parsed.base)) {
+    if (existing === undefined && !caps.has(parsed.base)) {
       // First entry for this capability.
-      this.caps.set(parsed.base, parsed.taint);
+      caps.set(parsed.base, parsed.taint);
       return;
     }
 
     // Both have taint: keep the more permissive (higher severity number).
     if (existing !== undefined && TAINT_SEVERITY[parsed.taint] > TAINT_SEVERITY[existing]) {
-      this.caps.set(parsed.base, parsed.taint);
+      caps.set(parsed.base, parsed.taint);
     }
   }
 
-  /** Check if this set grants the given capability, optionally under a taint level. */
-  has(base: BaseCapability, taint?: TaintLevel): boolean {
-    if (!this.caps.has(base)) return false;
-
-    const required = this.caps.get(base);
-    if (required === undefined) return true; // unrestricted
-    if (taint === undefined) return true; // no taint context, grant is present
-    return isTaintSufficient(taint, required);
+  for (const s of capStrings) {
+    addParsed(parseCapabilityString(s));
   }
 
-  /** Returns the taint restriction for a capability, or undefined if unrestricted/absent. */
-  getRestriction(base: BaseCapability): TaintLevel | undefined {
-    return this.caps.get(base);
-  }
+  return {
+    /** Check if this set grants the given capability, optionally under a taint level. */
+    has(base: BaseCapability, taint?: TaintLevel): boolean {
+      if (!caps.has(base)) return false;
 
-  /** Whether this set has any entry for the given base capability. */
-  hasBase(base: BaseCapability): boolean {
-    return this.caps.has(base);
-  }
+      const required = caps.get(base);
+      if (required === undefined) return true; // unrestricted
+      if (taint === undefined) return true; // no taint context, grant is present
+      return isTaintSufficient(taint, required);
+    },
 
-  get size(): number {
-    return this.caps.size;
-  }
+    /** Returns the taint restriction for a capability, or undefined if unrestricted/absent. */
+    getRestriction(base: BaseCapability): TaintLevel | undefined {
+      return caps.get(base);
+    },
 
-  /**
-   * Intersect two capability sets: result contains only capabilities present
-   * in BOTH, with the most restrictive taint qualification.
-   */
-  static intersect(a: CapabilitySet, b: CapabilitySet): CapabilitySet {
-    const result = new CapabilitySet();
+    /** Whether this set has any entry for the given base capability. */
+    hasBase(base: BaseCapability): boolean {
+      return caps.has(base);
+    },
 
-    for (const [base, aTaint] of a.caps) {
-      if (!b.caps.has(base)) continue;
-      const bTaint = b.caps.get(base);
+    get size(): number {
+      return caps.size;
+    },
 
-      let taint: TaintLevel | undefined;
-      if (aTaint === undefined && bTaint === undefined) {
-        taint = undefined; // both unrestricted
-      } else if (aTaint === undefined) {
-        taint = bTaint; // b is more restrictive
-      } else if (bTaint === undefined) {
-        taint = aTaint; // a is more restrictive
-      } else {
-        // Both have taint: pick lower severity (more restrictive / more trusted).
-        taint = TAINT_SEVERITY[aTaint] <= TAINT_SEVERITY[bTaint] ? aTaint : bTaint;
-      }
+    /** Returns the internal entries for use by intersectCapabilities. */
+    entries(): IterableIterator<[BaseCapability, TaintLevel | undefined]> {
+      return caps.entries();
+    },
+  };
+}
 
-      if (taint === undefined) {
-        result.caps.set(base, undefined);
-      } else {
-        result.caps.set(base, taint);
-      }
+export type CapabilitySet = ReturnType<typeof createCapabilitySet>;
+
+/**
+ * Intersect two capability sets: result contains only capabilities present
+ * in BOTH, with the most restrictive taint qualification.
+ */
+export function intersectCapabilities(a: CapabilitySet, b: CapabilitySet): CapabilitySet {
+  const capStrings: string[] = [];
+
+  for (const [base, aTaint] of a.entries()) {
+    if (!b.hasBase(base)) continue;
+    const bTaint = b.getRestriction(base);
+
+    let taint: TaintLevel | undefined;
+    if (aTaint === undefined && bTaint === undefined) {
+      taint = undefined; // both unrestricted
+    } else if (aTaint === undefined) {
+      taint = bTaint; // b is more restrictive
+    } else if (bTaint === undefined) {
+      taint = aTaint; // a is more restrictive
+    } else {
+      // Both have taint: pick lower severity (more restrictive / more trusted).
+      taint = TAINT_SEVERITY[aTaint] <= TAINT_SEVERITY[bTaint] ? aTaint : bTaint;
     }
 
-    return result;
+    capStrings.push(taint === undefined ? base : `${base}:${taint}`);
   }
+
+  return createCapabilitySet(capStrings);
 }

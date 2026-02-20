@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { CapabilityStore } from "@/capabilities/gate";
 import { checkCapability } from "@/capabilities/gate";
 import { buildCapabilityStore } from "@/capabilities/loader";
-import { CapabilitySet, parseCapabilityString } from "@/capabilities/set";
+import {
+  createCapabilitySet,
+  intersectCapabilities,
+  parseCapabilityString,
+} from "@/capabilities/set";
 import { BASE_CAPABILITIES } from "@/capabilities/types";
 import { defaultLearnedRulesConfig, defaultMainConfig } from "@/config/defaults";
 import type { LoadedConfig } from "@/config/types";
@@ -13,32 +17,32 @@ import type { LoadedConfig } from "@/config/types";
 
 describe("CapabilitySet", () => {
   it("basic has/missing", () => {
-    const set = new CapabilitySet(["exec", "file.read"]);
+    const set = createCapabilitySet(["exec", "file.read"]);
     expect(set.has("exec")).toBe(true);
     expect(set.has("file.read")).toBe(true);
     expect(set.has("file.write")).toBe(false);
   });
 
   it("taint-qualified: has('exec', 'owner') with exec:trusted → true", () => {
-    const set = new CapabilitySet(["exec:trusted"]);
+    const set = createCapabilitySet(["exec:trusted"]);
     expect(set.has("exec", "owner")).toBe(true); // owner more trusted than trusted
   });
 
   it("taint-qualified reject: has('exec', 'web') with exec:trusted → false", () => {
-    const set = new CapabilitySet(["exec:trusted"]);
+    const set = createCapabilitySet(["exec:trusted"]);
     expect(set.has("exec", "web")).toBe(false); // web less trusted than trusted
   });
 
   it("unrestricted overrides qualified", () => {
-    const set = new CapabilitySet(["exec:trusted", "exec"]);
+    const set = createCapabilitySet(["exec:trusted", "exec"]);
     expect(set.has("exec", "web")).toBe(true); // unrestricted, any taint OK
   });
 
   describe("intersect", () => {
     it("basic intersection — only shared capabilities", () => {
-      const a = new CapabilitySet(["exec", "file.read", "file.write"]);
-      const b = new CapabilitySet(["exec", "file.read", "browser"]);
-      const result = CapabilitySet.intersect(a, b);
+      const a = createCapabilitySet(["exec", "file.read", "file.write"]);
+      const b = createCapabilitySet(["exec", "file.read", "browser"]);
+      const result = intersectCapabilities(a, b);
       expect(result.has("exec")).toBe(true);
       expect(result.has("file.read")).toBe(true);
       expect(result.has("file.write")).toBe(false);
@@ -46,9 +50,9 @@ describe("CapabilitySet", () => {
     });
 
     it("taint-aware intersection — picks more restrictive", () => {
-      const a = new CapabilitySet(["exec:web"]);
-      const b = new CapabilitySet(["exec:trusted"]);
-      const result = CapabilitySet.intersect(a, b);
+      const a = createCapabilitySet(["exec:web"]);
+      const b = createCapabilitySet(["exec:trusted"]);
+      const result = intersectCapabilities(a, b);
       // trusted is more restrictive (lower severity) → result is exec:trusted
       expect(result.has("exec", "owner")).toBe(true);
       expect(result.has("exec", "trusted")).toBe(true);
@@ -56,16 +60,16 @@ describe("CapabilitySet", () => {
     });
 
     it("empty intersection", () => {
-      const a = new CapabilitySet(["exec"]);
-      const b = new CapabilitySet(["file.read"]);
-      const result = CapabilitySet.intersect(a, b);
+      const a = createCapabilitySet(["exec"]);
+      const b = createCapabilitySet(["file.read"]);
+      const result = intersectCapabilities(a, b);
       expect(result.size).toBe(0);
     });
 
     it("unrestricted vs qualified → qualified wins", () => {
-      const a = new CapabilitySet(["exec"]);
-      const b = new CapabilitySet(["exec:trusted"]);
-      const result = CapabilitySet.intersect(a, b);
+      const a = createCapabilitySet(["exec"]);
+      const b = createCapabilitySet(["exec:trusted"]);
+      const result = intersectCapabilities(a, b);
       expect(result.has("exec", "owner")).toBe(true);
       expect(result.has("exec", "web")).toBe(false);
     });
@@ -82,23 +86,23 @@ describe("checkCapability (gate)", () => {
     skills?: Record<string, string[]>;
     channels?: Record<string, string[] | "ALL">;
   }): CapabilityStore {
-    const sessions = new Map<string, CapabilitySet>();
+    const sessions = new Map<string, ReturnType<typeof createCapabilitySet>>();
     for (const [id, caps] of Object.entries(opts.sessions ?? {})) {
-      sessions.set(id, new CapabilitySet(caps));
+      sessions.set(id, createCapabilitySet(caps));
     }
 
-    const skills = new Map<string, CapabilitySet>();
+    const skills = new Map<string, ReturnType<typeof createCapabilitySet>>();
     for (const [id, caps] of Object.entries(opts.skills ?? {})) {
-      skills.set(id, new CapabilitySet(caps));
+      skills.set(id, createCapabilitySet(caps));
     }
 
-    const channels = new Map<string, CapabilitySet>();
-    const fullCaps = new CapabilitySet(BASE_CAPABILITIES.slice());
+    const channels = new Map<string, ReturnType<typeof createCapabilitySet>>();
+    const fullCaps = createCapabilitySet(BASE_CAPABILITIES.slice());
     for (const [id, caps] of Object.entries(opts.channels ?? {})) {
-      channels.set(id, caps === "ALL" ? fullCaps : new CapabilitySet(caps));
+      channels.set(id, caps === "ALL" ? fullCaps : createCapabilitySet(caps));
     }
 
-    const minimumSkillCaps = new CapabilitySet(["channel.send"]);
+    const minimumSkillCaps = createCapabilitySet(["channel.send"]);
 
     return {
       getSessionCaps: (id) => sessions.get(id),
@@ -298,13 +302,13 @@ describe("parseCapabilityString — taint validation (C3)", () => {
 
 describe("CapabilitySet — undefined taint + restricted capability", () => {
   it("undefined taint context grants access if capability exists", () => {
-    const set = new CapabilitySet(["exec:trusted"]);
+    const set = createCapabilitySet(["exec:trusted"]);
     // No taint context — capability is present, should be granted
     expect(set.has("exec")).toBe(true);
   });
 
   it("memory.read.trusted is a valid capability", () => {
-    const set = new CapabilitySet(["memory.read.trusted"]);
+    const set = createCapabilitySet(["memory.read.trusted"]);
     expect(set.has("memory.read.trusted")).toBe(true);
   });
 });

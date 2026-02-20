@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { CapabilityStore } from "@/capabilities/gate";
-import { CapabilitySet } from "@/capabilities/set";
+import { createCapabilitySet } from "@/capabilities/set";
 import { eventBus } from "@/events/bus";
 import { evaluateAction } from "@/pipeline/evaluator";
 import { mergeDecisions } from "@/pipeline/merger";
 import type { PipelineDeps } from "@/pipeline/types";
-import { NoOpJudge } from "@/semantic/judge";
-import { SessionTaintTracker } from "@/taint/tracker";
+import { createNoOpJudge } from "@/semantic/judge";
+import { createTaintTracker } from "@/taint/tracker";
 
 describe("mergeDecisions", () => {
   it("rules DENY always wins", () => {
@@ -74,7 +74,7 @@ function makeDeps(overrides?: Partial<PipelineDeps>): PipelineDeps {
   const sessions = new Map([
     [
       "s1",
-      new CapabilitySet([
+      createCapabilitySet([
         "exec",
         "file.read",
         "file.write",
@@ -84,7 +84,7 @@ function makeDeps(overrides?: Partial<PipelineDeps>): PipelineDeps {
       ]),
     ],
   ]);
-  const minimumSkillCaps = new CapabilitySet(["channel.send"]);
+  const minimumSkillCaps = createCapabilitySet(["channel.send"]);
 
   const store: CapabilityStore = {
     getSessionCaps: (id) => sessions.get(id),
@@ -94,8 +94,8 @@ function makeDeps(overrides?: Partial<PipelineDeps>): PipelineDeps {
 
   return {
     capabilityStore: overrides?.capabilityStore ?? store,
-    taintTracker: overrides?.taintTracker ?? new SessionTaintTracker(),
-    judge: overrides?.judge ?? new NoOpJudge(),
+    taintTracker: overrides?.taintTracker ?? createTaintTracker(),
+    judge: overrides?.judge ?? createNoOpJudge(),
     ...overrides,
   };
 }
@@ -203,10 +203,10 @@ describe("pipeline degraded mode", () => {
       },
     };
     // channel.send has 0.2 tool severity → low risk
-    const sessions = new Map([["s1", new CapabilitySet(["channel.send"])]]);
+    const sessions = new Map([["s1", createCapabilitySet(["channel.send"])]]);
     const store: CapabilityStore = {
       getSessionCaps: (id) => sessions.get(id),
-      getSkillCaps: () => new CapabilitySet(["channel.send"]),
+      getSkillCaps: () => createCapabilitySet(["channel.send"]),
       getChannelCaps: () => undefined,
     };
     const deps = makeDeps({

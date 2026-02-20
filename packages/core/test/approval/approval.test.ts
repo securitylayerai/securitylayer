@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { ApprovalManager } from "@/approval/manager";
+import { type ApprovalManager, createApprovalManager } from "@/approval/manager";
 import { eventBus } from "@/events/bus";
 
 describe("ApprovalManager", () => {
   let manager: ApprovalManager;
 
   beforeEach(() => {
-    manager = new ApprovalManager();
+    manager = createApprovalManager();
     eventBus.clear();
   });
 

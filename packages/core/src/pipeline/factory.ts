@@ -1,19 +1,19 @@
 import { buildCapabilityStore } from "@/capabilities/loader";
 import type { LoadedConfig } from "@/config/types";
-import { DefaultLLMJudge, NoOpJudge } from "@/semantic/judge";
-import { SessionTaintTracker } from "@/taint/tracker";
+import { createDefaultLLMJudge, createNoOpJudge } from "@/semantic/judge";
+import { createTaintTracker } from "@/taint/tracker";
 import type { PipelineDeps } from "./types";
 
 export function createPipeline(config: LoadedConfig): PipelineDeps {
   const capabilityStore = buildCapabilityStore(config);
-  const taintTracker = new SessionTaintTracker();
+  const taintTracker = createTaintTracker();
   const judge = config.main.semantic.enabled
-    ? new DefaultLLMJudge(
+    ? createDefaultLLMJudge(
         process.env.ANTHROPIC_API_KEY,
         config.main.semantic.model,
         config.main.semantic.timeout_ms,
       )
-    : new NoOpJudge();
+    : createNoOpJudge();
 
   return {
     capabilityStore,
