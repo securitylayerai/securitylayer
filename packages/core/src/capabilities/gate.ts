@@ -1,6 +1,6 @@
-import type { TaintLevel } from "../taint/index.js";
-import { CapabilitySet } from "./set.js";
-import { actionToCapability, type CapabilityResult } from "./types.js";
+import type { TaintLevel } from "../taint/index";
+import { CapabilitySet } from "./set";
+import { actionToCapability, type CapabilityResult } from "./types";
 
 // ---------------------------------------------------------------------------
 // Capability store interface (decoupled from config)

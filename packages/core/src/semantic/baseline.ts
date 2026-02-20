@@ -1,4 +1,4 @@
-import type { BehavioralBaseline } from "./types.js";
+import type { BehavioralBaseline } from "./types";
 
 /**
  * In-memory behavioral tracker. Records actions and computes baselines.

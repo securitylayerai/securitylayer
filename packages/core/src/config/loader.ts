@@ -7,8 +7,8 @@ import {
   defaultMainConfig,
   defaultSessionsConfig,
   defaultSkillsConfig,
-} from "./defaults.js";
-import { CONFIG_PATHS } from "./paths.js";
+} from "./defaults";
+import { CONFIG_PATHS } from "./paths";
 import {
   type ChannelsConfig,
   ChannelsConfigSchema,
@@ -22,7 +22,7 @@ import {
   type SkillsConfig,
   SkillsConfigSchema,
   SUPPORTED_VERSIONS,
-} from "./types.js";
+} from "./types";
 
 // ---------------------------------------------------------------------------
 // Errors

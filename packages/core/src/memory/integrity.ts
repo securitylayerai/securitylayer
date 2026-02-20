@@ -1,5 +1,5 @@
-import { hashSHA256 } from "../utils/crypto.js";
-import type { MemoryEntry } from "./types.js";
+import { hashSHA256 } from "../utils/crypto";
+import type { MemoryEntry } from "./types";
 
 /** Verifies a memory entry's integrity by recomputing its hash. */
 export function verifyIntegrity(entry: MemoryEntry): boolean {

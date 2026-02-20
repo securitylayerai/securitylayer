@@ -1,6 +1,6 @@
-import type { TaintLevel } from "../taint/index.js";
-import { hashSHA256 } from "../utils/crypto.js";
-import type { MemoryEntry } from "./types.js";
+import type { TaintLevel } from "../taint/index";
+import { hashSHA256 } from "../utils/crypto";
+import type { MemoryEntry } from "./types";
 
 /**
  * Tags content with provenance metadata and a SHA-256 integrity hash.

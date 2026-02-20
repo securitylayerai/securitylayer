@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { normalizeExecAction } from "../../src/normalize/normalizer.js";
-import { evaluateRules } from "../../src/rules/engine.js";
-import { parseRulesYaml } from "../../src/rules/parser.js";
+import { normalizeExecAction } from "../../src/normalize/normalizer";
+import { evaluateRules } from "../../src/rules/engine";
+import { parseRulesYaml } from "../../src/rules/parser";
 
 function evaluate(cmd: string) {
   return evaluateRules(normalizeExecAction(cmd));

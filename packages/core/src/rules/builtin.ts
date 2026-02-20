@@ -1,4 +1,4 @@
-import type { Rule } from "./types.js";
+import type { Rule } from "./types";
 
 /** Hardcoded structural rules for dangerous patterns. */
 export const BUILTIN_RULES: Rule[] = [

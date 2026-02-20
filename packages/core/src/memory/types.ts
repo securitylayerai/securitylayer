@@ -1,4 +1,4 @@
-import type { TaintLevel } from "../taint/index.js";
+import type { TaintLevel } from "../taint/index";
 
 export interface MemoryProvenance {
   source: TaintLevel;

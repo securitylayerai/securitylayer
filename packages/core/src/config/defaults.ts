@@ -4,7 +4,7 @@ import type {
   SecurityLayerConfig,
   SessionsConfig,
   SkillsConfig,
-} from "./types.js";
+} from "./types";
 
 export function defaultMainConfig(): SecurityLayerConfig {
   return {

@@ -1,4 +1,4 @@
-import type { TaintLevel } from "./index.js";
+import type { TaintLevel } from "./index";
 
 export interface TaintOrigin {
   channel?: string;

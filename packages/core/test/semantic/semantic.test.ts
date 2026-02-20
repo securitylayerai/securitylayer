@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { BehavioralTracker } from "../../src/semantic/baseline.js";
-import { JUDGE_SYSTEM_PROMPT, NoOpJudge } from "../../src/semantic/judge.js";
-import { calculateRiskScore, TOOL_SEVERITIES } from "../../src/semantic/risk-score.js";
+import { BehavioralTracker } from "../../src/semantic/baseline";
+import { JUDGE_SYSTEM_PROMPT, NoOpJudge } from "../../src/semantic/judge";
+import { calculateRiskScore, TOOL_SEVERITIES } from "../../src/semantic/risk-score";
 
 describe("NoOpJudge", () => {
   it("returns NORMAL with high confidence", async () => {

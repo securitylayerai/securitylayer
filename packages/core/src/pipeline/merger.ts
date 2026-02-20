@@ -1,7 +1,7 @@
-import type { RuleResult } from "../rules/types.js";
-import type { RiskScore } from "../semantic/risk-score.js";
-import type { LLMClassification } from "../semantic/types.js";
-import type { PipelineDecision } from "./types.js";
+import type { RuleResult } from "../rules/types";
+import type { RiskScore } from "../semantic/risk-score";
+import type { LLMClassification } from "../semantic/types";
+import type { PipelineDecision } from "./types";
 
 /**
  * Merges decisions from multiple security layers.

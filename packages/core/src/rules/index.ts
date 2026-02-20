@@ -1,4 +1,4 @@
-export { BUILTIN_RULES } from "./builtin.js";
-export { evaluateRules } from "./engine.js";
-export { parseRulesYaml } from "./parser.js";
-export type { Rule, RuleMatch, RuleResult } from "./types.js";
+export { BUILTIN_RULES } from "./builtin";
+export { evaluateRules } from "./engine";
+export { parseRulesYaml } from "./parser";
+export type { Rule, RuleMatch, RuleResult } from "./types";

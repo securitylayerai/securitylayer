@@ -1,7 +1,7 @@
-import type { LoadedConfig } from "../config/types.js";
-import type { CapabilityStore } from "./gate.js";
-import { CapabilitySet } from "./set.js";
-import { BASE_CAPABILITIES } from "./types.js";
+import type { LoadedConfig } from "../config/types";
+import type { CapabilityStore } from "./gate";
+import { CapabilitySet } from "./set";
+import { BASE_CAPABILITIES } from "./types";
 
 /** Minimum capabilities for unknown skills: only channel.send. */
 const MINIMUM_SKILL_CAPS = new CapabilitySet(["channel.send"]);

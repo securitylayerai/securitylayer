@@ -1,5 +1,5 @@
-import { TAINT_SEVERITY, type TaintLevel } from "../taint/index.js";
-import type { BehavioralBaseline } from "./types.js";
+import { TAINT_SEVERITY, type TaintLevel } from "../taint/index";
+import type { BehavioralBaseline } from "./types";
 
 export interface RiskScore {
   score: number;

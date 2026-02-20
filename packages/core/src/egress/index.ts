@@ -1,10 +1,10 @@
-export { shannonEntropy } from "./entropy.js";
+export { shannonEntropy } from "./entropy";
 export {
   detectApiKeys,
   detectCredentialPatterns,
   detectHighEntropy,
   detectPemBlocks,
   detectPII,
-} from "./patterns.js";
-export { scanEgress } from "./scanner.js";
-export type { EgressFinding, EgressScanResult } from "./types.js";
+} from "./patterns";
+export { scanEgress } from "./scanner";
+export type { EgressFinding, EgressScanResult } from "./types";

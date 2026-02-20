@@ -1,5 +1,5 @@
-import { isTaintSufficient, TAINT_SEVERITY, type TaintLevel } from "../taint/index.js";
-import { type BaseCapability, isBaseCapability, type ParsedCapability } from "./types.js";
+import { isTaintSufficient, TAINT_SEVERITY, type TaintLevel } from "../taint/index";
+import { type BaseCapability, isBaseCapability, type ParsedCapability } from "./types";
 
 /**
  * Parses a capability string like `"exec"` or `"exec:trusted"` into a

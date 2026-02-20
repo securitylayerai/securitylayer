@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { CapabilityStore } from "../../src/capabilities/gate.js";
-import { CapabilitySet } from "../../src/capabilities/set.js";
-import { eventBus } from "../../src/events/bus.js";
-import { evaluateAction } from "../../src/pipeline/evaluator.js";
-import { mergeDecisions } from "../../src/pipeline/merger.js";
-import type { PipelineDeps } from "../../src/pipeline/types.js";
-import { createSandboxConfig } from "../../src/sandbox/sandbox.js";
-import { NoOpJudge } from "../../src/semantic/judge.js";
-import { SessionTaintTracker } from "../../src/taint/tracker.js";
+import type { CapabilityStore } from "../../src/capabilities/gate";
+import { CapabilitySet } from "../../src/capabilities/set";
+import { eventBus } from "../../src/events/bus";
+import { evaluateAction } from "../../src/pipeline/evaluator";
+import { mergeDecisions } from "../../src/pipeline/merger";
+import type { PipelineDeps } from "../../src/pipeline/types";
+import { createSandboxConfig } from "../../src/sandbox/sandbox";
+import { NoOpJudge } from "../../src/semantic/judge";
+import { SessionTaintTracker } from "../../src/taint/tracker";
 
 describe("mergeDecisions", () => {
   it("rules DENY always wins", () => {

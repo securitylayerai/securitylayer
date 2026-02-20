@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { CapabilityStore } from "../../src/capabilities/gate.js";
-import { checkCapability } from "../../src/capabilities/gate.js";
-import { buildCapabilityStore } from "../../src/capabilities/loader.js";
-import { CapabilitySet } from "../../src/capabilities/set.js";
-import { BASE_CAPABILITIES } from "../../src/capabilities/types.js";
-import { defaultLearnedRulesConfig, defaultMainConfig } from "../../src/config/defaults.js";
-import type { LoadedConfig } from "../../src/config/types.js";
+import type { CapabilityStore } from "../../src/capabilities/gate";
+import { checkCapability } from "../../src/capabilities/gate";
+import { buildCapabilityStore } from "../../src/capabilities/loader";
+import { CapabilitySet } from "../../src/capabilities/set";
+import { BASE_CAPABILITIES } from "../../src/capabilities/types";
+import { defaultLearnedRulesConfig, defaultMainConfig } from "../../src/config/defaults";
+import type { LoadedConfig } from "../../src/config/types";
 
 // ---------------------------------------------------------------------------
 // CapabilitySet

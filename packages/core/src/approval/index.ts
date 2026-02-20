@@ -1,2 +1,2 @@
-export { ApprovalManager } from "./manager.js";
-export type { ApprovalOutcome, ApprovalRequest, ApprovalResult } from "./types.js";
+export { ApprovalManager } from "./manager";
+export type { ApprovalOutcome, ApprovalRequest, ApprovalResult } from "./types";

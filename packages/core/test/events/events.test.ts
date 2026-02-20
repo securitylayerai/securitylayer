@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { EventBus } from "../../src/events/bus.js";
-import type { ActionEvaluatedEvent, SecurityEvent } from "../../src/events/types.js";
-import { SecurityEventSchema } from "../../src/events/types.js";
+import { EventBus } from "../../src/events/bus";
+import type { ActionEvaluatedEvent, SecurityEvent } from "../../src/events/types";
+import { SecurityEventSchema } from "../../src/events/types";
 
 describe("EventBus", () => {
   let bus: EventBus;

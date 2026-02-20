@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { shannonEntropy } from "../../src/egress/entropy.js";
+import { shannonEntropy } from "../../src/egress/entropy";
 import {
   detectApiKeys,
   detectCredentialPatterns,
   detectHighEntropy,
   detectPemBlocks,
   detectPII,
-} from "../../src/egress/patterns.js";
-import { scanEgress } from "../../src/egress/scanner.js";
+} from "../../src/egress/patterns";
+import { scanEgress } from "../../src/egress/scanner";
 
 describe("detectApiKeys", () => {
   it("detects Anthropic key prefix", () => {

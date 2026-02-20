@@ -1,4 +1,4 @@
-import type { UlimitConfig } from "./types.js";
+import type { UlimitConfig } from "./types";
 
 /** Default ulimit values for sandboxed execution. */
 export const DEFAULT_ULIMITS: UlimitConfig = {

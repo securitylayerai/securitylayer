@@ -1,6 +1,6 @@
-import type { CapabilityResult } from "../capabilities/types.js";
-import { eventBus } from "../events/bus.js";
-import type { SkillDeclaration } from "./types.js";
+import type { CapabilityResult } from "../capabilities/types";
+import { eventBus } from "../events/bus";
+import type { SkillDeclaration } from "./types";
 
 /**
  * Checks if a skill has declared the capability it's trying to use.

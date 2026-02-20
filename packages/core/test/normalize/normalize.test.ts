@@ -4,10 +4,10 @@ import {
   detectIndirection,
   parsePipeChain,
   splitCommandChain,
-} from "../../src/normalize/command-parser.js";
-import { decodeAllLayers } from "../../src/normalize/decoder.js";
-import { normalizeExecAction } from "../../src/normalize/normalizer.js";
-import { extractPaths, resolveCanonicalPath } from "../../src/normalize/path-resolver.js";
+} from "../../src/normalize/command-parser";
+import { decodeAllLayers } from "../../src/normalize/decoder";
+import { normalizeExecAction } from "../../src/normalize/normalizer";
+import { extractPaths, resolveCanonicalPath } from "../../src/normalize/path-resolver";
 
 describe("splitCommandChain", () => {
   it("splits on semicolon", () => {

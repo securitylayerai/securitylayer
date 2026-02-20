@@ -1,4 +1,4 @@
-import type { TaintLevel } from "../taint/index.js";
+import type { TaintLevel } from "../taint/index";
 
 export interface LLMClassification {
   decision: "NORMAL" | "ANOMALOUS" | "DANGEROUS";

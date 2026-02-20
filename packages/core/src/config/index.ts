@@ -4,9 +4,9 @@ export {
   defaultMainConfig,
   defaultSessionsConfig,
   defaultSkillsConfig,
-} from "./defaults.js";
-export { ConfigValidationError, ConfigVersionError, loadConfig } from "./loader.js";
-export { CONFIG_DIR, CONFIG_PATHS } from "./paths.js";
+} from "./defaults";
+export { ConfigValidationError, ConfigVersionError, loadConfig } from "./loader";
+export { CONFIG_DIR, CONFIG_PATHS } from "./paths";
 export type {
   ChannelsConfig,
   LearnedRulesConfig,
@@ -14,7 +14,7 @@ export type {
   SecurityLayerConfig,
   SessionsConfig,
   SkillsConfig,
-} from "./types.js";
+} from "./types";
 export {
   CapabilityStringSchema,
   ChannelsConfigSchema,
@@ -23,4 +23,4 @@ export {
   SessionsConfigSchema,
   SkillsConfigSchema,
   SUPPORTED_VERSIONS,
-} from "./types.js";
+} from "./types";

@@ -1,8 +1,8 @@
-import { resolveActualBinary } from "./binary-resolver.js";
-import { detectIndirection, parsePipeChain, splitCommandChain } from "./command-parser.js";
-import { decodeAllLayers } from "./decoder.js";
-import { extractPaths } from "./path-resolver.js";
-import type { NormalizedExec } from "./types.js";
+import { resolveActualBinary } from "./binary-resolver";
+import { detectIndirection, parsePipeChain, splitCommandChain } from "./command-parser";
+import { decodeAllLayers } from "./decoder";
+import { extractPaths } from "./path-resolver";
+import type { NormalizedExec } from "./types";
 
 /**
  * Normalizes a raw command string into a structured representation.

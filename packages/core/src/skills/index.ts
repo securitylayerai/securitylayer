@@ -1,3 +1,3 @@
-export { checkSkillCapability } from "./enforcer.js";
-export { computeSkillHash, verifySkillIntegrity } from "./integrity.js";
-export type { SkillDeclaration, SkillIntegrity } from "./types.js";
+export { checkSkillCapability } from "./enforcer";
+export { computeSkillHash, verifySkillIntegrity } from "./integrity";
+export type { SkillDeclaration, SkillIntegrity } from "./types";

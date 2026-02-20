@@ -1,6 +1,6 @@
-import { eventBus } from "../events/bus.js";
-import { TAINT_SEVERITY, TaintLevel, worstOf } from "./index.js";
-import type { TaintedData } from "./types.js";
+import { eventBus } from "../events/bus";
+import { TAINT_SEVERITY, TaintLevel, worstOf } from "./index";
+import type { TaintedData } from "./types";
 
 /**
  * Tracks taint level for a session. Taint only escalates, never downgrades.

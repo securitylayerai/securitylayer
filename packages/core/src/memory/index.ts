@@ -1,4 +1,4 @@
-export { verifyIntegrity } from "./integrity.js";
-export { tagProvenance } from "./provenance.js";
-export { scanMemoryEntries } from "./scanner.js";
-export type { MemoryEntry, MemoryProvenance } from "./types.js";
+export { verifyIntegrity } from "./integrity";
+export { tagProvenance } from "./provenance";
+export { scanMemoryEntries } from "./scanner";
+export type { MemoryEntry, MemoryProvenance } from "./types";

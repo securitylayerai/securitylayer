@@ -1,4 +1,4 @@
-import type { JudgeContext, LLMClassification } from "./types.js";
+import type { JudgeContext, LLMClassification } from "./types";
 
 export const JUDGE_SYSTEM_PROMPT = `You are SecurityLayer's semantic judge. Your job is to classify agent actions as NORMAL, ANOMALOUS, or DANGEROUS.
 

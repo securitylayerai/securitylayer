@@ -1,7 +1,7 @@
-import type { NormalizedExec } from "../normalize/types.js";
-import { isTaintSufficient, type TaintLevel } from "../taint/index.js";
-import { BUILTIN_RULES } from "./builtin.js";
-import type { Rule, RuleResult } from "./types.js";
+import type { NormalizedExec } from "../normalize/types";
+import { isTaintSufficient, type TaintLevel } from "../taint/index";
+import { BUILTIN_RULES } from "./builtin";
+import type { Rule, RuleResult } from "./types";
 
 /**
  * Evaluates a normalized command against all rules.

@@ -1,3 +1,3 @@
-export { createSandboxConfig, wrapCommand } from "./sandbox.js";
-export type { SandboxConfig, SandboxLevel, UlimitConfig } from "./types.js";
-export { buildUlimitArgs, DEFAULT_ULIMITS } from "./ulimits.js";
+export { createSandboxConfig, wrapCommand } from "./sandbox";
+export type { SandboxConfig, SandboxLevel, UlimitConfig } from "./types";
+export { buildUlimitArgs, DEFAULT_ULIMITS } from "./ulimits";

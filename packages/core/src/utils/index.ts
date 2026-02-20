@@ -1,3 +1,3 @@
-export { hashSHA256 } from "./crypto.js";
-export { type FileChangeEvent, watchPaths } from "./fs-watcher.js";
-export { createLogger } from "./logger.js";
+export { hashSHA256 } from "./crypto";
+export { type FileChangeEvent, watchPaths } from "./fs-watcher";
+export { createLogger } from "./logger";

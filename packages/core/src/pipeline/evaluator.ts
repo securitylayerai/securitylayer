@@ -1,11 +1,11 @@
-import { checkCapability, type ExecutionContext } from "../capabilities/gate.js";
-import { eventBus } from "../events/bus.js";
-import { normalizeExecAction } from "../normalize/normalizer.js";
-import { evaluateRules } from "../rules/engine.js";
-import { calculateRiskScore } from "../semantic/risk-score.js";
-import type { LLMClassification } from "../semantic/types.js";
-import { mergeDecisions } from "./merger.js";
-import type { EvaluationResult, PipelineDeps } from "./types.js";
+import { checkCapability, type ExecutionContext } from "../capabilities/gate";
+import { eventBus } from "../events/bus";
+import { normalizeExecAction } from "../normalize/normalizer";
+import { evaluateRules } from "../rules/engine";
+import { calculateRiskScore } from "../semantic/risk-score";
+import type { LLMClassification } from "../semantic/types";
+import { mergeDecisions } from "./merger";
+import type { EvaluationResult, PipelineDeps } from "./types";
 
 /**
  * Evaluates an action through the full security pipeline:

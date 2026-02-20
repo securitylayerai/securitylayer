@@ -1,5 +1,5 @@
-import type { SandboxConfig, SandboxLevel } from "./types.js";
-import { buildUlimitArgs, DEFAULT_ULIMITS } from "./ulimits.js";
+import type { SandboxConfig, SandboxLevel } from "./types";
+import { buildUlimitArgs, DEFAULT_ULIMITS } from "./ulimits";
 
 /**
  * Creates a sandbox configuration for the given level.

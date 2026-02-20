@@ -1,4 +1,4 @@
-export { EventBus, eventBus } from "./bus.js";
+export { EventBus, eventBus } from "./bus";
 export type {
   ActionEvaluatedEvent,
   ApprovalRequestedEvent,
@@ -11,7 +11,7 @@ export type {
   SkillIntegrityViolationEvent,
   TaintClearedEvent,
   TaintElevatedEvent,
-} from "./types.js";
+} from "./types";
 export {
   ActionEvaluatedEventSchema,
   ApprovalRequestedEventSchema,
@@ -22,4 +22,4 @@ export {
   SkillIntegrityViolationEventSchema,
   TaintClearedEventSchema,
   TaintElevatedEventSchema,
-} from "./types.js";
+} from "./types";

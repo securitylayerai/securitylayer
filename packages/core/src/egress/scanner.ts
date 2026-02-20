@@ -4,8 +4,8 @@ import {
   detectHighEntropy,
   detectPemBlocks,
   detectPII,
-} from "./patterns.js";
-import type { EgressScanResult } from "./types.js";
+} from "./patterns";
+import type { EgressScanResult } from "./types";
 
 /**
  * Scans content for secrets, credentials, PII, and high-entropy strings.

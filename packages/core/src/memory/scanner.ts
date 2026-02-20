@@ -1,6 +1,6 @@
-import type { TaintLevel } from "../taint/index.js";
-import { tagProvenance } from "./provenance.js";
-import type { MemoryEntry } from "./types.js";
+import type { TaintLevel } from "../taint/index";
+import { tagProvenance } from "./provenance";
+import type { MemoryEntry } from "./types";
 
 interface RawEntry {
   content: string;

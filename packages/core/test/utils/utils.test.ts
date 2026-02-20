@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { hashSHA256 } from "../../src/utils/crypto.js";
-import { createLogger } from "../../src/utils/logger.js";
+import { hashSHA256 } from "../../src/utils/crypto";
+import { createLogger } from "../../src/utils/logger";
 
 describe("hashSHA256", () => {
   it("returns consistent hex string", () => {

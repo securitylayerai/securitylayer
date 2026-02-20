@@ -1,5 +1,5 @@
 import { parse as parseYaml } from "yaml";
-import type { Rule, RuleMatch } from "./types.js";
+import type { Rule, RuleMatch } from "./types";
 
 interface YamlRule {
   id: string;

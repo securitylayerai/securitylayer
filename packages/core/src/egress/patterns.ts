@@ -1,5 +1,5 @@
-import { shannonEntropy } from "./entropy.js";
-import type { EgressFinding } from "./types.js";
+import { shannonEntropy } from "./entropy";
+import type { EgressFinding } from "./types";
 
 /** Known API key prefixes and their patterns. */
 const API_KEY_PATTERNS: { name: string; regex: RegExp }[] = [

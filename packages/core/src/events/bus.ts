@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { SecurityEvent, SecurityEventMap, SecurityEventType } from "./types.js";
+import type { SecurityEvent, SecurityEventMap, SecurityEventType } from "./types";
 
 type Handler<T> = (event: T) => void;
 
