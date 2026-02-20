@@ -44,10 +44,18 @@ describe("createSandboxConfig", () => {
 });
 
 describe("wrapCommand", () => {
-  it("prepends ulimit to command", () => {
+  it("wraps command in subshell with ulimits", () => {
     const config = createSandboxConfig(0);
     const wrapped = wrapCommand("ls -la", config);
     expect(wrapped).toContain("ulimit -t");
-    expect(wrapped).toContain("&& ls -la");
+    expect(wrapped).toContain("exec sh -c 'ls -la'");
+    expect(wrapped.startsWith("(")).toBe(true);
+    expect(wrapped.endsWith(")")).toBe(true);
+  });
+
+  it("escapes single quotes in command to prevent injection", () => {
+    const config = createSandboxConfig(0);
+    const wrapped = wrapCommand("echo 'hello'", config);
+    expect(wrapped).toContain("echo '\\''hello'\\''");
   });
 });

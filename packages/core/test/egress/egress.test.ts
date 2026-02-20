@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { shannonEntropy } from "../../src/egress/entropy";
 import {
   detectApiKeys,
@@ -8,6 +8,8 @@ import {
   detectPII,
 } from "../../src/egress/patterns";
 import { scanEgress } from "../../src/egress/scanner";
+import { eventBus } from "../../src/events/bus";
+import type { EgressSecretDetectedEvent } from "../../src/events/types";
 
 describe("detectApiKeys", () => {
   it("detects Anthropic key prefix", () => {
@@ -111,6 +113,10 @@ describe("detectCredentialPatterns", () => {
 });
 
 describe("scanEgress", () => {
+  beforeEach(() => {
+    eventBus.clear();
+  });
+
   it("clean content returns clean result", () => {
     const result = scanEgress("Hello, this is normal text.");
     expect(result.clean).toBe(true);
@@ -126,5 +132,29 @@ describe("scanEgress", () => {
     const result = scanEgress(content);
     expect(result.clean).toBe(false);
     expect(result.findings.length).toBeGreaterThanOrEqual(3);
+  });
+
+  // 1.1-#9b: egress.secret_detected event emission
+  it("emits egress.secret_detected event for each finding", () => {
+    const events: EgressSecretDetectedEvent[] = [];
+    eventBus.on("egress.secret_detected", (e) => events.push(e));
+
+    const content = "API key: sk-ant-abcdefghijklmnopqrstuvwxyz and SSN: 123-45-6789";
+    const result = scanEgress(content);
+
+    expect(events.length).toBe(result.findings.length);
+    expect(events.length).toBeGreaterThanOrEqual(2);
+    for (const event of events) {
+      expect(event.channel).toBe("egress_scan");
+      expect(event.redacted).toBe(true);
+    }
+  });
+
+  it("does NOT emit events when content is clean", () => {
+    const events: EgressSecretDetectedEvent[] = [];
+    eventBus.on("egress.secret_detected", (e) => events.push(e));
+
+    scanEgress("Hello, this is normal text.");
+    expect(events).toHaveLength(0);
   });
 });

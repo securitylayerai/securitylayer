@@ -23,6 +23,16 @@ describe("tagProvenance", () => {
     expect(entry.provenance.sessionId).toBe("s1");
     expect(entry.provenance.timestamp).toBeTruthy();
   });
+
+  // M3: timestamp is now a number (epoch ms)
+  it("timestamp is a number (epoch ms)", () => {
+    const before = Date.now();
+    const entry = tagProvenance("data", "owner");
+    const after = Date.now();
+    expect(typeof entry.provenance.timestamp).toBe("number");
+    expect(entry.provenance.timestamp).toBeGreaterThanOrEqual(before);
+    expect(entry.provenance.timestamp).toBeLessThanOrEqual(after);
+  });
 });
 
 describe("verifyIntegrity", () => {

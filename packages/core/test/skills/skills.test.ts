@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { eventBus } from "../../src/events/bus";
+import { EventBus, eventBus } from "../../src/events/bus";
+import type { SkillIntegrityViolationEvent } from "../../src/events/types";
 import { checkSkillCapability } from "../../src/skills/enforcer";
 import { computeSkillHash, verifySkillIntegrity } from "../../src/skills/integrity";
 import type { SkillDeclaration } from "../../src/skills/types";
@@ -36,6 +37,34 @@ describe("checkSkillCapability", () => {
     const result = checkSkillCapability("unknown-skill", "exec", declarations);
     expect(result.allowed).toBe(false);
     expect(result.reason).toContain("Unknown skill");
+  });
+
+  // M7: injectable EventBus
+  it("uses injected event bus for violations", () => {
+    const customBus = new EventBus();
+    const customEvents: SkillIntegrityViolationEvent[] = [];
+    const singletonEvents: SkillIntegrityViolationEvent[] = [];
+
+    customBus.on("skill.integrity_violation", (e) => customEvents.push(e));
+    eventBus.on("skill.integrity_violation", (e) => singletonEvents.push(e));
+
+    checkSkillCapability("code-review", "exec", declarations, customBus);
+
+    expect(customEvents).toHaveLength(1);
+    expect(customEvents[0].skillId).toBe("code-review");
+    // Singleton should NOT receive event
+    expect(singletonEvents).toHaveLength(0);
+
+    customBus.clear();
+  });
+
+  it("falls back to singleton bus when no bus injected", () => {
+    const singletonEvents: SkillIntegrityViolationEvent[] = [];
+    eventBus.on("skill.integrity_violation", (e) => singletonEvents.push(e));
+
+    checkSkillCapability("code-review", "exec", declarations); // no bus
+
+    expect(singletonEvents).toHaveLength(1);
   });
 });
 

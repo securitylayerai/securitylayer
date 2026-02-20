@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { eventBus } from "../../src/events/bus";
+import type { RuleTriggeredEvent } from "../../src/events/types";
 import { normalizeExecAction } from "../../src/normalize/normalizer";
 import { evaluateRules } from "../../src/rules/engine";
 import { parseRulesYaml } from "../../src/rules/parser";
@@ -110,5 +112,155 @@ rules:
   it("returns empty array for invalid YAML", () => {
     const rules = parseRulesYaml("no rules here");
     expect(rules).toEqual([]);
+  });
+
+  it("rejects invalid match type (H2)", () => {
+    const yaml = `
+rules:
+  - id: bad-rule
+    description: Bad rule
+    match:
+      type: invalid_type
+      value: "test"
+    decision: DENY
+    reason: Bad
+`;
+    expect(() => parseRulesYaml(yaml)).toThrow("Invalid match type");
+  });
+
+  it("rejects invalid decision (H2)", () => {
+    const yaml = `
+rules:
+  - id: bad-rule
+    description: Bad rule
+    match:
+      type: pattern
+      value: "test"
+    decision: ALLOW
+    reason: Bad
+`;
+    expect(() => parseRulesYaml(yaml)).toThrow("Invalid decision");
+  });
+});
+
+// T5: Rule ordering tests
+describe("rules engine — most-restrictive match (H3)", () => {
+  it("DENY rule + REQUIRE_APPROVAL rule → DENY wins", () => {
+    const normalized = normalizeExecAction("rm -rf /");
+    // rm -rf / triggers a DENY rule. Even if we add a REQUIRE_APPROVAL extra rule
+    // that also matches, DENY should win.
+    const extraRules = [
+      {
+        id: "extra-approval",
+        description: "Require approval for rm",
+        match: { type: "binary" as const, value: "rm" },
+        decision: "REQUIRE_APPROVAL" as const,
+        reason: "Needs approval",
+      },
+    ];
+    const result = evaluateRules(normalized, undefined, extraRules);
+    expect(result.decision).toBe("DENY");
+  });
+
+  it("multiple REQUIRE_APPROVAL rules → first match returned", () => {
+    const normalized = normalizeExecAction("something-custom arg1 arg2");
+    const extraRules = [
+      {
+        id: "approval-1",
+        description: "First approval rule",
+        match: { type: "binary" as const, value: "something-custom" },
+        decision: "REQUIRE_APPROVAL" as const,
+        reason: "First reason",
+      },
+      {
+        id: "approval-2",
+        description: "Second approval rule",
+        match: { type: "pattern" as const, value: /something-custom/ },
+        decision: "REQUIRE_APPROVAL" as const,
+        reason: "Second reason",
+      },
+    ];
+    const result = evaluateRules(normalized, undefined, extraRules);
+    expect(result.matched).toBe(true);
+    expect(result.decision).toBe("REQUIRE_APPROVAL");
+  });
+
+  it("no matching rules → ALLOW", () => {
+    const normalized = normalizeExecAction("echo hello");
+    const result = evaluateRules(normalized);
+    expect(result.matched).toBe(false);
+    expect(result.decision).toBe("ALLOW");
+  });
+});
+
+// 1.1-#9a: rule.triggered event emission
+describe("rules engine — rule.triggered event", () => {
+  beforeEach(() => {
+    eventBus.clear();
+  });
+
+  it("emits rule.triggered event when a DENY rule matches", () => {
+    const events: RuleTriggeredEvent[] = [];
+    eventBus.on("rule.triggered", (e) => events.push(e));
+
+    evaluate("rm -rf /");
+
+    expect(events).toHaveLength(1);
+    expect(events[0].ruleId).toBe("destructive-rm-rf-root");
+    expect(events[0].decision).toBe("DENY");
+  });
+
+  it("emits rule.triggered event for REQUIRE_APPROVAL rule", () => {
+    const events: RuleTriggeredEvent[] = [];
+    eventBus.on("rule.triggered", (e) => events.push(e));
+
+    const normalized = normalizeExecAction("custom-tool arg1");
+    const extraRules = [
+      {
+        id: "approval-rule",
+        description: "Test approval",
+        match: { type: "binary" as const, value: "custom-tool" },
+        decision: "REQUIRE_APPROVAL" as const,
+        reason: "Needs review",
+      },
+    ];
+    evaluateRules(normalized, undefined, extraRules);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].ruleId).toBe("approval-rule");
+    expect(events[0].decision).toBe("REQUIRE_APPROVAL");
+  });
+
+  it("does NOT emit event when no rules match", () => {
+    const events: RuleTriggeredEvent[] = [];
+    eventBus.on("rule.triggered", (e) => events.push(e));
+
+    evaluate("echo hello");
+
+    expect(events).toHaveLength(0);
+  });
+});
+
+// 1.1-#6: Glob matching in rules engine
+describe("rules engine — glob matching", () => {
+  beforeEach(() => {
+    eventBus.clear();
+  });
+
+  it("matches path with glob pattern", () => {
+    const normalized = normalizeExecAction("cat ~/.ssh/id_rsa");
+    const extraRules = [
+      {
+        id: "glob-ssh",
+        description: "Glob match SSH keys",
+        match: { type: "path" as const, value: "~/.ssh/**" },
+        decision: "DENY" as const,
+        reason: "SSH key access via glob",
+      },
+    ];
+    // Note: builtin rules will also match this, but the glob extra rule should too
+    const result = evaluateRules(normalized, undefined, extraRules);
+    expect(result.matched).toBe(true);
+    expect(result.decision).toBe("DENY");
   });
 });

@@ -5,7 +5,6 @@ import { eventBus } from "../../src/events/bus";
 import { evaluateAction } from "../../src/pipeline/evaluator";
 import { mergeDecisions } from "../../src/pipeline/merger";
 import type { PipelineDeps } from "../../src/pipeline/types";
-import { createSandboxConfig } from "../../src/sandbox/sandbox";
 import { NoOpJudge } from "../../src/semantic/judge";
 import { SessionTaintTracker } from "../../src/taint/tracker";
 
@@ -73,7 +72,17 @@ describe("mergeDecisions", () => {
 
 function makeDeps(overrides?: Partial<PipelineDeps>): PipelineDeps {
   const sessions = new Map([
-    ["s1", new CapabilitySet(["exec", "file.read", "file.write", "channel.send"])],
+    [
+      "s1",
+      new CapabilitySet([
+        "exec",
+        "file.read",
+        "file.write",
+        "channel.send",
+        "node.invoke",
+        "cron.create",
+      ]),
+    ],
   ]);
   const minimumSkillCaps = new CapabilitySet(["channel.send"]);
 
@@ -87,7 +96,7 @@ function makeDeps(overrides?: Partial<PipelineDeps>): PipelineDeps {
     capabilityStore: overrides?.capabilityStore ?? store,
     taintTracker: overrides?.taintTracker ?? new SessionTaintTracker(),
     judge: overrides?.judge ?? new NoOpJudge(),
-    sandboxConfig: overrides?.sandboxConfig ?? createSandboxConfig(0),
+    ...overrides,
   };
 }
 
@@ -135,5 +144,194 @@ describe("evaluateAction", () => {
     const deps = makeDeps();
     await evaluateAction("exec", { sessionId: "s1" }, deps);
     expect(events).toHaveLength(1);
+  });
+});
+
+// T2: Chained command evaluation tests
+describe("chained command evaluation", () => {
+  beforeEach(() => {
+    eventBus.clear();
+  });
+
+  it("ls; rm -rf / → DENY (rm triggers rule)", async () => {
+    const deps = makeDeps();
+    const result = await evaluateAction("exec", { sessionId: "s1" }, deps, "ls; rm -rf /");
+    expect(result.decision).toBe("DENY");
+  });
+
+  it("echo hello && cat ~/.ssh/id_rsa → DENY (path rule)", async () => {
+    const deps = makeDeps();
+    const result = await evaluateAction(
+      "exec",
+      { sessionId: "s1" },
+      deps,
+      "echo hello && cat ~/.ssh/id_rsa",
+    );
+    expect(result.decision).toBe("DENY");
+  });
+
+  it("echo ok; echo fine → ALLOW (both safe)", async () => {
+    const deps = makeDeps();
+    const result = await evaluateAction("exec", { sessionId: "s1" }, deps, "echo ok; echo fine");
+    expect(result.decision).toBe("ALLOW");
+  });
+});
+
+// T4: Pipeline degraded mode tests
+describe("pipeline degraded mode", () => {
+  beforeEach(() => {
+    eventBus.clear();
+  });
+
+  it("judge throws → degraded=true, risk>0.3 → REQUIRE_APPROVAL", async () => {
+    const failingJudge = {
+      classify: async () => {
+        throw new Error("LLM unavailable");
+      },
+    };
+    const deps = makeDeps({ judge: failingJudge as never });
+    // exec has high risk score (0.9 tool severity → score > 0.3)
+    const result = await evaluateAction("exec", { sessionId: "s1" }, deps, "rm something");
+    expect(result.degraded).toBe(true);
+    expect(result.decision).toBe("REQUIRE_APPROVAL");
+  });
+
+  it("judge throws → degraded=true, low-risk action → ALLOW", async () => {
+    const failingJudge = {
+      classify: async () => {
+        throw new Error("LLM unavailable");
+      },
+    };
+    // channel.send has 0.2 tool severity → low risk
+    const sessions = new Map([["s1", new CapabilitySet(["channel.send"])]]);
+    const store: CapabilityStore = {
+      getSessionCaps: (id) => sessions.get(id),
+      getSkillCaps: () => new CapabilitySet(["channel.send"]),
+      getChannelCaps: () => undefined,
+    };
+    const deps = makeDeps({
+      judge: failingJudge as never,
+      capabilityStore: store,
+    });
+    const result = await evaluateAction("channel.send", { sessionId: "s1" }, deps);
+    expect(result.degraded).toBe(true);
+    expect(result.decision).toBe("ALLOW");
+  });
+});
+
+// L1: Learned rules check
+describe("learned rules in evaluator", () => {
+  beforeEach(() => {
+    eventBus.clear();
+  });
+
+  it("learned rule match skips LLM and allows action", async () => {
+    const deps = makeDeps({
+      learnedRules: {
+        version: 1,
+        rules: [
+          {
+            pattern: "git status",
+            capability: "exec",
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    const result = await evaluateAction("exec", { sessionId: "s1" }, deps, "git status");
+    expect(result.decision).toBe("ALLOW");
+    // Should still have allowed through capability gate
+    expect(result.layers.capability.allowed).toBe(true);
+  });
+
+  it("learned rule for safe pattern does not affect unrelated dangerous commands", async () => {
+    const deps = makeDeps({
+      learnedRules: {
+        version: 1,
+        rules: [
+          {
+            pattern: "git status",
+            capability: "exec",
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    // "git status" is learned, but "rm -rf /" is not — should still DENY
+    const result = await evaluateAction("exec", { sessionId: "s1" }, deps, "git status; rm -rf /");
+    expect(result.decision).toBe("DENY");
+  });
+
+  it("non-matching learned rule does not bypass rules engine", async () => {
+    const deps = makeDeps({
+      learnedRules: {
+        version: 1,
+        rules: [
+          {
+            pattern: "npm install",
+            capability: "exec",
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    // Learned rule is for "npm install", not "rm -rf /" — rules engine should catch it
+    const result = await evaluateAction("exec", { sessionId: "s1" }, deps, "rm -rf /");
+    expect(result.decision).toBe("DENY");
+  });
+});
+
+// M10: sessionHistory wired into evaluator
+describe("sessionHistory wiring", () => {
+  beforeEach(() => {
+    eventBus.clear();
+  });
+
+  it("passes sessionHistory to LLM judge", async () => {
+    let receivedHistory: string[] = [];
+    const spyJudge = {
+      classify: async (ctx: { sessionHistory: string[] }) => {
+        receivedHistory = ctx.sessionHistory;
+        return { decision: "NORMAL" as const, confidence: 1.0, reasoning: "ok" };
+      },
+    };
+    const deps = makeDeps({
+      judge: spyJudge as never,
+      sessionHistory: ["previous action 1", "previous action 2"],
+    });
+    await evaluateAction("exec", { sessionId: "s1" }, deps, "git log");
+    expect(receivedHistory).toEqual(["previous action 1", "previous action 2"]);
+  });
+
+  it("defaults to empty sessionHistory when not provided", async () => {
+    let receivedHistory: string[] | undefined;
+    const spyJudge = {
+      classify: async (ctx: { sessionHistory: string[] }) => {
+        receivedHistory = ctx.sessionHistory;
+        return { decision: "NORMAL" as const, confidence: 1.0, reasoning: "ok" };
+      },
+    };
+    const deps = makeDeps({ judge: spyJudge as never });
+    await evaluateAction("exec", { sessionId: "s1" }, deps, "git log");
+    expect(receivedHistory).toEqual([]);
+  });
+});
+
+// T8: node.invoke/cron.create mandatory approval tests
+describe("mandatory approval for high-risk actions", () => {
+  beforeEach(() => {
+    eventBus.clear();
+  });
+
+  it("node.invoke with all capabilities → REQUIRE_APPROVAL (not ALLOW)", async () => {
+    const deps = makeDeps();
+    const result = await evaluateAction("node.invoke", { sessionId: "s1" }, deps);
+    expect(result.decision).toBe("REQUIRE_APPROVAL");
+  });
+
+  it("cron.create with all capabilities → REQUIRE_APPROVAL (not ALLOW)", async () => {
+    const deps = makeDeps();
+    const result = await evaluateAction("cron.create", { sessionId: "s1" }, deps);
+    expect(result.decision).toBe("REQUIRE_APPROVAL");
   });
 });

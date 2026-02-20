@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CapabilityStore } from "../../src/capabilities/gate";
 import { checkCapability } from "../../src/capabilities/gate";
 import { buildCapabilityStore } from "../../src/capabilities/loader";
-import { CapabilitySet } from "../../src/capabilities/set";
+import { CapabilitySet, parseCapabilityString } from "../../src/capabilities/set";
 import { BASE_CAPABILITIES } from "../../src/capabilities/types";
 import { defaultLearnedRulesConfig, defaultMainConfig } from "../../src/config/defaults";
 import type { LoadedConfig } from "../../src/config/types";
@@ -265,5 +265,46 @@ describe("buildCapabilityStore", () => {
     for (const base of BASE_CAPABILITIES) {
       expect(caps?.has(base)).toBe(true);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T3: Taint-aware capability edge cases
+// ---------------------------------------------------------------------------
+
+describe("parseCapabilityString — taint validation (C3)", () => {
+  it("rejects invalid taint level", () => {
+    expect(() => parseCapabilityString("exec:invalid_taint")).toThrow("Invalid taint level");
+  });
+
+  it("accepts valid taint levels", () => {
+    expect(() => parseCapabilityString("exec:owner")).not.toThrow();
+    expect(() => parseCapabilityString("exec:trusted")).not.toThrow();
+    expect(() => parseCapabilityString("exec:web")).not.toThrow();
+    expect(() => parseCapabilityString("exec:skill")).not.toThrow();
+    expect(() => parseCapabilityString("exec:memory")).not.toThrow();
+  });
+
+  it("accepts capability without taint", () => {
+    const result = parseCapabilityString("exec");
+    expect(result.base).toBe("exec");
+    expect(result.taint).toBeUndefined();
+  });
+
+  it("rejects unknown base capability", () => {
+    expect(() => parseCapabilityString("nonexistent")).toThrow("Unknown base capability");
+  });
+});
+
+describe("CapabilitySet — undefined taint + restricted capability", () => {
+  it("undefined taint context grants access if capability exists", () => {
+    const set = new CapabilitySet(["exec:trusted"]);
+    // No taint context — capability is present, should be granted
+    expect(set.has("exec")).toBe(true);
+  });
+
+  it("memory.read.trusted is a valid capability", () => {
+    const set = new CapabilitySet(["memory.read.trusted"]);
+    expect(set.has("memory.read.trusted")).toBe(true);
   });
 });

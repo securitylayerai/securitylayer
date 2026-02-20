@@ -117,4 +117,54 @@ describe("EventBus", () => {
     const result = SecurityEventSchema.safeParse(event);
     expect(result.success).toBe(true);
   });
+
+  // T7: Concurrent event emission tests
+  it("multiple rapid emissions don't lose events", () => {
+    const received: SecurityEvent[] = [];
+    bus.on("action.evaluated", (e) => received.push(e));
+
+    const count = 100;
+    for (let i = 0; i < count; i++) {
+      bus.emit({
+        type: "action.evaluated",
+        action: `exec-${i}`,
+        allowed: true,
+      });
+    }
+
+    expect(received).toHaveLength(count);
+    // Verify each event has a unique ID
+    const ids = new Set(received.map((e) => e.id));
+    expect(ids.size).toBe(count);
+  });
+
+  it("handlers from one type don't interfere with another", () => {
+    const actionEvents: SecurityEvent[] = [];
+    const taintEvents: SecurityEvent[] = [];
+
+    bus.on("action.evaluated", (e) => actionEvents.push(e));
+    bus.on("taint.elevated", (e) => taintEvents.push(e));
+
+    // Emit both types rapidly
+    for (let i = 0; i < 50; i++) {
+      bus.emit({ type: "action.evaluated", action: `exec-${i}`, allowed: true });
+      bus.emit({
+        type: "taint.elevated",
+        previousLevel: "owner",
+        newLevel: "web",
+        source: `source-${i}`,
+      });
+    }
+
+    expect(actionEvents).toHaveLength(50);
+    expect(taintEvents).toHaveLength(50);
+
+    // Verify no cross-contamination
+    for (const e of actionEvents) {
+      expect(e.type).toBe("action.evaluated");
+    }
+    for (const e of taintEvents) {
+      expect(e.type).toBe("taint.elevated");
+    }
+  });
 });

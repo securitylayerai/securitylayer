@@ -122,6 +122,18 @@ describe("decodeAllLayers", () => {
   it("passes through plain text unchanged", () => {
     expect(decodeAllLayers("git status")).toBe("git status");
   });
+
+  // M6: base64 decoder min length 32, URL rejection
+  it("does NOT decode short base64-like strings (<32 chars)", () => {
+    // 24 chars of valid base64 — should NOT be decoded
+    const short = "ABCDEFGHIJKLmnopqrstuvwx";
+    expect(decodeAllLayers(short)).toBe(short);
+  });
+
+  it("does NOT decode URL-like base64 strings", () => {
+    const urlLike = "https://example.com/path/to/something/really/long/endpoint";
+    expect(decodeAllLayers(urlLike)).toBe(urlLike);
+  });
 });
 
 describe("normalizeExecAction", () => {
@@ -149,5 +161,33 @@ describe("normalizeExecAction", () => {
     expect(result.pipeDestinations).toHaveLength(0);
     expect(result.chainedCommands).toEqual(["git status"]);
     expect(result.usesIndirection).toBe(false);
+  });
+
+  // M5: decodedCommand field
+  it("decodedCommand equals raw for plain commands", () => {
+    const result = normalizeExecAction("git status");
+    expect(result.decodedCommand).toBe("git status");
+    expect(result.decodedCommand).toBe(result.raw);
+  });
+
+  it("decodedCommand differs from raw for encoded commands", () => {
+    const result = normalizeExecAction("%2Fetc%2Fpasswd");
+    expect(result.decodedCommand).toBe("/etc/passwd");
+    expect(result.decodedCommand).not.toBe(result.raw);
+  });
+});
+
+// M9: extractPaths binary path capture
+describe("extractPaths — binary path capture", () => {
+  it("captures absolute binary path", () => {
+    const paths = extractPaths("/usr/bin/cat /etc/passwd");
+    expect(paths.some((p) => p.endsWith("/usr/bin/cat"))).toBe(true);
+    expect(paths.some((p) => p.endsWith("/etc/passwd"))).toBe(true);
+  });
+
+  it("does not duplicate first token when it matches later args", () => {
+    // If first token is "cat" and a later arg is also "cat", should not skip the arg
+    const paths = extractPaths("cat /tmp/cat");
+    expect(paths.some((p) => p.endsWith("/tmp/cat"))).toBe(true);
   });
 });
