@@ -4,7 +4,7 @@ export interface MemoryProvenance {
   source: TaintLevel;
   channel?: string;
   sender?: string;
-  timestamp: string;
+  timestamp: number;
   sessionId?: string;
   hash: string;
 }

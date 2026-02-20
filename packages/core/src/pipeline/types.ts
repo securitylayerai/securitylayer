@@ -1,8 +1,9 @@
 import type { CapabilityStore } from "../capabilities/gate";
 import type { CapabilityResult } from "../capabilities/types";
+import type { LearnedRulesConfig } from "../config/types";
 import type { EgressScanResult } from "../egress/types";
-import type { RuleResult } from "../rules/types";
-import type { SandboxConfig } from "../sandbox/types";
+import type { EventBus } from "../events/bus";
+import type { Rule, RuleResult } from "../rules/types";
 import type { LLMJudge } from "../semantic/judge";
 import type { RiskScore } from "../semantic/risk-score";
 import type { LLMClassification } from "../semantic/types";
@@ -36,5 +37,8 @@ export interface PipelineDeps {
   capabilityStore: CapabilityStore;
   taintTracker: SessionTaintTracker;
   judge: LLMJudge;
-  sandboxConfig: SandboxConfig;
+  extraRules?: Rule[];
+  sessionHistory?: string[];
+  learnedRules?: LearnedRulesConfig;
+  eventBus?: EventBus;
 }

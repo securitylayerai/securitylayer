@@ -18,13 +18,71 @@ export interface LLMJudge {
 }
 
 /**
- * Default LLM judge that makes actual API calls.
- * v0: scaffold — implementation requires API integration.
+ * Default LLM judge that makes actual API calls to Anthropic.
+ * Falls back to taint-based heuristic when no API key is available.
  */
 export class DefaultLLMJudge implements LLMJudge {
+  constructor(
+    private apiKey?: string,
+    private model: string = "claude-haiku-4-5-20251001",
+    private timeoutMs: number = 500,
+  ) {}
+
   async classify(context: JudgeContext): Promise<LLMClassification> {
-    // v0: Placeholder — actual API integration is v1
-    // For now, return a conservative classification based on taint
+    if (!this.apiKey) {
+      return this.classifyByTaint(context);
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": this.apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: this.model,
+          max_tokens: 256,
+          system: JUDGE_SYSTEM_PROMPT,
+          messages: [
+            {
+              role: "user",
+              content: `Action: ${context.action}\nTaint: ${context.taint}\nSession history: ${JSON.stringify(context.sessionHistory)}\n\nClassify this action.`,
+            },
+          ],
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+      const data = (await response.json()) as {
+        content?: { text?: string }[];
+      };
+      const text = data.content?.[0]?.text ?? "";
+      const parsed = JSON.parse(text) as {
+        decision?: string;
+        confidence?: number;
+        reasoning?: string;
+      };
+
+      return {
+        decision: (parsed.decision as LLMClassification["decision"]) ?? "ANOMALOUS",
+        confidence: parsed.confidence ?? 0.5,
+        reasoning: parsed.reasoning ?? "LLM judge classification",
+      };
+    } catch {
+      throw new Error("LLM judge unavailable");
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private classifyByTaint(context: JudgeContext): LLMClassification {
     const taintSeverity = ["owner", "trusted"].includes(context.taint) ? "low" : "elevated";
     if (taintSeverity === "elevated") {
       return {

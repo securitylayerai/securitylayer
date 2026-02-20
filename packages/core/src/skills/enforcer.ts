@@ -1,5 +1,5 @@
 import type { CapabilityResult } from "../capabilities/types";
-import { eventBus } from "../events/bus";
+import { type EventBus, eventBus as singletonBus } from "../events/bus";
 import type { SkillDeclaration } from "./types";
 
 /**
@@ -10,7 +10,9 @@ export function checkSkillCapability(
   skillId: string,
   action: string,
   declarations: Map<string, SkillDeclaration>,
+  bus?: EventBus,
 ): CapabilityResult {
+  const eventBus = bus ?? singletonBus;
   const decl = declarations.get(skillId);
 
   if (!decl) {

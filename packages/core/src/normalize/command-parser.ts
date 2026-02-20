@@ -116,13 +116,15 @@ export function parsePipeChain(cmd: string): string[] {
 
     // Single pipe (not ||)
     if (ch === "|" && cmd[i + 1] !== "|") {
-      // Also check we're not the second | in ||
-      if (i > 0 && cmd[i - 1] === "|") {
-        current += ch;
-        continue;
-      }
       if (current.trim()) stages.push(current.trim());
       current = "";
+      continue;
+    }
+
+    // Skip || (chain operator, not pipe) — advance past both chars
+    if (ch === "|" && cmd[i + 1] === "|") {
+      current += "||";
+      i++; // skip second |
       continue;
     }
 

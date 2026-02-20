@@ -83,4 +83,30 @@ export const BUILTIN_RULES: Rule[] = [
     decision: "DENY",
     reason: "Remote code execution via wget | bash",
   },
+
+  // Pipe pair rules
+  {
+    id: "rce-pipe-pair",
+    description: "Prevent piping download to execution",
+    match: {
+      type: "pipe_pair",
+      value: "pipe_pair",
+      from: ["curl", "wget"],
+      to: ["sh", "bash", "zsh", "python", "node"],
+    },
+    decision: "DENY",
+    reason: "Remote code execution via download piped to interpreter",
+  },
+  {
+    id: "exfil-pipe-pair",
+    description: "Prevent piping file content to network tools",
+    match: {
+      type: "pipe_pair",
+      value: "pipe_pair",
+      from: ["cat", "head", "tail", "less", "more", "base64", "tar", "zip", "gzip"],
+      to: ["curl", "wget", "nc", "ncat", "socat"],
+    },
+    decision: "DENY",
+    reason: "Potential data exfiltration via pipe to network tool",
+  },
 ];

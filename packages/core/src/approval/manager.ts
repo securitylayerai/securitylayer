@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { eventBus } from "../events/bus";
+import { type EventBus, eventBus as singletonBus } from "../events/bus";
 import type { ApprovalOutcome, ApprovalRequest, ApprovalResult } from "./types";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -14,6 +14,11 @@ export class ApprovalManager {
     { request: ApprovalRequest; resolve: (result: ApprovalResult) => void }
   >();
   private timers = new Map<string, ReturnType<typeof setTimeout>>();
+  private bus: EventBus;
+
+  constructor(bus?: EventBus) {
+    this.bus = bus ?? singletonBus;
+  }
 
   /**
    * Create an approval request and wait for resolution.
@@ -37,7 +42,7 @@ export class ApprovalManager {
       }, timeoutMs);
       this.timers.set(id, timer);
 
-      eventBus.emit({
+      this.bus.emit({
         type: "approval.requested",
         requestId: id,
         action: req.action,
@@ -69,7 +74,7 @@ export class ApprovalManager {
       approvedAt: outcome === "approved" ? new Date() : undefined,
     };
 
-    eventBus.emit({
+    this.bus.emit({
       type: "approval.resolved",
       requestId: id,
       outcome,

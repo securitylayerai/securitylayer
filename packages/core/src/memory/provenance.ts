@@ -17,7 +17,7 @@ export function tagProvenance(
       channel: meta?.channel,
       sender: meta?.sender,
       sessionId: meta?.sessionId,
-      timestamp: new Date().toISOString(),
+      timestamp: Date.now(),
       hash: hashSHA256(content),
     },
   };

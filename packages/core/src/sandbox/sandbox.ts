@@ -32,10 +32,12 @@ export function createSandboxConfig(level: SandboxLevel = 0): SandboxConfig {
 
 /**
  * Wraps a command with sandbox restrictions (ulimits).
- * Returns the wrapped command string.
+ * Uses a subshell to isolate ulimits and prevent shell injection escape.
  */
 export function wrapCommand(command: string, config: SandboxConfig): string {
   const ulimits = buildUlimitArgs(config.ulimits);
-  // Join ulimits with && to ensure they apply before the command
-  return `${ulimits.join(" && ")} && ${command}`;
+  const ulimitChain = ulimits.join("; ");
+  // Single-quote the command to prevent interpretation, escaping existing single quotes
+  const escaped = command.replace(/'/g, "'\\''");
+  return `(${ulimitChain}; exec sh -c '${escaped}')`;
 }

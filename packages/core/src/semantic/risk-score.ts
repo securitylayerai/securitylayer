@@ -1,3 +1,4 @@
+import type { NormalizedExec } from "../normalize/types";
 import { TAINT_SEVERITY, type TaintLevel } from "../taint/index";
 import type { BehavioralBaseline } from "./types";
 
@@ -19,20 +20,20 @@ export const TOOL_SEVERITIES: Record<string, number> = {
   bash: 0.9,
   shell: 0.9,
   "file.write": 0.6,
-  "file.read": 0.2,
+  "file.read": 0.3,
   write: 0.6,
-  read: 0.2,
+  read: 0.3,
   edit: 0.5,
-  web_fetch: 0.3,
+  web_fetch: 0.2,
   browser: 0.4,
-  "browser.login": 0.7,
-  "channel.send": 0.4,
-  "channel.send.external": 0.6,
+  "browser.login": 0.8,
+  "channel.send": 0.2,
+  "channel.send.external": 0.5,
   "skill.install": 0.8,
-  "cron.create": 0.7,
+  "cron.create": 0.8,
   "memory.write": 0.5,
   "memory.read.all_zones": 0.4,
-  "node.invoke": 0.6,
+  "node.invoke": 1.0,
 };
 
 /** Weight distribution for risk score components. */
@@ -46,11 +47,13 @@ const WEIGHTS = {
 
 /**
  * Calculates a composite risk score (0.0–1.0) for an action.
+ * Optionally factors in normalization data for obfuscation detection.
  */
 export function calculateRiskScore(
   action: string,
   taint?: TaintLevel,
   _baseline?: BehavioralBaseline,
+  normalized?: NormalizedExec,
 ): RiskScore {
   const toolSeverity = TOOL_SEVERITIES[action] ?? 0.5;
   const taintScore = taint ? TAINT_SEVERITY[taint] / 5 : 0; // Normalize to 0-1
@@ -78,12 +81,21 @@ export function calculateRiskScore(
     taint: taintScore,
   };
 
-  const score =
+  // Obfuscation bonus: if command was encoded/obfuscated, bump risk
+  let obfuscationBonus = 0;
+  if (normalized && normalized.decodedCommand !== normalized.raw) {
+    obfuscationBonus = 0.15;
+  }
+
+  const score = Math.min(
+    1.0,
     weights.tool * WEIGHTS.tool +
-    weights.data * WEIGHTS.data +
-    weights.blast * WEIGHTS.blast +
-    weights.session * WEIGHTS.session +
-    weights.taint * WEIGHTS.taint;
+      weights.data * WEIGHTS.data +
+      weights.blast * WEIGHTS.blast +
+      weights.session * WEIGHTS.session +
+      weights.taint * WEIGHTS.taint +
+      obfuscationBonus,
+  );
 
   return { score, weights };
 }

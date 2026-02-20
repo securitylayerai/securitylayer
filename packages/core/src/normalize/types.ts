@@ -5,5 +5,6 @@ export interface NormalizedExec {
   chainedCommands: string[];
   pipeDestinations: string[];
   usesIndirection: boolean;
+  decodedCommand: string;
   raw: string;
 }

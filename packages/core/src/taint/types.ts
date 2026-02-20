@@ -6,7 +6,7 @@ export interface TaintOrigin {
   url?: string;
   skill?: string;
   sessionId?: string;
-  timestamp?: string;
+  timestamp: number;
 }
 
 export interface TaintedData {

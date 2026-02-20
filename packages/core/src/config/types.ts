@@ -35,7 +35,7 @@ export const SecurityLayerConfigSchema = VersionedSchema.extend({
   semantic: z
     .object({
       enabled: z.boolean().default(false),
-      model: z.string().default("claude-sonnet-4-5-20250929"),
+      model: z.string().default("claude-haiku-4-5-20251001"),
       timeout_ms: z.number().int().positive().default(500),
     })
     .default({}),

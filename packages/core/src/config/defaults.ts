@@ -11,10 +11,14 @@ export function defaultMainConfig(): SecurityLayerConfig {
     version: 1,
     log_level: "info",
     proxy: { port: 18790, upstream_port: 18789 },
-    semantic: { enabled: false, model: "claude-sonnet-4-5-20250929", timeout_ms: 500 },
+    semantic: { enabled: false, model: "claude-haiku-4-5-20251001", timeout_ms: 500 },
   };
 }
 
+/**
+ * Empty sessions config is fail-safe: unknown sessions are denied everything.
+ * The `securitylayer init` CLI populates the first session on first run.
+ */
 export function defaultSessionsConfig(): SessionsConfig {
   return { version: 1, sessions: {} };
 }

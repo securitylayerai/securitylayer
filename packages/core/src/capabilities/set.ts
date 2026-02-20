@@ -16,8 +16,13 @@ export function parseCapabilityString(s: string): ParsedCapability {
     throw new Error(`Unknown base capability: ${base}`);
   }
 
-  const taint = parts[1] as TaintLevel | undefined;
-  return { base, taint };
+  const taint = parts[1];
+  if (taint !== undefined) {
+    if (!(taint in TAINT_SEVERITY)) {
+      throw new Error(`Invalid taint level "${taint}" in capability string: ${s}`);
+    }
+  }
+  return { base, taint: taint as TaintLevel | undefined };
 }
 
 /**

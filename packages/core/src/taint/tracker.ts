@@ -1,4 +1,4 @@
-import { eventBus } from "../events/bus";
+import { type EventBus, eventBus as singletonBus } from "../events/bus";
 import { TAINT_SEVERITY, TaintLevel, worstOf } from "./index";
 import type { TaintedData } from "./types";
 
@@ -9,6 +9,11 @@ import type { TaintedData } from "./types";
 export class SessionTaintTracker {
   private effectiveTaint: TaintLevel = TaintLevel.OWNER;
   private sources: TaintedData[] = [];
+  private bus: EventBus;
+
+  constructor(bus?: EventBus) {
+    this.bus = bus ?? singletonBus;
+  }
 
   /** Ingest content and potentially escalate the session taint. */
   onContentIngested(data: TaintedData): void {
@@ -18,7 +23,7 @@ export class SessionTaintTracker {
     this.effectiveTaint = worstOf(this.effectiveTaint, data.taint);
 
     if (TAINT_SEVERITY[this.effectiveTaint] > TAINT_SEVERITY[previous]) {
-      eventBus.emit({
+      this.bus.emit({
         type: "taint.elevated",
         previousLevel: previous,
         newLevel: this.effectiveTaint,
@@ -44,7 +49,7 @@ export class SessionTaintTracker {
     this.sources = [];
 
     if (previous !== TaintLevel.OWNER) {
-      eventBus.emit({
+      this.bus.emit({
         type: "taint.cleared",
         previousLevel: previous,
       });

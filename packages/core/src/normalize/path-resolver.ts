@@ -33,11 +33,18 @@ export function extractPaths(cmd: string): string[] {
   // Tokenize respecting quotes
   const tokens = tokenize(cmd);
 
-  for (const token of tokens) {
+  // Capture binary path itself if absolute
+  const firstToken = tokens[0];
+  if (firstToken && firstToken.includes("/")) {
+    paths.push(resolveCanonicalPath(firstToken));
+  }
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
     // Skip flags
     if (token.startsWith("-")) continue;
-    // Skip the binary itself (first token)
-    if (token === tokens[0]) continue;
+    // Skip binary (first token) — already handled above
+    if (i === 0) continue;
 
     if (
       token.includes("/") ||

@@ -40,6 +40,7 @@ export function normalizeExecAction(command: string): NormalizedExec {
     chainedCommands,
     pipeDestinations,
     usesIndirection,
+    decodedCommand: decoded,
     raw: command,
   };
 }

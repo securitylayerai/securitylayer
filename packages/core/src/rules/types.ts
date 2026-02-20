@@ -1,8 +1,10 @@
 import type { TaintLevel } from "../taint/index";
 
 export interface RuleMatch {
-  type: "binary" | "path" | "pipe" | "pattern";
+  type: "binary" | "path" | "pipe" | "pattern" | "pipe_pair";
   value: string | RegExp;
+  from?: string[];
+  to?: string[];
 }
 
 export interface Rule {
