@@ -5,8 +5,8 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "bunx vitest run",
+    "test:watch": "bunx vitest",
     "build": "bun run --filter '*' build",
     "typecheck": "bun run --filter '*' typecheck",
     "lint": "bunx biome check .",
