@@ -1,7 +1,7 @@
-import { buildCapabilityStore } from "../capabilities/loader";
-import type { LoadedConfig } from "../config/types";
-import { DefaultLLMJudge, NoOpJudge } from "../semantic/judge";
-import { SessionTaintTracker } from "../taint/tracker";
+import { buildCapabilityStore } from "@/capabilities/loader";
+import type { LoadedConfig } from "@/config/types";
+import { DefaultLLMJudge, NoOpJudge } from "@/semantic/judge";
+import { SessionTaintTracker } from "@/taint/tracker";
 import type { PipelineDeps } from "./types";
 
 export function createPipeline(config: LoadedConfig): PipelineDeps {

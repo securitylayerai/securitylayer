@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { buildCapabilityStore } from "../../src/capabilities/loader";
+import { buildCapabilityStore } from "@/capabilities/loader";
 import {
   defaultChannelsConfig,
   defaultLearnedRulesConfig,
   defaultMainConfig,
   defaultSkillsConfig,
-} from "../../src/config/defaults";
-import type { LoadedConfig } from "../../src/config/types";
-import { eventBus } from "../../src/events/bus";
-import { evaluateAction } from "../../src/pipeline/evaluator";
-import { createPipeline } from "../../src/pipeline/factory";
-import { NoOpJudge } from "../../src/semantic/judge";
-import { SessionTaintTracker } from "../../src/taint/tracker";
+} from "@/config/defaults";
+import type { LoadedConfig } from "@/config/types";
+import { eventBus } from "@/events/bus";
+import { evaluateAction } from "@/pipeline/evaluator";
+import { createPipeline } from "@/pipeline/factory";
+import { NoOpJudge } from "@/semantic/judge";
+import { SessionTaintTracker } from "@/taint/tracker";
 
 describe("cross-module integration", () => {
   beforeEach(() => {

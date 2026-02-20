@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { EventBus, eventBus } from "../../src/events/bus";
-import type { TaintElevatedEvent } from "../../src/events/types";
-import { isTaintSufficient, TaintLevel, worstOf } from "../../src/taint/index";
-import { SessionTaintTracker } from "../../src/taint/tracker";
-import type { TaintedData } from "../../src/taint/types";
+import { EventBus, eventBus } from "@/events/bus";
+import type { TaintElevatedEvent } from "@/events/types";
+import { isTaintSufficient, TaintLevel, worstOf } from "@/taint/index";
+import { SessionTaintTracker } from "@/taint/tracker";
+import type { TaintedData } from "@/taint/types";
 
 function makeData(taint: TaintLevel, channel = "test"): TaintedData {
   return { content: "test content", taint, origin: { channel, timestamp: Date.now() } };

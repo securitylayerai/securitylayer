@@ -1,4 +1,4 @@
-import type { TaintLevel } from "../taint/index";
+import type { TaintLevel } from "@/taint/index";
 
 export interface RuleMatch {
   type: "binary" | "path" | "pipe" | "pattern" | "pipe_pair";

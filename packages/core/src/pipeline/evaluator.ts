@@ -1,11 +1,11 @@
-import { checkCapability, type ExecutionContext } from "../capabilities/gate";
-import type { LearnedRulesConfig } from "../config/types";
-import { eventBus as singletonBus } from "../events/bus";
-import { normalizeExecAction } from "../normalize/normalizer";
-import type { NormalizedExec } from "../normalize/types";
-import { evaluateRules } from "../rules/engine";
-import { calculateRiskScore } from "../semantic/risk-score";
-import type { LLMClassification } from "../semantic/types";
+import { checkCapability, type ExecutionContext } from "@/capabilities/gate";
+import type { LearnedRulesConfig } from "@/config/types";
+import { eventBus as singletonBus } from "@/events/bus";
+import { normalizeExecAction } from "@/normalize/normalizer";
+import type { NormalizedExec } from "@/normalize/types";
+import { evaluateRules } from "@/rules/engine";
+import { calculateRiskScore } from "@/semantic/risk-score";
+import type { LLMClassification } from "@/semantic/types";
 import { mergeDecisions } from "./merger";
 import type { EvaluationResult, PipelineDeps } from "./types";
 

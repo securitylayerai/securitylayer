@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { eventBus } from "../../src/events/bus";
-import type { RuleTriggeredEvent } from "../../src/events/types";
-import { normalizeExecAction } from "../../src/normalize/normalizer";
-import { evaluateRules } from "../../src/rules/engine";
-import { parseRulesYaml } from "../../src/rules/parser";
+import { eventBus } from "@/events/bus";
+import type { RuleTriggeredEvent } from "@/events/types";
+import { normalizeExecAction } from "@/normalize/normalizer";
+import { evaluateRules } from "@/rules/engine";
+import { parseRulesYaml } from "@/rules/parser";
 
 function evaluate(cmd: string) {
   return evaluateRules(normalizeExecAction(cmd));

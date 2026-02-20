@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { decodeAllLayers } from "../../src/normalize/decoder";
-import { normalizeExecAction } from "../../src/normalize/normalizer";
-import { evaluateRules } from "../../src/rules/engine";
-import { createSandboxConfig, wrapCommand } from "../../src/sandbox/sandbox";
+import { decodeAllLayers } from "@/normalize/decoder";
+import { normalizeExecAction } from "@/normalize/normalizer";
+import { evaluateRules } from "@/rules/engine";
+import { createSandboxConfig, wrapCommand } from "@/sandbox/sandbox";
 
 describe("adversarial — unicode homoglyphs", () => {
   it("normalizes homoglyph command names", () => {

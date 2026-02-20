@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { ApprovalManager } from "../../src/approval/manager";
-import { eventBus } from "../../src/events/bus";
+import { ApprovalManager } from "@/approval/manager";
+import { eventBus } from "@/events/bus";
 
 describe("ApprovalManager", () => {
   let manager: ApprovalManager;

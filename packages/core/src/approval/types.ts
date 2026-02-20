@@ -1,4 +1,4 @@
-import type { TaintLevel } from "../taint/index";
+import type { TaintLevel } from "@/taint/index";
 
 export interface ApprovalRequest {
   id: string;

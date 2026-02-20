@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { EventBus, eventBus } from "../../src/events/bus";
-import type { SkillIntegrityViolationEvent } from "../../src/events/types";
-import { checkSkillCapability } from "../../src/skills/enforcer";
-import { computeSkillHash, verifySkillIntegrity } from "../../src/skills/integrity";
-import type { SkillDeclaration } from "../../src/skills/types";
+import { EventBus, eventBus } from "@/events/bus";
+import type { SkillIntegrityViolationEvent } from "@/events/types";
+import { checkSkillCapability } from "@/skills/enforcer";
+import { computeSkillHash, verifySkillIntegrity } from "@/skills/integrity";
+import type { SkillDeclaration } from "@/skills/types";
 
 describe("checkSkillCapability", () => {
   let declarations: Map<string, SkillDeclaration>;

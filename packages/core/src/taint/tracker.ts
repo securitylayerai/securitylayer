@@ -1,4 +1,4 @@
-import { type EventBus, eventBus as singletonBus } from "../events/bus";
+import { type EventBus, eventBus as singletonBus } from "@/events/bus";
 import { TAINT_SEVERITY, TaintLevel, worstOf } from "./index";
 import type { TaintedData } from "./types";
 

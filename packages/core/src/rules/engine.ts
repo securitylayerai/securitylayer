@@ -1,6 +1,6 @@
-import { eventBus } from "../events/bus";
-import type { NormalizedExec } from "../normalize/types";
-import { isTaintSufficient, type TaintLevel } from "../taint/index";
+import { eventBus } from "@/events/bus";
+import type { NormalizedExec } from "@/normalize/types";
+import { isTaintSufficient, type TaintLevel } from "@/taint/index";
 import { BUILTIN_RULES } from "./builtin";
 import type { Rule, RuleResult } from "./types";
 

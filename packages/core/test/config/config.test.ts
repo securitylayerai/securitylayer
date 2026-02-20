@@ -9,8 +9,8 @@ import {
   defaultMainConfig,
   defaultSessionsConfig,
   defaultSkillsConfig,
-} from "../../src/config/defaults";
-import { ConfigValidationError, ConfigVersionError, loadConfig } from "../../src/config/loader";
+} from "@/config/defaults";
+import { ConfigValidationError, ConfigVersionError, loadConfig } from "@/config/loader";
 import {
   CapabilityStringSchema,
   ChannelsConfigSchema,
@@ -18,7 +18,7 @@ import {
   SecurityLayerConfigSchema,
   SessionsConfigSchema,
   SkillsConfigSchema,
-} from "../../src/config/types";
+} from "@/config/types";
 
 // ---------------------------------------------------------------------------
 // Schema validation

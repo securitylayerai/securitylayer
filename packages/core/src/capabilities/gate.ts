@@ -1,4 +1,4 @@
-import type { TaintLevel } from "../taint/index";
+import type { TaintLevel } from "@/taint/index";
 import { CapabilitySet } from "./set";
 import { actionToCapability, type CapabilityResult } from "./types";
 

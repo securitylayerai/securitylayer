@@ -1,5 +1,5 @@
-import type { CapabilityResult } from "../capabilities/types";
-import { type EventBus, eventBus as singletonBus } from "../events/bus";
+import type { CapabilityResult } from "@/capabilities/types";
+import { type EventBus, eventBus as singletonBus } from "@/events/bus";
 import type { SkillDeclaration } from "./types";
 
 /**

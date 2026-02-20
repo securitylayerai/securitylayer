@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { verifyIntegrity } from "../../src/memory/integrity";
-import { tagProvenance } from "../../src/memory/provenance";
-import { scanMemoryEntries } from "../../src/memory/scanner";
+import { verifyIntegrity } from "@/memory/integrity";
+import { tagProvenance } from "@/memory/provenance";
+import { scanMemoryEntries } from "@/memory/scanner";
 
 describe("tagProvenance", () => {
   it("creates entry with correct hash", () => {

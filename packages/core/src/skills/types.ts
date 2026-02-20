@@ -1,4 +1,4 @@
-import type { BaseCapability } from "../capabilities/types";
+import type { BaseCapability } from "@/capabilities/types";
 
 export interface SkillDeclaration {
   id: string;

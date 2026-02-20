@@ -1,4 +1,4 @@
-import { eventBus } from "../events/bus";
+import { eventBus } from "@/events/bus";
 import {
   detectApiKeys,
   detectCredentialPatterns,

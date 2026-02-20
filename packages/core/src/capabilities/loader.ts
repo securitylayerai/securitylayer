@@ -1,4 +1,4 @@
-import type { LoadedConfig } from "../config/types";
+import type { LoadedConfig } from "@/config/types";
 import type { CapabilityStore } from "./gate";
 import { CapabilitySet } from "./set";
 import { BASE_CAPABILITIES } from "./types";

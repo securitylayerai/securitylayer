@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createSandboxConfig, wrapCommand } from "../../src/sandbox/sandbox";
-import { buildUlimitArgs, DEFAULT_ULIMITS } from "../../src/sandbox/ulimits";
+import { createSandboxConfig, wrapCommand } from "@/sandbox/sandbox";
+import { buildUlimitArgs, DEFAULT_ULIMITS } from "@/sandbox/ulimits";
 
 describe("DEFAULT_ULIMITS", () => {
   it("has expected values", () => {

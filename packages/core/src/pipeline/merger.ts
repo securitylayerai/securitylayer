@@ -1,6 +1,6 @@
-import type { RuleResult } from "../rules/types";
-import type { RiskScore } from "../semantic/risk-score";
-import type { LLMClassification } from "../semantic/types";
+import type { RuleResult } from "@/rules/types";
+import type { RiskScore } from "@/semantic/risk-score";
+import type { LLMClassification } from "@/semantic/types";
 import type { PipelineDecision } from "./types";
 
 /**

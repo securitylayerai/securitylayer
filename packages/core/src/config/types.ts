@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TaintLevelSchema } from "../taint/index";
+import { TaintLevelSchema } from "@/taint/index";
 
 // ---------------------------------------------------------------------------
 // Shared

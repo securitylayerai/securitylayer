@@ -1,4 +1,4 @@
-import { isTaintSufficient, TAINT_SEVERITY, type TaintLevel } from "../taint/index";
+import { isTaintSufficient, TAINT_SEVERITY, type TaintLevel } from "@/taint/index";
 import { type BaseCapability, isBaseCapability, type ParsedCapability } from "./types";
 
 /**

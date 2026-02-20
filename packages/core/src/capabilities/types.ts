@@ -1,4 +1,4 @@
-import type { TaintLevel } from "../taint/index";
+import type { TaintLevel } from "@/taint/index";
 
 // ---------------------------------------------------------------------------
 // Base capabilities — the 14 structural capability names

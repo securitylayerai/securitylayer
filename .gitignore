@@ -31,6 +31,9 @@ bun.lockb
 
 # notes
 notes/
+specs/
+reviews/
+todos/
 
 # debug
 *.pid

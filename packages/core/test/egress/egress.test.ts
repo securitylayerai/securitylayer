@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { shannonEntropy } from "../../src/egress/entropy";
+import { shannonEntropy } from "@/egress/entropy";
 import {
   detectApiKeys,
   detectCredentialPatterns,
   detectHighEntropy,
   detectPemBlocks,
   detectPII,
-} from "../../src/egress/patterns";
-import { scanEgress } from "../../src/egress/scanner";
-import { eventBus } from "../../src/events/bus";
-import type { EgressSecretDetectedEvent } from "../../src/events/types";
+} from "@/egress/patterns";
+import { scanEgress } from "@/egress/scanner";
+import { eventBus } from "@/events/bus";
+import type { EgressSecretDetectedEvent } from "@/events/types";
 
 describe("detectApiKeys", () => {
   it("detects Anthropic key prefix", () => {

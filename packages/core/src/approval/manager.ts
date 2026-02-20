@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { type EventBus, eventBus as singletonBus } from "../events/bus";
+import { type EventBus, eventBus as singletonBus } from "@/events/bus";
 import type { ApprovalOutcome, ApprovalRequest, ApprovalResult } from "./types";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes

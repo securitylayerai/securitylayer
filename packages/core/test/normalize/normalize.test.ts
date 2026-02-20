@@ -1,13 +1,9 @@
 import { homedir } from "node:os";
 import { describe, expect, it } from "vitest";
-import {
-  detectIndirection,
-  parsePipeChain,
-  splitCommandChain,
-} from "../../src/normalize/command-parser";
-import { decodeAllLayers } from "../../src/normalize/decoder";
-import { normalizeExecAction } from "../../src/normalize/normalizer";
-import { extractPaths, resolveCanonicalPath } from "../../src/normalize/path-resolver";
+import { detectIndirection, parsePipeChain, splitCommandChain } from "@/normalize/command-parser";
+import { decodeAllLayers } from "@/normalize/decoder";
+import { normalizeExecAction } from "@/normalize/normalizer";
+import { extractPaths, resolveCanonicalPath } from "@/normalize/path-resolver";
 
 describe("splitCommandChain", () => {
   it("splits on semicolon", () => {

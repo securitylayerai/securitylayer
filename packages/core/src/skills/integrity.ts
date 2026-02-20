@@ -1,4 +1,4 @@
-import { hashSHA256 } from "../utils/crypto";
+import { hashSHA256 } from "@/utils/crypto";
 
 /** Computes a SHA-256 hash of skill content for integrity verification. */
 export function computeSkillHash(content: string): string {

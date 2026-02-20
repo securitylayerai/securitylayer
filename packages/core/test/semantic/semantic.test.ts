@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { normalizeExecAction } from "../../src/normalize/normalizer";
-import { BehavioralTracker } from "../../src/semantic/baseline";
-import { DefaultLLMJudge, JUDGE_SYSTEM_PROMPT, NoOpJudge } from "../../src/semantic/judge";
-import { calculateRiskScore, TOOL_SEVERITIES } from "../../src/semantic/risk-score";
+import { normalizeExecAction } from "@/normalize/normalizer";
+import { BehavioralTracker } from "@/semantic/baseline";
+import { DefaultLLMJudge, JUDGE_SYSTEM_PROMPT, NoOpJudge } from "@/semantic/judge";
+import { calculateRiskScore, TOOL_SEVERITIES } from "@/semantic/risk-score";
 
 describe("NoOpJudge", () => {
   it("returns NORMAL with high confidence", async () => {

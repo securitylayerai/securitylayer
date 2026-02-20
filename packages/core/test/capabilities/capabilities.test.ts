@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { CapabilityStore } from "../../src/capabilities/gate";
-import { checkCapability } from "../../src/capabilities/gate";
-import { buildCapabilityStore } from "../../src/capabilities/loader";
-import { CapabilitySet, parseCapabilityString } from "../../src/capabilities/set";
-import { BASE_CAPABILITIES } from "../../src/capabilities/types";
-import { defaultLearnedRulesConfig, defaultMainConfig } from "../../src/config/defaults";
-import type { LoadedConfig } from "../../src/config/types";
+import type { CapabilityStore } from "@/capabilities/gate";
+import { checkCapability } from "@/capabilities/gate";
+import { buildCapabilityStore } from "@/capabilities/loader";
+import { CapabilitySet, parseCapabilityString } from "@/capabilities/set";
+import { BASE_CAPABILITIES } from "@/capabilities/types";
+import { defaultLearnedRulesConfig, defaultMainConfig } from "@/config/defaults";
+import type { LoadedConfig } from "@/config/types";
 
 // ---------------------------------------------------------------------------
 // CapabilitySet

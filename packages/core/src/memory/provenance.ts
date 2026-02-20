@@ -1,5 +1,5 @@
-import type { TaintLevel } from "../taint/index";
-import { hashSHA256 } from "../utils/crypto";
+import type { TaintLevel } from "@/taint/index";
+import { hashSHA256 } from "@/utils/crypto";
 import type { MemoryEntry } from "./types";
 
 /**
