@@ -10,6 +10,9 @@ out/
 .env.*
 !.env.example
 
+# coverage
+coverage/
+
 # logs
 *.log
 
