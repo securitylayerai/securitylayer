@@ -13,7 +13,11 @@
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@securitylayer/core": "workspace:*"
+    "@securitylayer/core": "workspace:*",
+    "@bomb.sh/args": "latest",
+    "@bomb.sh/tab": "latest",
+    "@clack/prompts": "latest",
+    "yaml": "^2"
   },
   "devDependencies": {
     "bun-types": "latest",
