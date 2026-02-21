@@ -11,7 +11,14 @@ export function defaultMainConfig(): SecurityLayerConfig {
     version: 1,
     log_level: "info",
     proxy: { port: 18790, upstream_port: 18789 },
-    semantic: { enabled: false, model: "claude-haiku-4-5-20251001", timeout_ms: 500 },
+    semantic: {
+      enabled: false,
+      provider: "anthropic",
+      model: "claude-haiku-4-5-20251001",
+      api_key_env: "ANTHROPIC_API_KEY",
+      timeout_ms: 500,
+      base_url: null,
+    },
   };
 }
 

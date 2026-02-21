@@ -15,6 +15,8 @@ import {
   CapabilityStringSchema,
   ChannelsConfigSchema,
   LearnedRulesConfigSchema,
+  SemanticConfigSchema,
+  SemanticProviderSchema,
   SecurityLayerConfigSchema,
   SessionsConfigSchema,
   SkillsConfigSchema,
@@ -38,6 +40,9 @@ describe("config schemas", () => {
     expect(result.log_level).toBe("info");
     expect(result.proxy.port).toBe(18790);
     expect(result.semantic.enabled).toBe(false);
+    expect(result.semantic.provider).toBe("anthropic");
+    expect(result.semantic.api_key_env).toBe("ANTHROPIC_API_KEY");
+    expect(result.semantic.base_url).toBeNull();
   });
 
   it("parses valid sessions config", () => {
@@ -94,6 +99,71 @@ describe("config schemas", () => {
       log_level: "verbose", // invalid enum
     });
     expect(result.success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Semantic config schema
+// ---------------------------------------------------------------------------
+
+describe("SemanticConfigSchema", () => {
+  it("accepts all valid providers", () => {
+    for (const provider of ["anthropic", "openai", "google", "xai", "openai-compatible"]) {
+      const result = SemanticProviderSchema.safeParse(provider);
+      expect(result.success).toBe(true);
+    }
+  });
+
+  it("rejects invalid provider", () => {
+    const result = SemanticProviderSchema.safeParse("deepseek");
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts full semantic config with all fields", () => {
+    const result = SemanticConfigSchema.safeParse({
+      enabled: true,
+      provider: "openai",
+      model: "gpt-4o-mini",
+      api_key_env: "OPENAI_API_KEY",
+      timeout_ms: 1000,
+      base_url: null,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts openai-compatible with base_url", () => {
+    const result = SemanticConfigSchema.safeParse({
+      enabled: true,
+      provider: "openai-compatible",
+      model: "deepseek-chat",
+      api_key_env: "DEEPSEEK_API_KEY",
+      timeout_ms: 500,
+      base_url: "https://api.deepseek.com/v1",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.base_url).toBe("https://api.deepseek.com/v1");
+    }
+  });
+
+  it("defaults base_url to null", () => {
+    const result = SemanticConfigSchema.parse({});
+    expect(result.base_url).toBeNull();
+  });
+
+  it("parses semantic config within main config", () => {
+    const result = SecurityLayerConfigSchema.parse({
+      version: 1,
+      semantic: {
+        enabled: true,
+        provider: "google",
+        model: "gemini-2.0-flash",
+        api_key_env: "GOOGLE_GENERATIVE_AI_API_KEY",
+      },
+    });
+    expect(result.semantic.provider).toBe("google");
+    expect(result.semantic.model).toBe("gemini-2.0-flash");
+    expect(result.semantic.api_key_env).toBe("GOOGLE_GENERATIVE_AI_API_KEY");
   });
 });
 
