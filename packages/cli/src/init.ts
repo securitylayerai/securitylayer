@@ -1,7 +1,12 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import * as p from "@clack/prompts";
-import { BASE_CAPABILITIES, CONFIG_DIR } from "@securitylayer/core";
+import {
+  BASE_CAPABILITIES,
+  CONFIG_DIR,
+  PROVIDER_DEFAULTS,
+  type SemanticProvider,
+} from "@securitylayer/core";
 import { stringify as toYaml } from "yaml";
 import type { CliArgs } from "@/index";
 import {
@@ -11,20 +16,6 @@ import {
   defaultProjectsConfig,
   ensureConfigDir,
 } from "@/shared";
-
-// ---------------------------------------------------------------------------
-// Provider defaults for semantic judge setup wizard
-// ---------------------------------------------------------------------------
-
-type SemanticProvider = "anthropic" | "openai" | "google" | "xai" | "openai-compatible";
-
-const PROVIDER_DEFAULTS: Record<SemanticProvider, { model: string; apiKeyEnv: string }> = {
-  anthropic: { model: "claude-sonnet-4-5-20250929", apiKeyEnv: "ANTHROPIC_API_KEY" },
-  openai: { model: "gpt-4o", apiKeyEnv: "OPENAI_API_KEY" },
-  google: { model: "gemini-2.0-flash", apiKeyEnv: "GOOGLE_API_KEY" },
-  xai: { model: "grok-3-mini-fast", apiKeyEnv: "XAI_API_KEY" },
-  "openai-compatible": { model: "deepseek-chat", apiKeyEnv: "OPENAI_API_KEY" },
-};
 
 export async function runInit(args: CliArgs): Promise<void> {
   p.intro("SecurityLayer — Setup");
