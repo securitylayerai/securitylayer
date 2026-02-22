@@ -15,6 +15,7 @@ export default defineConfig({
   test: {
     name: "cli",
     globals: true,
+    passWithNoTests: true,
     include: ["test/**/*.test.ts"],
   },
 });

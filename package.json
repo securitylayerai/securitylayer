@@ -5,7 +5,7 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "bunx vitest run",
+    "test": "bun run --filter '*' test",
     "test:watch": "bunx vitest",
     "build": "bun run --filter '*' build",
     "typecheck": "bun run --filter '*' typecheck",

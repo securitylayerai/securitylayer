@@ -77,7 +77,7 @@ describe("calculateRiskScore", () => {
   });
 
   it("web_fetch has severity 0.2", () => {
-    expect(TOOL_SEVERITIES["web_fetch"]).toBe(0.2);
+    expect(TOOL_SEVERITIES.web_fetch).toBe(0.2);
   });
 
   it("browser.login has severity 0.8", () => {
@@ -157,9 +157,7 @@ describe("DefaultLLMJudge", () => {
 describe("createModelFromConfig", () => {
   it("throws for openai-compatible without base_url", () => {
     expect(() =>
-      createModelFromConfig(
-        makeSemanticConfig({ provider: "openai-compatible", base_url: null }),
-      ),
+      createModelFromConfig(makeSemanticConfig({ provider: "openai-compatible", base_url: null })),
     ).toThrow("base_url is required");
   });
 });
