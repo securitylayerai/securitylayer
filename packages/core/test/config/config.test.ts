@@ -15,9 +15,9 @@ import {
   CapabilityStringSchema,
   ChannelsConfigSchema,
   LearnedRulesConfigSchema,
+  SecurityLayerConfigSchema,
   SemanticConfigSchema,
   SemanticProviderSchema,
-  SecurityLayerConfigSchema,
   SessionsConfigSchema,
   SkillsConfigSchema,
 } from "@/config/types";

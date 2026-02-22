@@ -9,10 +9,7 @@ export const SUPPORTED_PROVIDERS = [
   "openai-compatible",
 ] as const satisfies readonly SemanticProvider[];
 
-export const PROVIDER_DEFAULTS: Record<
-  SemanticProvider,
-  { model: string; apiKeyEnv: string }
-> = {
+export const PROVIDER_DEFAULTS: Record<SemanticProvider, { model: string; apiKeyEnv: string }> = {
   anthropic: { model: "claude-haiku-4-5-20251001", apiKeyEnv: "ANTHROPIC_API_KEY" },
   openai: { model: "gpt-4o-mini", apiKeyEnv: "OPENAI_API_KEY" },
   google: { model: "gemini-2.0-flash", apiKeyEnv: "GOOGLE_GENERATIVE_AI_API_KEY" },
@@ -26,7 +23,8 @@ export function createModelFromConfig(config: SemanticConfig): LanguageModel {
 
   switch (config.provider) {
     case "anthropic": {
-      const { createAnthropic } = require("@ai-sdk/anthropic") as typeof import("@ai-sdk/anthropic");
+      const { createAnthropic } =
+        require("@ai-sdk/anthropic") as typeof import("@ai-sdk/anthropic");
       return createAnthropic({ apiKey })(model);
     }
     case "openai": {
@@ -34,7 +32,8 @@ export function createModelFromConfig(config: SemanticConfig): LanguageModel {
       return createOpenAI({ apiKey })(model);
     }
     case "google": {
-      const { createGoogleGenerativeAI } = require("@ai-sdk/google") as typeof import("@ai-sdk/google");
+      const { createGoogleGenerativeAI } =
+        require("@ai-sdk/google") as typeof import("@ai-sdk/google");
       return createGoogleGenerativeAI({ apiKey })(model);
     }
     case "xai": {
