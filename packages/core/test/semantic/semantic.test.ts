@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest";
+import type { SemanticConfig } from "@/config/types";
 import { normalizeExecAction } from "@/normalize/normalizer";
 import { createBehavioralTracker } from "@/semantic/baseline";
 import { createDefaultLLMJudge, createNoOpJudge, JUDGE_SYSTEM_PROMPT } from "@/semantic/judge";
+import { createModelFromConfig, PROVIDER_DEFAULTS, SUPPORTED_PROVIDERS } from "@/semantic/provider";
 import { calculateRiskScore, TOOL_SEVERITIES } from "@/semantic/risk-score";
+
+function makeSemanticConfig(overrides?: Partial<SemanticConfig>): SemanticConfig {
+  return {
+    enabled: false,
+    provider: "anthropic",
+    model: "claude-haiku-4-5-20251001",
+    api_key_env: "NONEXISTENT_KEY_FOR_TEST",
+    timeout_ms: 500,
+    base_url: null,
+    ...overrides,
+  };
+}
 
 describe("NoOpJudge", () => {
   it("returns NORMAL with high confidence", async () => {
@@ -63,7 +77,7 @@ describe("calculateRiskScore", () => {
   });
 
   it("web_fetch has severity 0.2", () => {
-    expect(TOOL_SEVERITIES["web_fetch"]).toBe(0.2);
+    expect(TOOL_SEVERITIES.web_fetch).toBe(0.2);
   });
 
   it("browser.login has severity 0.8", () => {
@@ -97,7 +111,7 @@ describe("calculateRiskScore", () => {
 // 1.1-#4: DefaultLLMJudge taint-based fallback
 describe("DefaultLLMJudge", () => {
   it("falls back to taint heuristic when no API key", async () => {
-    const judge = createDefaultLLMJudge(); // no API key
+    const judge = createDefaultLLMJudge(makeSemanticConfig());
     const result = await judge.classify({
       action: "exec",
       sessionHistory: [],
@@ -108,7 +122,7 @@ describe("DefaultLLMJudge", () => {
   });
 
   it("flags elevated taint as ANOMALOUS when no API key", async () => {
-    const judge = createDefaultLLMJudge();
+    const judge = createDefaultLLMJudge(makeSemanticConfig());
     const result = await judge.classify({
       action: "exec",
       sessionHistory: [],
@@ -119,7 +133,7 @@ describe("DefaultLLMJudge", () => {
   });
 
   it("treats 'trusted' taint as low severity (NORMAL)", async () => {
-    const judge = createDefaultLLMJudge();
+    const judge = createDefaultLLMJudge(makeSemanticConfig());
     const result = await judge.classify({
       action: "exec",
       sessionHistory: [],
@@ -129,13 +143,41 @@ describe("DefaultLLMJudge", () => {
   });
 
   it("treats 'skill' taint as elevated (ANOMALOUS)", async () => {
-    const judge = createDefaultLLMJudge();
+    const judge = createDefaultLLMJudge(makeSemanticConfig());
     const result = await judge.classify({
       action: "exec",
       sessionHistory: [],
       taint: "skill",
     });
     expect(result.decision).toBe("ANOMALOUS");
+  });
+});
+
+// Provider factory tests
+describe("createModelFromConfig", () => {
+  it("throws for openai-compatible without base_url", () => {
+    expect(() =>
+      createModelFromConfig(makeSemanticConfig({ provider: "openai-compatible", base_url: null })),
+    ).toThrow("base_url is required");
+  });
+});
+
+describe("PROVIDER_DEFAULTS", () => {
+  it("has defaults for all supported providers", () => {
+    for (const provider of SUPPORTED_PROVIDERS) {
+      expect(PROVIDER_DEFAULTS[provider]).toBeDefined();
+      expect(PROVIDER_DEFAULTS[provider].apiKeyEnv).toBeDefined();
+    }
+  });
+
+  it("anthropic defaults to claude-haiku", () => {
+    expect(PROVIDER_DEFAULTS.anthropic.model).toBe("claude-haiku-4-5-20251001");
+    expect(PROVIDER_DEFAULTS.anthropic.apiKeyEnv).toBe("ANTHROPIC_API_KEY");
+  });
+
+  it("openai defaults to gpt-4o-mini", () => {
+    expect(PROVIDER_DEFAULTS.openai.model).toBe("gpt-4o-mini");
+    expect(PROVIDER_DEFAULTS.openai.apiKeyEnv).toBe("OPENAI_API_KEY");
   });
 });
 

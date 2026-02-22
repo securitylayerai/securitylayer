@@ -12,6 +12,8 @@ export type {
   LearnedRulesConfig,
   LoadedConfig,
   SecurityLayerConfig,
+  SemanticConfig,
+  SemanticProvider,
   SessionsConfig,
   SkillsConfig,
 } from "./types";
@@ -20,6 +22,8 @@ export {
   ChannelsConfigSchema,
   LearnedRulesConfigSchema,
   SecurityLayerConfigSchema,
+  SemanticConfigSchema,
+  SemanticProviderSchema,
   SessionsConfigSchema,
   SkillsConfigSchema,
   SUPPORTED_VERSIONS,

@@ -35,7 +35,7 @@ export function extractPaths(cmd: string): string[] {
 
   // Capture binary path itself if absolute
   const firstToken = tokens[0];
-  if (firstToken && firstToken.includes("/")) {
+  if (firstToken?.includes("/")) {
     paths.push(resolveCanonicalPath(firstToken));
   }
 

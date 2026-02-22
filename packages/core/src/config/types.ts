@@ -24,6 +24,27 @@ export const CapabilityStringSchema = z
 // Main config  (~/.securitylayer/config.yaml)
 // ---------------------------------------------------------------------------
 
+export const SemanticProviderSchema = z.enum([
+  "anthropic",
+  "openai",
+  "google",
+  "xai",
+  "openai-compatible",
+]);
+
+export type SemanticProvider = z.infer<typeof SemanticProviderSchema>;
+
+export const SemanticConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  provider: SemanticProviderSchema.default("anthropic"),
+  model: z.string().default("claude-haiku-4-5-20251001"),
+  api_key_env: z.string().default("ANTHROPIC_API_KEY"),
+  timeout_ms: z.number().int().positive().default(500),
+  base_url: z.string().nullable().default(null),
+});
+
+export type SemanticConfig = z.infer<typeof SemanticConfigSchema>;
+
 export const SecurityLayerConfigSchema = VersionedSchema.extend({
   log_level: z.enum(["debug", "info", "warn", "error"]).default("info"),
   proxy: z
@@ -32,13 +53,7 @@ export const SecurityLayerConfigSchema = VersionedSchema.extend({
       upstream_port: z.number().int().positive().default(18789),
     })
     .default({}),
-  semantic: z
-    .object({
-      enabled: z.boolean().default(false),
-      model: z.string().default("claude-haiku-4-5-20251001"),
-      timeout_ms: z.number().int().positive().default(500),
-    })
-    .default({}),
+  semantic: SemanticConfigSchema.default({}),
 });
 
 export type SecurityLayerConfig = z.infer<typeof SecurityLayerConfigSchema>;

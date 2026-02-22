@@ -8,11 +8,7 @@ export function createPipeline(config: LoadedConfig): PipelineDeps {
   const capabilityStore = buildCapabilityStore(config);
   const taintTracker = createTaintTracker();
   const judge = config.main.semantic.enabled
-    ? createDefaultLLMJudge(
-        process.env.ANTHROPIC_API_KEY,
-        config.main.semantic.model,
-        config.main.semantic.timeout_ms,
-      )
+    ? createDefaultLLMJudge(config.main.semantic)
     : createNoOpJudge();
 
   return {

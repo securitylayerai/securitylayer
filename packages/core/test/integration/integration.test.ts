@@ -132,7 +132,14 @@ describe("createPipeline factory", () => {
     const config: LoadedConfig = {
       main: {
         ...defaultMainConfig(),
-        semantic: { enabled: true, model: "claude-haiku-4-5-20251001", timeout_ms: 500 },
+        semantic: {
+          enabled: true,
+          provider: "anthropic",
+          model: "claude-haiku-4-5-20251001",
+          api_key_env: "NONEXISTENT_KEY_FOR_TEST",
+          timeout_ms: 500,
+          base_url: null,
+        },
       },
       sessions: { version: 1, sessions: {} },
       channels: defaultChannelsConfig(),

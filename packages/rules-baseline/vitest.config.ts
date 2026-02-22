@@ -15,6 +15,7 @@ export default defineConfig({
   test: {
     name: "rules-baseline",
     globals: true,
+    passWithNoTests: true,
     include: ["test/**/*.test.ts"],
   },
 });
