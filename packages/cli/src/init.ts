@@ -2,6 +2,15 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import * as p from "@clack/prompts";
 import { BASE_CAPABILITIES, CONFIG_DIR } from "@securitylayer/core";
+import { stringify as toYaml } from "yaml";
+import type { CliArgs } from "@/index";
+import {
+  CLI_CONFIG_PATHS,
+  configExists,
+  defaultCallersConfig,
+  defaultProjectsConfig,
+  ensureConfigDir,
+} from "@/shared";
 
 // ---------------------------------------------------------------------------
 // Provider defaults for semantic judge setup wizard
@@ -16,15 +25,6 @@ const PROVIDER_DEFAULTS: Record<SemanticProvider, { model: string; apiKeyEnv: st
   xai: { model: "grok-3-mini-fast", apiKeyEnv: "XAI_API_KEY" },
   "openai-compatible": { model: "deepseek-chat", apiKeyEnv: "OPENAI_API_KEY" },
 };
-import { stringify as toYaml } from "yaml";
-import type { CliArgs } from "@/index";
-import {
-  CLI_CONFIG_PATHS,
-  configExists,
-  defaultCallersConfig,
-  defaultProjectsConfig,
-  ensureConfigDir,
-} from "@/shared";
 
 export async function runInit(args: CliArgs): Promise<void> {
   p.intro("SecurityLayer — Setup");
