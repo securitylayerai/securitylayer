@@ -5,7 +5,8 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "bin": {
-    "securitylayer": "bin/securitylayer.ts"
+    "securitylayer": "bin/securitylayer.ts",
+    "sl": "bin/securitylayer.ts"
   },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun",
@@ -13,7 +14,11 @@
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@securitylayer/core": "workspace:*"
+    "@securitylayer/core": "workspace:*",
+    "@bomb.sh/args": "latest",
+    "@bomb.sh/tab": "latest",
+    "@clack/prompts": "latest",
+    "yaml": "^2"
   },
   "devDependencies": {
     "bun-types": "latest",
