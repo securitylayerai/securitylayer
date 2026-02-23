@@ -59,7 +59,7 @@ _securitylayer_completions() {
   commands="${COMMANDS.join(" ")}"
 
   case "\${prev}" in
-    securitylayer)
+    securitylayer|sl)
       COMPREPLY=( $(compgen -W "\${commands}" -- "\${cur}") )
       return 0
       ;;
@@ -75,12 +75,13 @@ ${Object.entries(SUBCOMMANDS)
   esac
 }
 complete -F _securitylayer_completions securitylayer
+complete -F _securitylayer_completions sl
 `;
   console.log(script);
 }
 
 function outputZshCompletions(): void {
-  const script = `#compdef securitylayer
+  const script = `#compdef securitylayer sl
 # securitylayer zsh completions
 
 _securitylayer() {
@@ -123,16 +124,20 @@ _securitylayer
 function outputFishCompletions(): void {
   const lines = ["# securitylayer fish completions", ""];
 
-  for (const cmd of COMMANDS) {
-    lines.push(
-      `complete -c securitylayer -n '__fish_use_subcommand' -a '${cmd}' -d '${getCommandDescription(cmd)}'`,
-    );
-  }
-
-  for (const [cmd, subs] of Object.entries(SUBCOMMANDS)) {
-    for (const sub of subs) {
-      lines.push(`complete -c securitylayer -n '__fish_seen_subcommand_from ${cmd}' -a '${sub}'`);
+  for (const bin of ["securitylayer", "sl"]) {
+    for (const cmd of COMMANDS) {
+      lines.push(
+        `complete -c ${bin} -n '__fish_use_subcommand' -a '${cmd}' -d '${getCommandDescription(cmd)}'`,
+      );
     }
+
+    for (const [cmd, subs] of Object.entries(SUBCOMMANDS)) {
+      for (const sub of subs) {
+        lines.push(`complete -c ${bin} -n '__fish_seen_subcommand_from ${cmd}' -a '${sub}'`);
+      }
+    }
+
+    lines.push("");
   }
 
   console.log(lines.join("\n"));

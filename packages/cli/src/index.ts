@@ -34,9 +34,10 @@ export interface CliArgs {
 const VERSION = "0.0.1";
 
 const HELP_TEXT = `
-securitylayer — agent security platform
+securitylayer (sl) — agent security platform
 
 Usage: securitylayer <command> [subcommand] [flags]
+       sl <command> [subcommand] [flags]
 
 Commands:
   init                    Interactive guided setup

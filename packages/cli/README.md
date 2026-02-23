@@ -8,17 +8,18 @@ Command-line interface for SecurityLayer. Provides policy enforcement, shell shi
 bun install @securitylayer/cli
 ```
 
-The CLI binary is available as `securitylayer`:
+The CLI binary is available as `securitylayer` or the shorthand `sl`:
 
 ```bash
 securitylayer --help
+sl --help              # same thing
 ```
 
 ## Quick Start
 
 ```bash
 # Interactive guided setup
-securitylayer init
+sl init
 
 # Check security status
 securitylayer status
@@ -380,20 +381,29 @@ securitylayer rules clear
 
 ### `securitylayer completions <shell>`
 
-Outputs shell completion scripts. Supports `bash`, `zsh`, and `fish`.
+Outputs shell completion scripts. Supports `bash`, `zsh`, and `fish`. Completions are registered for both `securitylayer` and the `sl` alias.
 
 ```bash
 # Bash
-securitylayer completions bash >> ~/.bashrc
+sl completions bash >> ~/.bashrc
 
 # Zsh
-securitylayer completions zsh >> ~/.zshrc
+sl completions zsh >> ~/.zshrc
 
 # Fish
-securitylayer completions fish > ~/.config/fish/completions/securitylayer.fish
+sl completions fish > ~/.config/fish/completions/securitylayer.fish
 ```
 
 ---
+
+## Alias
+
+The CLI is available as both `securitylayer` and `sl`. They are identical — use whichever you prefer:
+
+```bash
+securitylayer status
+sl status              # equivalent
+```
 
 ## Global Flags
 

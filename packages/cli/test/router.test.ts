@@ -292,6 +292,21 @@ describe("CLI Router", () => {
     expect(allOutput).not.toContain("Commands:");
   });
 
+  it("help text mentions sl alias", async () => {
+    const { runMain } = await import("@/index");
+    await runMain(makeArgs([], { help: true }));
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("sl <command>");
+  });
+
+  it("help text shows both securitylayer and sl usage lines", async () => {
+    const { runMain } = await import("@/index");
+    await runMain(makeArgs([], { help: true }));
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("securitylayer (sl)");
+    expect(output).toContain("sl <command> [subcommand] [flags]");
+  });
+
   it("--version takes priority even with a command", async () => {
     const { runMain } = await import("@/index");
     const { runInit } = await import("@/init");

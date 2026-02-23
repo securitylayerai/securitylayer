@@ -187,8 +187,43 @@ describe("Completions", () => {
       const subcommandLines = output
         .split("\n")
         .filter((line) => line.includes("__fish_seen_subcommand_from"));
-      // capabilities:1 + taint:2 + policy:1 + shield:3 + setup:2 + callers:2 + projects:3 + rules:3 = 17
-      expect(subcommandLines).toHaveLength(17);
+      // (capabilities:1 + taint:2 + policy:1 + shield:3 + setup:2 + callers:2 + projects:3 + rules:3) * 2 bins = 34
+      expect(subcommandLines).toHaveLength(34);
+    });
+  });
+
+  describe("sl alias completions", () => {
+    it("bash registers completions for sl alias", async () => {
+      await runCompletions({ _: ["completions", "bash"] } as CliArgs);
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("complete -F _securitylayer_completions sl");
+    });
+
+    it("bash case matches both securitylayer and sl", async () => {
+      await runCompletions({ _: ["completions", "bash"] } as CliArgs);
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("securitylayer|sl)");
+    });
+
+    it("zsh #compdef includes sl", async () => {
+      await runCompletions({ _: ["completions", "zsh"] } as CliArgs);
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("#compdef securitylayer sl");
+    });
+
+    it("fish registers completions for sl alias", async () => {
+      await runCompletions({ _: ["completions", "fish"] } as CliArgs);
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("complete -c sl");
+    });
+
+    it("fish has equal number of sl and securitylayer completion lines", async () => {
+      await runCompletions({ _: ["completions", "fish"] } as CliArgs);
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      const slLines = output.split("\n").filter((l) => l.includes("complete -c sl "));
+      const fullLines = output.split("\n").filter((l) => l.includes("complete -c securitylayer "));
+      expect(slLines.length).toBe(fullLines.length);
+      expect(slLines.length).toBeGreaterThan(0);
     });
   });
 });
