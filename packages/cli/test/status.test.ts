@@ -179,4 +179,135 @@ describe("Status Command", () => {
     const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
     expect(output).toContain("SecurityLayer Status");
   });
+
+  it('shows "Run `securitylayer init` to get started" when no config', async () => {
+    mockConfigExists.mockReturnValue(false);
+
+    await runStatus({ _: ["status"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Run `securitylayer init` to get started");
+  });
+
+  it('shows shield as "active" when shim dir exists AND PATH includes it', async () => {
+    mockConfigExists.mockReturnValue(true);
+    mockLoadConfig.mockResolvedValue({
+      main: { version: 1 },
+      sessions: { sessions: {} },
+      channels: { channels: {} },
+      skills: { skills: {} },
+    });
+
+    // Create the bin directory so existsSync returns true
+    const shimDir = join(TEST_DIR, "bin");
+    await mkdir(shimDir, { recursive: true });
+
+    // Mock PATH to include the shim directory
+    const originalPath = process.env.PATH;
+    process.env.PATH = `${shimDir}:${originalPath}`;
+
+    try {
+      await runStatus({ _: ["status"] } as CliArgs);
+
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("Shield:");
+      expect(output).toContain("active");
+      expect(output).not.toContain("inactive");
+    } finally {
+      process.env.PATH = originalPath;
+    }
+  });
+
+  it('shows hooks as "installed" when hooks.json contains "securitylayer hook"', async () => {
+    mockConfigExists.mockReturnValue(true);
+    mockLoadConfig.mockResolvedValue({
+      main: { version: 1 },
+      sessions: { sessions: {} },
+      channels: { channels: {} },
+      skills: { skills: {} },
+    });
+
+    // Create a mock hooks.json with "securitylayer hook" in the user's .claude directory
+    const claudeDir = join(process.env.HOME ?? "", ".claude");
+    await mkdir(claudeDir, { recursive: true });
+    const hooksPath = join(claudeDir, "hooks.json");
+
+    // Check if hooks.json already exists to restore later
+    const { readFile } = await import("node:fs/promises");
+    let originalContent: string | null = null;
+    try {
+      originalContent = await readFile(hooksPath, "utf-8");
+    } catch {
+      // file doesn't exist
+    }
+
+    await writeFile(
+      hooksPath,
+      JSON.stringify({
+        hooks: { PreToolUse: [{ command: "securitylayer hook pre" }] },
+      }),
+    );
+
+    try {
+      await runStatus({ _: ["status"] } as CliArgs);
+
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("Claude Code hooks:");
+      expect(output).toContain("installed");
+      expect(output).not.toContain("not installed");
+    } finally {
+      // Restore original hooks.json or remove it
+      if (originalContent !== null) {
+        await writeFile(hooksPath, originalContent);
+      } else {
+        await rm(hooksPath, { force: true }).catch(() => {});
+      }
+    }
+  });
+
+  it("shows multiple sessions with individual capability counts", async () => {
+    mockConfigExists.mockReturnValue(true);
+    mockLoadConfig.mockResolvedValue({
+      main: { version: 1 },
+      sessions: {
+        sessions: {
+          "claude-code": {
+            capabilities: ["exec", "file.read", "file.write"],
+            default_taint: "owner",
+          },
+          cursor: { capabilities: ["file.read"], default_taint: "trusted" },
+          aider: { capabilities: ["exec", "file.read"], default_taint: "untrusted" },
+        },
+      },
+      channels: { channels: {} },
+      skills: { skills: {} },
+    });
+
+    await runStatus({ _: ["status"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Sessions (3)");
+    expect(output).toContain("claude-code:");
+    expect(output).toContain("3 capabilities");
+    expect(output).toContain("cursor:");
+    expect(output).toContain("1 capabilities");
+    expect(output).toContain("aider:");
+    expect(output).toContain("2 capabilities");
+  });
+
+  it("shows config dir path in output", async () => {
+    mockConfigExists.mockReturnValue(true);
+    mockLoadConfig.mockResolvedValue({
+      main: { version: 1 },
+      sessions: { sessions: {} },
+      channels: { channels: {} },
+      skills: { skills: {} },
+    });
+
+    await runStatus({ _: ["status"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Config dir:");
+    expect(output).toContain(TEST_DIR);
+  });
 });

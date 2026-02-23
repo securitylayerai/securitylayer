@@ -173,4 +173,90 @@ describe("Projects Commands", () => {
     const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
     expect(output).toContain("No trust rule found for: /nonexistent/**");
   });
+
+  it("list displays default taint level at the bottom", async () => {
+    mockLoadProjectsConfig.mockResolvedValue({
+      version: 1,
+      trust_rules: [{ path: "~/Dev/**", taint: "owner" }],
+      default: "untrusted",
+    });
+
+    await runProjectsList({ _: ["projects", "list"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Default: UNTRUSTED");
+  });
+
+  it("list displays rule numbers (1., 2., etc.)", async () => {
+    mockLoadProjectsConfig.mockResolvedValue({
+      version: 1,
+      trust_rules: [
+        { path: "~/Dev/Personal/**", taint: "owner" },
+        { path: "~/Dev/Work/**", taint: "trusted" },
+        { path: "/tmp/**", taint: "web" },
+      ],
+      default: "untrusted",
+    });
+
+    await runProjectsList({ _: ["projects", "list"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("1. ~/Dev/Personal/**");
+    expect(output).toContain("2. ~/Dev/Work/**");
+    expect(output).toContain("3. /tmp/**");
+  });
+
+  it("list with formatted taint levels (formatTaintLevel mock is called)", async () => {
+    mockLoadProjectsConfig.mockResolvedValue({
+      version: 1,
+      trust_rules: [
+        { path: "~/Dev/Personal/**", taint: "owner" },
+        { path: "/tmp/**", taint: "web" },
+      ],
+      default: "untrusted",
+    });
+
+    await runProjectsList({ _: ["projects", "list"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    // formatTaintLevel mock uppercases the taint value
+    expect(output).toContain("OWNER");
+    expect(output).toContain("WEB");
+    expect(output).toContain("UNTRUSTED");
+  });
+
+  it("trust with custom --taint flag uses provided taint level", async () => {
+    mockLoadProjectsConfig.mockResolvedValue({
+      version: 1,
+      trust_rules: [],
+      default: "untrusted",
+    });
+
+    await runProjectsTrust({
+      _: ["projects", "trust", "~/Dev/Work/**"],
+      taint: "trusted",
+    } as unknown as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("~/Dev/Work/**");
+    expect(output).toContain("TRUSTED");
+    expect(mockWriteFile).toHaveBeenCalled();
+  });
+
+  it('untrust displays "will now use the default taint" message after removal', async () => {
+    mockLoadProjectsConfig.mockResolvedValue({
+      version: 1,
+      trust_rules: [
+        { path: "~/Dev/Personal/**", taint: "owner" },
+        { path: "/tmp/**", taint: "web" },
+      ],
+      default: "untrusted",
+    });
+
+    await runProjectsUntrust({ _: ["projects", "untrust", "/tmp/**"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("will now use the default taint");
+    expect(output).toContain("UNTRUSTED");
+  });
 });

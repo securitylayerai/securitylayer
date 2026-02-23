@@ -117,4 +117,60 @@ describe("Learn Command", () => {
     await runLearn({ _: ["learn"], duration: "1" } as CliArgs);
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
+
+  it("config preserves existing fields after learn", async () => {
+    await writeFile(CONFIG_MAIN, "version: 1\nlog_level: info\ncustom_field: foo\n");
+
+    await runLearn({ _: ["learn"] } as CliArgs);
+
+    const content = await readFile(CONFIG_MAIN, "utf-8");
+    expect(content).toContain("version: 1");
+    expect(content).toContain("log_level: info");
+    expect(content).toContain("custom_field: foo");
+    expect(content).toContain("mode: learning");
+    expect(content).toContain("learning_expires:");
+  });
+
+  it('duration "1d" works', async () => {
+    await runLearn({ _: ["learn"], duration: "1d" } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Duration: 1d");
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it('invalid duration "7dd" (double unit) exits 1', async () => {
+    await runLearn({ _: ["learn"], duration: "7dd" } as CliArgs);
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Invalid duration"));
+  });
+
+  it('invalid duration "d7" (unit before number) exits 1', async () => {
+    await runLearn({ _: ["learn"], duration: "d7" } as CliArgs);
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Invalid duration"));
+  });
+
+  it("error messages show examples format", async () => {
+    await runLearn({ _: ["learn"], duration: "bad" } as CliArgs);
+
+    const errorOutput = errorSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(errorOutput).toContain("1h, 12h, 1d, 7d, 30d");
+  });
+
+  it('output contains explanatory text about monitoring ("monitor all actions")', async () => {
+    await runLearn({ _: ["learn"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("monitor all actions");
+  });
+
+  it('output contains disable instructions ("edit ~/.securitylayer/config.yaml")', async () => {
+    await runLearn({ _: ["learn"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("edit ~/.securitylayer/config.yaml");
+  });
 });

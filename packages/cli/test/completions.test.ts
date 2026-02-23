@@ -114,4 +114,81 @@ describe("Completions", () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Unsupported shell"));
   });
+
+  it("error message for unsupported shell shows supported shells list", async () => {
+    await runCompletions({ _: ["completions", "tcsh"] } as CliArgs);
+    const errorOutput = errorSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(errorOutput).toContain("Supported shells: bash, zsh, fish");
+  });
+
+  describe("bash completions — subcommand groups", () => {
+    it("includes all 8 subcommand groups", async () => {
+      await runCompletions({ _: ["completions", "bash"] } as CliArgs);
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      const groups = [
+        "capabilities",
+        "taint",
+        "policy",
+        "shield",
+        "setup",
+        "callers",
+        "projects",
+        "rules",
+      ];
+      for (const group of groups) {
+        // Each group appears as a case label in the bash case statement
+        expect(output).toContain(`${group})`);
+      }
+    });
+
+    it("uses COMPREPLY variable", async () => {
+      await runCompletions({ _: ["completions", "bash"] } as CliArgs);
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("COMPREPLY");
+    });
+  });
+
+  describe("zsh completions — command descriptions", () => {
+    it("includes all 14 command descriptions", async () => {
+      await runCompletions({ _: ["completions", "zsh"] } as CliArgs);
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      const descriptions = [
+        "Interactive guided setup",
+        "Show status dashboard",
+        "Manage capabilities",
+        "Show/clear taint levels",
+        "Policy simulation",
+        "Learning/monitor mode",
+        "Shell completions",
+        "Shell shim protection",
+        "AI tool integration setup",
+        "Hook handler",
+        "Standalone check",
+        "AI tool caller profiles",
+        "Project trust management",
+        "Learned rules management",
+      ];
+      for (const desc of descriptions) {
+        expect(output).toContain(desc);
+      }
+    });
+
+    it("uses _describe for subcommand completion", async () => {
+      await runCompletions({ _: ["completions", "zsh"] } as CliArgs);
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("_describe");
+    });
+  });
+
+  describe("fish completions — subcommand count", () => {
+    it("has correct number of __fish_seen_subcommand_from lines matching source", async () => {
+      await runCompletions({ _: ["completions", "fish"] } as CliArgs);
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      const subcommandLines = output
+        .split("\n")
+        .filter((line) => line.includes("__fish_seen_subcommand_from"));
+      // capabilities:1 + taint:2 + policy:1 + shield:3 + setup:2 + callers:2 + projects:3 + rules:3 = 17
+      expect(subcommandLines).toHaveLength(17);
+    });
+  });
 });

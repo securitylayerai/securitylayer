@@ -203,4 +203,155 @@ describe("Check Command", () => {
     expect(parsed.decision).toBe("DENY");
     expect(parsed.reason).toContain("config corrupt");
   });
+
+  it("text format output contains formatDecision result and reason", async () => {
+    setupMockPipeline("ALLOW");
+    await runCheck({ _: ["check"], command: "git status", format: "text" } as CliArgs);
+
+    // formatDecision is mocked to return d as-is, so "ALLOW" appears
+    // The reason fallback for ALLOW is "Allowed by policy"
+    expect(logSpy).toHaveBeenCalledWith("ALLOW — Allowed by policy");
+  });
+
+  it("defaults to text format when format arg is not provided", async () => {
+    setupMockPipeline("DENY");
+    await runCheck({ _: ["check"], command: "rm -rf /" } as CliArgs);
+
+    // Without format arg, default is "text" — console.log should be called
+    // with the text format (not JSON)
+    const output = logSpy.mock.calls[0]?.[0] ?? "";
+    expect(() => JSON.parse(output)).toThrow();
+    expect(output).toContain("DENY");
+    expect(output).toContain("blocked");
+  });
+
+  it("uses provided --caller flag instead of detectCaller()", async () => {
+    const { detectCaller } = await import("@/caller-detect");
+    setupMockPipeline("ALLOW");
+    await runCheck({
+      _: ["check"],
+      command: "git status",
+      format: "json",
+      caller: "cursor",
+    } as CliArgs);
+
+    // detectCaller should not have been called when --caller is provided
+    expect(detectCaller).not.toHaveBeenCalled();
+
+    const output = logSpy.mock.calls[0][0];
+    const parsed = JSON.parse(output);
+    expect(parsed.caller).toBe("cursor");
+  });
+
+  it("uses positional arg as command when --command flag is absent", async () => {
+    setupMockPipeline("ALLOW");
+    // args._[1] is the fallback for command
+    await runCheck({ _: ["check", "echo hello"], format: "json" } as CliArgs);
+
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    const output = logSpy.mock.calls[0][0];
+    const parsed = JSON.parse(output);
+    expect(parsed.decision).toBe("ALLOW");
+  });
+
+  it("applies caller profile custom default_taint when not owner", async () => {
+    const { loadCallersConfig } = await import("@/shared");
+    (loadCallersConfig as ReturnType<typeof vi.fn>).mockResolvedValue({
+      version: 1,
+      callers: {
+        cursor: { default_taint: "untrusted", capabilities: ["exec"] },
+      },
+    });
+
+    mockLoadConfig.mockResolvedValue({
+      main: { version: 1, log_level: "info", proxy: {}, semantic: { enabled: false } },
+      sessions: { version: 1, sessions: {} },
+      channels: { version: 1, channels: {} },
+      skills: { version: 1, skills: {} },
+      learnedRules: { version: 1, rules: [] },
+    });
+    const mockOnContentIngested = vi.fn();
+    mockCreatePipeline.mockReturnValue({
+      capabilityStore: {},
+      taintTracker: {
+        onContentIngested: mockOnContentIngested,
+        getEffectiveTaint: () => "untrusted",
+        getSources: () => [],
+        clear: vi.fn(),
+      },
+      judge: { classify: vi.fn() },
+      extraRules: [],
+    });
+    mockEvaluateAction.mockResolvedValue({
+      decision: "ALLOW",
+      layers: { capability: { allowed: true }, taint: "untrusted" },
+      degraded: false,
+      timing: { total: 1, capability: 0.5 },
+    });
+
+    await runCheck({
+      _: ["check"],
+      command: "ls",
+      format: "json",
+      caller: "cursor",
+    } as CliArgs);
+
+    // Should have called onContentIngested with caller taint
+    const callerCall = mockOnContentIngested.mock.calls.find(
+      (c: unknown[]) =>
+        typeof c[0] === "object" && (c[0] as Record<string, unknown>).content === "caller:cursor",
+    );
+    expect(callerCall).toBeDefined();
+    expect(callerCall?.[0].taint).toBe("untrusted");
+  });
+
+  it("does NOT ingest project taint when project taint is owner", async () => {
+    const sharedModule = await import("@/shared");
+    const originalGetProjectTaint = sharedModule.getProjectTaint;
+    (sharedModule as Record<string, unknown>).getProjectTaint = () => "owner";
+
+    mockLoadConfig.mockResolvedValue({
+      main: { version: 1, log_level: "info", proxy: {}, semantic: { enabled: false } },
+      sessions: { version: 1, sessions: {} },
+      channels: { version: 1, channels: {} },
+      skills: { version: 1, skills: {} },
+      learnedRules: { version: 1, rules: [] },
+    });
+    const mockOnContentIngested = vi.fn();
+    mockCreatePipeline.mockReturnValue({
+      capabilityStore: {},
+      taintTracker: {
+        onContentIngested: mockOnContentIngested,
+        getEffectiveTaint: () => "owner",
+        getSources: () => [],
+        clear: vi.fn(),
+      },
+      judge: { classify: vi.fn() },
+      extraRules: [],
+    });
+    mockEvaluateAction.mockResolvedValue({
+      decision: "ALLOW",
+      layers: { capability: { allowed: true }, taint: "owner" },
+      degraded: false,
+      timing: { total: 1, capability: 0.5 },
+    });
+
+    await runCheck({
+      _: ["check"],
+      command: "ls",
+      format: "json",
+    } as CliArgs);
+
+    // onContentIngested should NOT have been called with project taint for "owner"
+    const projectCall = mockOnContentIngested.mock.calls.find(
+      (c: unknown[]) =>
+        typeof c[0] === "object" &&
+        typeof (c[0] as Record<string, unknown>).content === "string" &&
+        ((c[0] as Record<string, unknown>).content as string).startsWith("project:"),
+    );
+    expect(projectCall).toBeUndefined();
+
+    // Restore
+    (sharedModule as Record<string, unknown>).getProjectTaint = originalGetProjectTaint;
+  });
 });

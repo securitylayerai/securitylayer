@@ -127,6 +127,77 @@ describe("Callers Commands", () => {
       expect(output).toContain("(no callers configured)");
     });
 
+    it("displays default_taint for each caller using formatTaintLevel", async () => {
+      mockLoadCallersConfig.mockResolvedValue({
+        version: 1,
+        callers: {
+          "claude-code": {
+            name: "claude-code",
+            display_name: "Claude Code",
+            capabilities: ["exec"],
+            default_taint: "trusted",
+            detection: { env_vars: [], process_names: [] },
+          },
+          cursor: {
+            name: "cursor",
+            display_name: "Cursor",
+            capabilities: ["exec"],
+            default_taint: "untrusted",
+            detection: { env_vars: [], process_names: [] },
+          },
+        },
+      });
+
+      await runCallersList({ _: ["callers", "list"] } as CliArgs);
+
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("Default taint: TRUSTED");
+      expect(output).toContain("Default taint: UNTRUSTED");
+    });
+
+    it("skips env detection line when env_vars is empty", async () => {
+      mockLoadCallersConfig.mockResolvedValue({
+        version: 1,
+        callers: {
+          copilot: {
+            name: "copilot",
+            display_name: "GitHub Copilot",
+            capabilities: ["file.read"],
+            default_taint: "untrusted",
+            detection: { env_vars: [], process_names: ["copilot"] },
+          },
+        },
+      });
+
+      await runCallersList({ _: ["callers", "list"] } as CliArgs);
+
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).not.toContain("Env detection:");
+      expect(output).toContain("Process names:");
+    });
+
+    it("skips process names line when process_names is empty", async () => {
+      mockLoadCallersConfig.mockResolvedValue({
+        version: 1,
+        callers: {
+          custom: {
+            name: "custom",
+            display_name: "Custom Tool",
+            capabilities: ["exec"],
+            default_taint: "untrusted",
+            detection: { env_vars: ["CUSTOM_SESSION"], process_names: [] },
+          },
+        },
+      });
+
+      await runCallersList({ _: ["callers", "list"] } as CliArgs);
+
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("Env detection:");
+      expect(output).toContain("CUSTOM_SESSION");
+      expect(output).not.toContain("Process names:");
+    });
+
     it('shows "(none)" for caller with no capabilities', async () => {
       mockLoadCallersConfig.mockResolvedValue({
         version: 1,
@@ -237,6 +308,50 @@ describe("Callers Commands", () => {
       expect(output).toContain("Detection:");
       expect(output).toContain("CLAUDE_CODE_SESSION");
       expect(output).toContain("claude");
+    });
+
+    it("shows caller ID in profile output", async () => {
+      mockLoadCallersConfig.mockResolvedValue(callerConfig);
+
+      await runCallersProfile({ _: ["callers", "profile", "claude-code"] } as CliArgs);
+
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("ID:");
+      expect(output).toContain("claude-code");
+    });
+
+    it("lists known callers in error when caller not found", async () => {
+      mockLoadCallersConfig.mockResolvedValue({
+        version: 1,
+        callers: {
+          "claude-code": {
+            name: "claude-code",
+            display_name: "Claude Code",
+            capabilities: ["exec"],
+            default_taint: "trusted",
+            detection: { env_vars: [], process_names: [] },
+          },
+          cursor: {
+            name: "cursor",
+            display_name: "Cursor",
+            capabilities: ["exec"],
+            default_taint: "trusted",
+            detection: { env_vars: [], process_names: [] },
+          },
+        },
+      });
+      exitSpy.mockImplementation((() => {
+        throw new Error("exit");
+      }) as never);
+
+      await expect(
+        runCallersProfile({ _: ["callers", "profile", "nonexistent"] } as CliArgs),
+      ).rejects.toThrow("exit");
+
+      const errorOutput = errorSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(errorOutput).toContain("Known callers:");
+      expect(errorOutput).toContain("claude-code");
+      expect(errorOutput).toContain("cursor");
     });
   });
 });

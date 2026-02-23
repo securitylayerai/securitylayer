@@ -289,4 +289,279 @@ describe("Hook Handler", () => {
 
     expect(exitSpy).toHaveBeenCalledWith(2);
   });
+
+  describe("Tool capability mapping", () => {
+    function setupAllowPipeline() {
+      mockLoadConfig.mockResolvedValue({
+        main: { version: 1, log_level: "info", proxy: {}, semantic: { enabled: false } },
+        sessions: {
+          version: 1,
+          sessions: {
+            "claude-code": {
+              capabilities: ["exec", "file.write", "file.read", "web_fetch"],
+              default_taint: "owner",
+            },
+          },
+        },
+        channels: { version: 1, channels: {} },
+        skills: { version: 1, skills: {} },
+        learnedRules: { version: 1, rules: [] },
+      });
+      mockCreatePipeline.mockReturnValue({
+        capabilityStore: {},
+        taintTracker: {
+          onContentIngested: vi.fn(),
+          getEffectiveTaint: () => "owner",
+          getSources: () => [],
+          clear: vi.fn(),
+        },
+        judge: { classify: vi.fn() },
+        extraRules: [],
+      });
+      mockEvaluateAction.mockResolvedValue({
+        decision: "ALLOW",
+        layers: { capability: { allowed: true } },
+        degraded: false,
+        timing: { total: 1 },
+      });
+    }
+
+    it("Write tool maps to file.write capability", async () => {
+      setupAllowPipeline();
+
+      await runHook({
+        _: ["hook", "claude-code"],
+        tool: "Write",
+        input: JSON.stringify({ file_path: "/tmp/test.txt", content: "hello" }),
+      } as CliArgs);
+
+      expect(exitSpy).toHaveBeenCalledWith(0);
+      expect(mockEvaluateAction).toHaveBeenCalledWith(
+        "file.write",
+        expect.any(Object),
+        expect.any(Object),
+        undefined,
+      );
+    });
+
+    it("Edit tool maps to file.write capability", async () => {
+      setupAllowPipeline();
+
+      await runHook({
+        _: ["hook", "claude-code"],
+        tool: "Edit",
+        input: JSON.stringify({ file_path: "/tmp/test.txt" }),
+      } as CliArgs);
+
+      expect(exitSpy).toHaveBeenCalledWith(0);
+      expect(mockEvaluateAction).toHaveBeenCalledWith(
+        "file.write",
+        expect.any(Object),
+        expect.any(Object),
+        undefined,
+      );
+    });
+
+    it("Read tool maps to file.read capability (allow by default)", async () => {
+      setupAllowPipeline();
+
+      await runHook({
+        _: ["hook", "claude-code"],
+        tool: "Read",
+        input: JSON.stringify({ file_path: "/tmp/test.txt" }),
+      } as CliArgs);
+
+      expect(exitSpy).toHaveBeenCalledWith(0);
+      expect(mockEvaluateAction).toHaveBeenCalledWith(
+        "file.read",
+        expect.any(Object),
+        expect.any(Object),
+        undefined,
+      );
+    });
+
+    it("WebFetch tool maps to web_fetch capability", async () => {
+      setupAllowPipeline();
+
+      await runHook({
+        _: ["hook", "claude-code"],
+        tool: "WebFetch",
+        input: JSON.stringify({ url: "https://example.com" }),
+      } as CliArgs);
+
+      expect(exitSpy).toHaveBeenCalledWith(0);
+      expect(mockEvaluateAction).toHaveBeenCalledWith(
+        "web_fetch",
+        expect.any(Object),
+        expect.any(Object),
+        undefined,
+      );
+    });
+  });
+
+  describe("parseToolInput extraction", () => {
+    function setupAllowPipeline() {
+      mockLoadConfig.mockResolvedValue({
+        main: { version: 1, log_level: "info", proxy: {}, semantic: { enabled: false } },
+        sessions: {
+          version: 1,
+          sessions: {
+            "claude-code": {
+              capabilities: ["exec", "file.write", "web_fetch"],
+              default_taint: "owner",
+            },
+          },
+        },
+        channels: { version: 1, channels: {} },
+        skills: { version: 1, skills: {} },
+        learnedRules: { version: 1, rules: [] },
+      });
+      mockCreatePipeline.mockReturnValue({
+        capabilityStore: {},
+        taintTracker: {
+          onContentIngested: vi.fn(),
+          getEffectiveTaint: () => "owner",
+          getSources: () => [],
+          clear: vi.fn(),
+        },
+        judge: { classify: vi.fn() },
+        extraRules: [],
+      });
+      mockEvaluateAction.mockResolvedValue({
+        decision: "ALLOW",
+        layers: { capability: { allowed: true } },
+        degraded: false,
+        timing: { total: 1 },
+      });
+    }
+
+    it("Bash tool extracts command from input JSON", async () => {
+      setupAllowPipeline();
+
+      await runHook({
+        _: ["hook", "claude-code"],
+        tool: "Bash",
+        input: JSON.stringify({ command: "npm install" }),
+      } as CliArgs);
+
+      expect(mockEvaluateAction).toHaveBeenCalledWith(
+        "exec",
+        expect.any(Object),
+        expect.any(Object),
+        "npm install",
+      );
+    });
+
+    it("Write tool extracts file_path from input JSON", async () => {
+      setupAllowPipeline();
+
+      await runHook({
+        _: ["hook", "claude-code"],
+        tool: "Write",
+        input: JSON.stringify({ file_path: "/home/user/file.ts", content: "code" }),
+      } as CliArgs);
+
+      // For file tools, command arg is undefined (path extracted but not passed as command)
+      expect(mockEvaluateAction).toHaveBeenCalledWith(
+        "file.write",
+        expect.any(Object),
+        expect.any(Object),
+        undefined,
+      );
+    });
+
+    it("WebFetch tool extracts url from input JSON", async () => {
+      setupAllowPipeline();
+
+      await runHook({
+        _: ["hook", "claude-code"],
+        tool: "WebFetch",
+        input: JSON.stringify({ url: "https://api.example.com/data" }),
+      } as CliArgs);
+
+      expect(mockEvaluateAction).toHaveBeenCalledWith(
+        "web_fetch",
+        expect.any(Object),
+        expect.any(Object),
+        undefined,
+      );
+    });
+  });
+
+  describe("PostToolUse handling", () => {
+    it("exits 0 for PostToolUse with Bash tool", async () => {
+      await runHook({
+        _: ["hook", "claude-code"],
+        tool: "Bash",
+        post: true,
+        output: JSON.stringify({ stdout: "output" }),
+      } as CliArgs);
+
+      expect(exitSpy).toHaveBeenCalledWith(0);
+    });
+
+    it("exits 0 for PostToolUse with WebFetch tool", async () => {
+      await runHook({
+        _: ["hook", "claude-code"],
+        tool: "WebFetch",
+        post: true,
+        output: JSON.stringify({ content: "<html></html>" }),
+      } as CliArgs);
+
+      expect(exitSpy).toHaveBeenCalledWith(0);
+    });
+  });
+
+  it("uses CLAUDE_CODE_SESSION env var as session ID", async () => {
+    const originalEnv = process.env.CLAUDE_CODE_SESSION;
+    process.env.CLAUDE_CODE_SESSION = "custom-session-42";
+
+    mockLoadConfig.mockResolvedValue({
+      main: { version: 1, log_level: "info", proxy: {}, semantic: { enabled: false } },
+      sessions: {
+        version: 1,
+        sessions: { "custom-session-42": { capabilities: ["exec"], default_taint: "owner" } },
+      },
+      channels: { version: 1, channels: {} },
+      skills: { version: 1, skills: {} },
+      learnedRules: { version: 1, rules: [] },
+    });
+    mockCreatePipeline.mockReturnValue({
+      capabilityStore: {},
+      taintTracker: {
+        onContentIngested: vi.fn(),
+        getEffectiveTaint: () => "owner",
+        getSources: () => [],
+        clear: vi.fn(),
+      },
+      judge: { classify: vi.fn() },
+      extraRules: [],
+    });
+    mockEvaluateAction.mockResolvedValue({
+      decision: "ALLOW",
+      layers: { capability: { allowed: true } },
+      degraded: false,
+      timing: { total: 1 },
+    });
+
+    await runHook({
+      _: ["hook", "claude-code"],
+      tool: "Bash",
+      input: JSON.stringify({ command: "git status" }),
+    } as CliArgs);
+
+    expect(mockEvaluateAction).toHaveBeenCalledWith(
+      "exec",
+      expect.objectContaining({ sessionId: "custom-session-42" }),
+      expect.any(Object),
+      "git status",
+    );
+
+    // Restore env
+    if (originalEnv === undefined) {
+      delete process.env.CLAUDE_CODE_SESSION;
+    } else {
+      process.env.CLAUDE_CODE_SESSION = originalEnv;
+    }
+  });
 });

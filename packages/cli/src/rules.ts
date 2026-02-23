@@ -67,7 +67,7 @@ export async function runRulesRevoke(args: CliArgs): Promise<void> {
   const index = Number.parseInt(idArg, 10) - 1; // User-facing is 1-indexed
   const data = await loadLearnedRules();
 
-  if (index < 0 || index >= data.rules.length) {
+  if (Number.isNaN(index) || index < 0 || index >= data.rules.length) {
     console.error(`Invalid rule number: ${idArg}. Valid range: 1-${data.rules.length}`);
     process.exit(1);
     return;

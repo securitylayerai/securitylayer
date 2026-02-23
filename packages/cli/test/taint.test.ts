@@ -143,5 +143,56 @@ describe("Taint Commands", () => {
       const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
       expect(output).toContain("securitylayer projects trust");
     });
+
+    it('mentions "proxy daemon" for persistent tracking', async () => {
+      await runTaintClear({ _: ["taint", "clear"] } as CliArgs);
+
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("proxy daemon");
+    });
+
+    it("shows the projects trust/untrust command syntax", async () => {
+      await runTaintClear({ _: ["taint", "clear"] } as CliArgs);
+
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("securitylayer projects trust <path> --taint <level>");
+      expect(output).toContain("securitylayer projects untrust <path>");
+    });
+  });
+
+  describe("runTaintShow - additional paths", () => {
+    it("shows CWD path in parentheses", async () => {
+      mockLoadProjectsConfig.mockResolvedValue({
+        version: 1,
+        trust_rules: [],
+        default: "untrusted",
+      });
+      mockGetProjectTaint.mockReturnValue("untrusted");
+
+      await runTaintShow({ _: ["taint", "show"] } as CliArgs);
+
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain(`(${process.cwd()})`);
+    });
+
+    it("displays multiple rules with arrow (\u2192) separator", async () => {
+      mockLoadProjectsConfig.mockResolvedValue({
+        version: 1,
+        trust_rules: [
+          { path: "~/Dev/Personal/**", taint: "owner" },
+          { path: "~/Dev/Work/**", taint: "trusted" },
+          { path: "/tmp/**", taint: "web" },
+        ],
+        default: "untrusted",
+      });
+      mockGetProjectTaint.mockReturnValue("owner");
+
+      await runTaintShow({ _: ["taint", "show"] } as CliArgs);
+
+      const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+      expect(output).toContain("~/Dev/Personal/** \u2192 OWNER");
+      expect(output).toContain("~/Dev/Work/** \u2192 TRUSTED");
+      expect(output).toContain("/tmp/** \u2192 WEB");
+    });
   });
 });

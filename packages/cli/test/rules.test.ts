@@ -158,4 +158,112 @@ describe("Rules Commands", () => {
     const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
     expect(output).toContain("no learned rules");
   });
+
+  it('list with session_id displays "[claude]" next to rule', async () => {
+    await writeFile(
+      RULES_PATH,
+      JSON.stringify({
+        version: 1,
+        rules: [
+          {
+            pattern: "npm test",
+            capability: "exec",
+            created_at: "2025-01-02T00:00:00Z",
+            session_id: "claude",
+          },
+        ],
+      }),
+    );
+
+    await runRulesList({ _: ["rules", "list"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("[claude]");
+  });
+
+  it("list shows capability for each rule", async () => {
+    await writeFile(
+      RULES_PATH,
+      JSON.stringify({
+        version: 1,
+        rules: [
+          { pattern: "git push", capability: "exec", created_at: "2025-01-01T00:00:00Z" },
+          { pattern: "~/secrets.txt", capability: "file.read", created_at: "2025-01-02T00:00:00Z" },
+        ],
+      }),
+    );
+
+    await runRulesList({ _: ["rules", "list"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Capability: exec");
+    expect(output).toContain("Capability: file.read");
+  });
+
+  it("list shows created_at timestamp for each rule", async () => {
+    await writeFile(
+      RULES_PATH,
+      JSON.stringify({
+        version: 1,
+        rules: [
+          { pattern: "git status", capability: "exec", created_at: "2025-01-01T00:00:00Z" },
+          { pattern: "npm test", capability: "exec", created_at: "2025-06-15T12:30:00Z" },
+        ],
+      }),
+    );
+
+    await runRulesList({ _: ["rules", "list"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Created:    2025-01-01T00:00:00Z");
+    expect(output).toContain("Created:    2025-06-15T12:30:00Z");
+  });
+
+  it("revoke second rule: first rule remains, second removed", async () => {
+    await writeFile(
+      RULES_PATH,
+      JSON.stringify({
+        version: 1,
+        rules: [
+          { pattern: "git status", capability: "exec", created_at: "2025-01-01T00:00:00Z" },
+          { pattern: "npm test", capability: "exec", created_at: "2025-01-02T00:00:00Z" },
+        ],
+      }),
+    );
+
+    await runRulesRevoke({ _: ["rules", "revoke", "2"] } as CliArgs);
+
+    const content = JSON.parse(await readFile(RULES_PATH, "utf-8"));
+    expect(content.rules).toHaveLength(1);
+    expect(content.rules[0].pattern).toBe("git status");
+  });
+
+  it('revoke shows "Revoked rule: <pattern> (<capability>)"', async () => {
+    await writeFile(
+      RULES_PATH,
+      JSON.stringify({
+        version: 1,
+        rules: [{ pattern: "git push", capability: "exec", created_at: "2025-01-01T00:00:00Z" }],
+      }),
+    );
+
+    await runRulesRevoke({ _: ["rules", "revoke", "1"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Revoked rule: git push (exec)");
+  });
+
+  it('revoke with non-numeric id (e.g., "abc") exits 1', async () => {
+    await writeFile(
+      RULES_PATH,
+      JSON.stringify({
+        version: 1,
+        rules: [{ pattern: "git status", capability: "exec", created_at: "2025-01-01T00:00:00Z" }],
+      }),
+    );
+
+    await runRulesRevoke({ _: ["rules", "revoke", "abc"] } as CliArgs);
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
 });

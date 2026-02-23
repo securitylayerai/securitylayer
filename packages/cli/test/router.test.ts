@@ -183,4 +183,121 @@ describe("CLI Router", () => {
     await runMain(makeArgs(["completions", "bash"]));
     expect(runCompletions).toHaveBeenCalled();
   });
+
+  it("routes shield status (default subcommand when no subcommand given)", async () => {
+    const { runMain } = await import("@/index");
+    const { runShieldStatus } = await import("@/shield");
+    await runMain(makeArgs(["shield"]));
+    expect(runShieldStatus).toHaveBeenCalled();
+  });
+
+  it("routes setup cursor", async () => {
+    const { runMain } = await import("@/index");
+    const { runSetupCursor } = await import("@/setup");
+    await runMain(makeArgs(["setup", "cursor"]));
+    expect(runSetupCursor).toHaveBeenCalled();
+  });
+
+  it("routes taint clear", async () => {
+    const { runMain } = await import("@/index");
+    const { runTaintClear } = await import("@/taint");
+    await runMain(makeArgs(["taint", "clear"]));
+    expect(runTaintClear).toHaveBeenCalled();
+  });
+
+  it("routes taint with no subcommand (defaults to show)", async () => {
+    const { runMain } = await import("@/index");
+    const { runTaintShow } = await import("@/taint");
+    await runMain(makeArgs(["taint"]));
+    expect(runTaintShow).toHaveBeenCalled();
+  });
+
+  it("routes projects trust", async () => {
+    const { runMain } = await import("@/index");
+    const { runProjectsTrust } = await import("@/projects");
+    await runMain(makeArgs(["projects", "trust", "/some/path"]));
+    expect(runProjectsTrust).toHaveBeenCalled();
+  });
+
+  it("routes projects untrust", async () => {
+    const { runMain } = await import("@/index");
+    const { runProjectsUntrust } = await import("@/projects");
+    await runMain(makeArgs(["projects", "untrust", "/some/path"]));
+    expect(runProjectsUntrust).toHaveBeenCalled();
+  });
+
+  it("routes projects with no subcommand (defaults to list)", async () => {
+    const { runMain } = await import("@/index");
+    const { runProjectsList } = await import("@/projects");
+    await runMain(makeArgs(["projects"]));
+    expect(runProjectsList).toHaveBeenCalled();
+  });
+
+  it("routes callers profile", async () => {
+    const { runMain } = await import("@/index");
+    const { runCallersProfile } = await import("@/callers");
+    await runMain(makeArgs(["callers", "profile", "claude-code"]));
+    expect(runCallersProfile).toHaveBeenCalled();
+  });
+
+  it("routes callers with no subcommand (defaults to list)", async () => {
+    const { runMain } = await import("@/index");
+    const { runCallersList } = await import("@/callers");
+    await runMain(makeArgs(["callers"]));
+    expect(runCallersList).toHaveBeenCalled();
+  });
+
+  it("routes rules revoke", async () => {
+    const { runMain } = await import("@/index");
+    const { runRulesRevoke } = await import("@/rules");
+    await runMain(makeArgs(["rules", "revoke", "some-id"]));
+    expect(runRulesRevoke).toHaveBeenCalled();
+  });
+
+  it("routes rules clear", async () => {
+    const { runMain } = await import("@/index");
+    const { runRulesClear } = await import("@/rules");
+    await runMain(makeArgs(["rules", "clear"]));
+    expect(runRulesClear).toHaveBeenCalled();
+  });
+
+  it("routes rules with no subcommand (defaults to list)", async () => {
+    const { runMain } = await import("@/index");
+    const { runRulesList } = await import("@/rules");
+    await runMain(makeArgs(["rules"]));
+    expect(runRulesList).toHaveBeenCalled();
+  });
+
+  it("exits 1 for unknown subcommand: shield foobar", async () => {
+    const { runMain } = await import("@/index");
+    await runMain(makeArgs(["shield", "foobar"]));
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Unknown command"));
+  });
+
+  it("exits 1 for unknown subcommand: setup foobar", async () => {
+    const { runMain } = await import("@/index");
+    await runMain(makeArgs(["setup", "foobar"]));
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Unknown command"));
+  });
+
+  it("version flag should NOT show help text", async () => {
+    const { runMain } = await import("@/index");
+    await runMain(makeArgs([], { version: true }));
+    expect(logSpy).toHaveBeenCalledWith("0.0.1");
+    // Should NOT contain help text
+    const allOutput = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(allOutput).not.toContain("Usage:");
+    expect(allOutput).not.toContain("Commands:");
+  });
+
+  it("--version takes priority even with a command", async () => {
+    const { runMain } = await import("@/index");
+    const { runInit } = await import("@/init");
+    (runInit as unknown as ReturnType<typeof vi.fn>).mockClear();
+    await runMain(makeArgs(["init"], { version: true }));
+    expect(logSpy).toHaveBeenCalledWith("0.0.1");
+    expect(runInit).not.toHaveBeenCalled();
+  });
 });

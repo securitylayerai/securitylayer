@@ -237,4 +237,113 @@ describe("Capabilities Show", () => {
     const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
     expect(output).not.toContain("Skills");
   });
+
+  it("shows mixed plain and taint-qualified capabilities in one session", async () => {
+    mockLoadConfigOrSuggestInit.mockResolvedValue({
+      sessions: {
+        sessions: {
+          "claude-code": {
+            capabilities: ["exec", "file.write:owner", "file.read"],
+            default_taint: "trusted",
+          },
+        },
+      },
+      channels: { channels: {} },
+      skills: { skills: {} },
+    });
+
+    await runCapabilitiesShow({ _: ["capabilities", "show"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    // Plain capabilities listed without taint qualification
+    expect(output).toContain("exec");
+    expect(output).toContain("file.read");
+    // Taint-qualified capability shows "requires" text
+    expect(output).toContain("file.write");
+    expect(output).toContain("requires");
+    expect(output).toContain("OWNER");
+  });
+
+  it('shows "(no capabilities granted)" for session with zero capabilities', async () => {
+    mockLoadConfigOrSuggestInit.mockResolvedValue({
+      sessions: {
+        sessions: {
+          restricted: { capabilities: [], default_taint: "untrusted" },
+        },
+      },
+      channels: { channels: {} },
+      skills: { skills: {} },
+    });
+
+    await runCapabilitiesShow({ _: ["capabilities", "show"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("(no capabilities granted)");
+  });
+
+  it('shows "(minimum capabilities: channel.send)" for skill with empty capabilities', async () => {
+    mockLoadConfigOrSuggestInit.mockResolvedValue({
+      sessions: {
+        sessions: {
+          main: { capabilities: ["exec"], default_taint: "owner" },
+        },
+      },
+      channels: { channels: {} },
+      skills: {
+        skills: {
+          "chat-only": { capabilities: [] },
+        },
+      },
+    });
+
+    await runCapabilitiesShow({ _: ["capabilities", "show"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Skills (1)");
+    expect(output).toContain("chat-only");
+    expect(output).toContain("(minimum capabilities: channel.send)");
+  });
+
+  it("lists each capability for channel with array of specific capabilities", async () => {
+    mockLoadConfigOrSuggestInit.mockResolvedValue({
+      sessions: {
+        sessions: {
+          main: { capabilities: ["exec"], default_taint: "owner" },
+        },
+      },
+      channels: {
+        channels: {
+          discord: { max_capabilities: ["channel.send", "file.read", "web_fetch"] },
+        },
+      },
+      skills: { skills: {} },
+    });
+
+    await runCapabilitiesShow({ _: ["capabilities", "show"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Channels (1)");
+    expect(output).toContain("discord");
+    expect(output).toContain("channel.send");
+    expect(output).toContain("file.read");
+    expect(output).toContain("web_fetch");
+  });
+
+  it('includes session count in header (e.g., "Sessions (2):")', async () => {
+    mockLoadConfigOrSuggestInit.mockResolvedValue({
+      sessions: {
+        sessions: {
+          "claude-code": { capabilities: ["exec", "file.read"], default_taint: "owner" },
+          cursor: { capabilities: ["file.read"], default_taint: "trusted" },
+        },
+      },
+      channels: { channels: {} },
+      skills: { skills: {} },
+    });
+
+    await runCapabilitiesShow({ _: ["capabilities", "show"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Sessions (2):");
+  });
 });
