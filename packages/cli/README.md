@@ -396,6 +396,14 @@ sl completions fish > ~/.config/fish/completions/securitylayer.fish
 
 ---
 
+## Testing
+
+```bash
+bun run test        # correct — runs Vitest
+```
+
+Do **not** use `bun test` — that invokes Bun's built-in test runner, which does not resolve the `@/` path aliases or Vitest APIs used by this package.
+
 ## Alias
 
 The CLI is available as both `securitylayer` and `sl`. They are identical — use whichever you prefer:
