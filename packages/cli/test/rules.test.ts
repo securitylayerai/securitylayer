@@ -105,4 +105,57 @@ describe("Rules Commands", () => {
     await runRulesRevoke({ _: ["rules", "revoke"] } as CliArgs);
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
+
+  it("revokes a rule by number", async () => {
+    await writeFile(
+      RULES_PATH,
+      JSON.stringify({
+        version: 1,
+        rules: [
+          { pattern: "git status", capability: "exec", created_at: "2025-01-01T00:00:00Z" },
+          { pattern: "npm test", capability: "exec", created_at: "2025-01-02T00:00:00Z" },
+        ],
+      }),
+    );
+
+    await runRulesRevoke({ _: ["rules", "revoke", "1"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Revoked rule: git status");
+
+    const content = JSON.parse(await readFile(RULES_PATH, "utf-8"));
+    expect(content.rules).toHaveLength(1);
+    expect(content.rules[0].pattern).toBe("npm test");
+  });
+
+  it("exits 1 for out-of-range revoke id", async () => {
+    await writeFile(
+      RULES_PATH,
+      JSON.stringify({
+        version: 1,
+        rules: [{ pattern: "git status", capability: "exec", created_at: "2025-01-01T00:00:00Z" }],
+      }),
+    );
+
+    await runRulesRevoke({ _: ["rules", "revoke", "5"] } as CliArgs);
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("clears shows message when no rules to clear", async () => {
+    await writeFile(RULES_PATH, JSON.stringify({ version: 1, rules: [] }));
+
+    await runRulesClear({ _: ["rules", "clear"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("No learned rules to clear");
+  });
+
+  it("loads empty rules when file does not exist", async () => {
+    await rm(RULES_PATH, { force: true }).catch(() => {});
+
+    await runRulesList({ _: ["rules", "list"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("no learned rules");
+  });
 });

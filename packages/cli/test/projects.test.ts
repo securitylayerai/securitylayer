@@ -3,11 +3,16 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CliArgs } from "@/index";
 
-const { TEST_DIR, mockLoadProjectsConfig } = vi.hoisted(() => {
+const { TEST_DIR, mockLoadProjectsConfig, mockWriteFile } = vi.hoisted(() => {
   const os = require("node:os");
   const path = require("node:path");
   const d = path.join(os.tmpdir(), `securitylayer-test-projects-${Date.now()}`);
-  return { TEST_DIR: d, mockLoadProjectsConfig: vi.fn() };
+  return { TEST_DIR: d, mockLoadProjectsConfig: vi.fn(), mockWriteFile: vi.fn() };
+});
+
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, writeFile: mockWriteFile };
 });
 
 vi.mock("@securitylayer/core", () => ({
@@ -46,6 +51,7 @@ describe("Projects Commands", () => {
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     exitSpy = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
     vi.spyOn(console, "error").mockImplementation(() => {});
+    mockWriteFile.mockResolvedValue(undefined);
     vi.clearAllMocks();
   });
 
@@ -72,6 +78,19 @@ describe("Projects Commands", () => {
     expect(output).toContain("/tmp/**");
   });
 
+  it("shows empty state when no trust rules", async () => {
+    mockLoadProjectsConfig.mockResolvedValue({
+      version: 1,
+      trust_rules: [],
+      default: "untrusted",
+    });
+
+    await runProjectsList({ _: ["projects", "list"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("no trust rules configured");
+  });
+
   it("exits 1 when trust path is missing", async () => {
     mockLoadProjectsConfig.mockResolvedValue({
       version: 1,
@@ -82,6 +101,39 @@ describe("Projects Commands", () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
+  it("adds trust rule and writes config", async () => {
+    mockLoadProjectsConfig.mockResolvedValue({
+      version: 1,
+      trust_rules: [{ path: "/tmp/**", taint: "web" }],
+      default: "untrusted",
+    });
+
+    await runProjectsTrust({ _: ["projects", "trust", "~/Dev/Work/**"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Trusted");
+    expect(output).toContain("~/Dev/Work/**");
+    expect(mockWriteFile).toHaveBeenCalled();
+  });
+
+  it("trust replaces existing rule for same path", async () => {
+    mockLoadProjectsConfig.mockResolvedValue({
+      version: 1,
+      trust_rules: [{ path: "~/Dev/Work/**", taint: "untrusted" }],
+      default: "untrusted",
+    });
+
+    await runProjectsTrust({
+      _: ["projects", "trust", "~/Dev/Work/**"],
+      taint: "trusted",
+    } as unknown as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Trusted");
+    expect(output).toContain("~/Dev/Work/**");
+    expect(mockWriteFile).toHaveBeenCalled();
+  });
+
   it("exits 1 when untrust path is missing", async () => {
     mockLoadProjectsConfig.mockResolvedValue({
       version: 1,
@@ -90,5 +142,35 @@ describe("Projects Commands", () => {
     });
     await runProjectsUntrust({ _: ["projects", "untrust"] } as CliArgs);
     expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("removes trust rule and writes config", async () => {
+    mockLoadProjectsConfig.mockResolvedValue({
+      version: 1,
+      trust_rules: [
+        { path: "~/Dev/Personal/**", taint: "owner" },
+        { path: "/tmp/**", taint: "web" },
+      ],
+      default: "untrusted",
+    });
+
+    await runProjectsUntrust({ _: ["projects", "untrust", "/tmp/**"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("Removed trust rule for: /tmp/**");
+    expect(mockWriteFile).toHaveBeenCalled();
+  });
+
+  it("untrust shows message when path not found", async () => {
+    mockLoadProjectsConfig.mockResolvedValue({
+      version: 1,
+      trust_rules: [{ path: "/tmp/**", taint: "web" }],
+      default: "untrusted",
+    });
+
+    await runProjectsUntrust({ _: ["projects", "untrust", "/nonexistent/**"] } as CliArgs);
+
+    const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
+    expect(output).toContain("No trust rule found for: /nonexistent/**");
   });
 });

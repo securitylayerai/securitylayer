@@ -131,9 +131,76 @@ describe("Check Command", () => {
     expect(parsed).toHaveProperty("timing");
   });
 
+  it("outputs JSON with all fields for DENY", async () => {
+    setupMockPipeline("DENY");
+    await runCheck({ _: ["check"], command: "rm -rf /", format: "json" } as CliArgs);
+
+    const output = logSpy.mock.calls[0][0];
+    const parsed = JSON.parse(output);
+    expect(parsed.decision).toBe("DENY");
+    expect(parsed).toHaveProperty("reason");
+    expect(parsed).toHaveProperty("caller");
+    expect(parsed).toHaveProperty("taint");
+    expect(parsed).toHaveProperty("timing");
+  });
+
+  it("allows in learning mode and outputs original decision", async () => {
+    mockLoadConfig.mockResolvedValue({
+      main: {
+        version: 1,
+        log_level: "info",
+        proxy: {},
+        semantic: { enabled: false },
+        mode: "learning",
+        learning_expires: new Date(Date.now() + 86400000).toISOString(),
+      },
+      sessions: { version: 1, sessions: {} },
+      channels: { version: 1, channels: {} },
+      skills: { version: 1, skills: {} },
+      learnedRules: { version: 1, rules: [] },
+    });
+    mockCreatePipeline.mockReturnValue({
+      capabilityStore: {},
+      taintTracker: {
+        onContentIngested: vi.fn(),
+        getEffectiveTaint: () => "untrusted",
+        getSources: () => [],
+        clear: vi.fn(),
+      },
+      judge: { classify: vi.fn() },
+      extraRules: [],
+    });
+    mockEvaluateAction.mockResolvedValue({
+      decision: "DENY",
+      layers: { capability: { allowed: false, reason: "no capability" }, taint: "untrusted" },
+      degraded: false,
+      timing: { total: 1, capability: 0.5 },
+    });
+
+    await runCheck({ _: ["check"], command: "rm -rf /", format: "json" } as CliArgs);
+
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    const output = logSpy.mock.calls[0][0];
+    const parsed = JSON.parse(output);
+    expect(parsed.decision).toBe("ALLOW");
+    expect(parsed.learning_mode).toBe(true);
+    expect(parsed.original_decision).toBe("DENY");
+  });
+
   it("fails safe on unexpected error", async () => {
     mockLoadConfig.mockRejectedValue(new Error("fail"));
     await runCheck({ _: ["check"], command: "ls" } as CliArgs);
     expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("fails safe with JSON output on error", async () => {
+    mockLoadConfig.mockRejectedValue(new Error("config corrupt"));
+    await runCheck({ _: ["check"], command: "ls", format: "json" } as CliArgs);
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = logSpy.mock.calls[0][0];
+    const parsed = JSON.parse(output);
+    expect(parsed.decision).toBe("DENY");
+    expect(parsed.reason).toContain("config corrupt");
   });
 });
