@@ -2,7 +2,7 @@
 
 Track cross-platform package manager distribution for `securitylayer` / `sl`.
 
-GitHub Issue: https://github.com/securitylayerai/securitylayer/issues/TBD
+GitHub Issue: https://github.com/securitylayerai/securitylayer/issues/3
 
 ## Prerequisites
 
