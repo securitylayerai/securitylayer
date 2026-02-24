@@ -36,11 +36,11 @@ import { CopyButton, ViewOptions } from "@/components/page-actions";
 import { baseOptions } from "@/lib/layout.shared";
 import { source } from "@/lib/source";
 
-export const Route = createFileRoute("/docs/$")({
+export const Route = createFileRoute("/$lang/docs/$")({
   component: Page,
   loader: async ({ params }) => {
     const slugs = params._splat?.split("/") ?? [];
-    const data = await serverLoader({ data: slugs });
+    const data = await serverLoader({ data: { slugs, lang: params.lang } });
     await clientLoader.preload(data.path);
     return data;
   },
@@ -49,14 +49,15 @@ export const Route = createFileRoute("/docs/$")({
 const serverLoader = createServerFn({
   method: "GET",
 })
-  .inputValidator((slugs: string[]) => slugs)
-  .handler(async ({ data: slugs }) => {
-    const page = source.getPage(slugs);
+  .inputValidator((input: { slugs: string[]; lang: string }) => input)
+  .handler(async ({ data: { slugs, lang } }) => {
+    const page = source.getPage(slugs, lang);
     if (!page) throw notFound();
 
     return {
       path: page.path,
-      pageTree: await source.serializePageTree(source.getPageTree()),
+      lang,
+      pageTree: await source.serializePageTree(source.getPageTree(lang)),
     };
   });
 
@@ -110,10 +111,11 @@ const clientLoader = browserCollections.docs.createClientLoader({
 
 function Page() {
   const data = useFumadocsLoader(Route.useLoaderData());
+  const { lang } = Route.useParams();
   const markdownUrl = `/api/llm?path=${encodeURIComponent(data.path)}`;
 
   return (
-    <DocsLayout {...baseOptions()} tree={data.pageTree}>
+    <DocsLayout {...baseOptions(lang)} tree={data.pageTree}>
       <Suspense>
         {clientLoader.useContent(data.path, {
           className: "",

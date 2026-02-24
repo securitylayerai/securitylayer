@@ -3,7 +3,15 @@ import { createFromSource } from "fumadocs-core/search/server";
 import { source } from "@/lib/source";
 
 const server = createFromSource(source, {
-  language: "english",
+  localeMap: {
+    en: "english",
+    zh: "english",
+    ja: "english",
+    es: "spanish",
+    ko: "english",
+    pt: "portuguese",
+    de: "german",
+  },
 });
 
 export const Route = createFileRoute("/api/search")({
