@@ -1,0 +1,73 @@
+---
+title: Claude Code
+description: Native hooks integration for Claude Code.
+icon: Code
+---
+
+SecurityLayer integrates natively with Claude Code via its hooks system. PreToolUse hooks evaluate actions before execution; PostToolUse hooks track taint after execution.
+
+## Setup
+
+```bash
+securitylayer setup claude-code
+```
+
+This writes hooks to `~/.claude/hooks.json`. No manual configuration needed.
+
+## How It Works
+
+### PreToolUse Hooks
+
+Before Claude Code executes a tool, SecurityLayer evaluates the action:
+
+| Tool | Capability | What's Checked |
+|---|---|---|
+| `Bash` | `exec` | Full command through security pipeline |
+| `Write` | `file.write` | File path and content |
+| `Edit` | `file.write` | File path and modifications |
+| `WebFetch` | `web_fetch` | URL and request |
+| `NotebookEdit` | `file.write` | Notebook path and cell changes |
+
+If the action is denied, Claude Code receives an error message explaining why.
+
+### PostToolUse Hooks
+
+After a tool completes, SecurityLayer updates taint tracking:
+
+| Tool | Effect |
+|---|---|
+| `Bash` | Track command execution context |
+| `Read` | Elevate taint if file is from untrusted directory |
+| `WebFetch` | Elevate taint to `WEB_CONTENT` |
+
+### Hook Format
+
+Each hook calls the SecurityLayer CLI:
+
+```bash
+# PreToolUse
+securitylayer hook claude-code --tool Bash --input "$TOOL_INPUT"
+
+# PostToolUse
+securitylayer hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
+```
+
+## Verifying
+
+Check that hooks are installed:
+
+```bash
+securitylayer status
+```
+
+Look for "Claude Code hooks: installed" in the output.
+
+## Removing
+
+To remove SecurityLayer hooks from Claude Code, edit `~/.claude/hooks.json` and remove the SecurityLayer entries, or delete the file to remove all hooks.
+
+## See Also
+
+- [hook](/docs/commands/hook) — Hook handler reference
+- [setup](/docs/commands/setup) — Auto-setup command
+- [Shell Shim](/docs/integrations/shell-shim) — Alternative integration method

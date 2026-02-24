@@ -1,0 +1,66 @@
+---
+title: shield
+description: Enable, disable, or check the shell shim protection.
+icon: ShieldCheck
+---
+
+The shield installs PATH-priority wrapper scripts that intercept all shell commands any AI tool executes. Universal protection — works with any tool that runs shell commands.
+
+## Usage
+
+```bash
+securitylayer shield enable
+securitylayer shield disable
+securitylayer shield status
+```
+
+## Subcommands
+
+### `shield enable`
+
+Creates shimmed binary wrappers in `~/.securitylayer/bin/` and adds the directory to your shell profile's PATH (prepended for priority).
+
+**Shimmed binaries:** `bash`, `sh`, `zsh`, `python`, `python3`, `node`, `ruby`, `perl`
+
+Each shim calls `securitylayer check` before forwarding to the real binary.
+
+**Exit codes:** `0` on success, `1` if not configured or no binaries found.
+
+### `shield disable`
+
+Removes all shim scripts from `~/.securitylayer/bin/` and removes the PATH entry from your shell profile.
+
+**Exit codes:** Always `0`.
+
+### `shield status`
+
+Shows whether the shield is active, the shim directory status, and which binaries are shimmed.
+
+```
+Shield Status
+
+  Shim directory: ~/.securitylayer/bin/ (exists)
+  PATH includes shim dir: yes
+  Shimmed binaries: bash, sh, zsh, python, python3, node, ruby, perl
+
+  Status: ACTIVE
+```
+
+**Exit codes:** Always `0`.
+
+## How It Works
+
+When an AI tool (Claude Code, Cursor, Aider, etc.) runs a shell command:
+
+1. The shimmed binary intercepts the call
+2. `securitylayer check` evaluates the command against your policy
+3. If allowed, the real binary executes the command
+4. If denied, the command is blocked with an error message
+
+Caller detection identifies which AI tool triggered the command and applies the appropriate capability profile.
+
+## See Also
+
+- [Shell Shim Integration](/docs/integrations/shell-shim)
+- [check](/docs/commands/check) — The check command used by shims
+- [callers](/docs/commands/callers) — AI tool caller detection

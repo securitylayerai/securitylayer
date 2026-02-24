@@ -1,0 +1,65 @@
+---
+title: hook
+description: Hook handler called by AI tool integrations.
+icon: ArrowsClockwise
+---
+
+The hook handler is called by AI tool integrations (like Claude Code hooks) to evaluate actions before and after execution.
+
+## Usage
+
+```bash
+# Pre-tool check
+securitylayer hook <agent> --tool <tool> --input <json>
+
+# Post-tool tracking
+securitylayer hook <agent> --tool <tool> --post --output <json>
+```
+
+## Flags
+
+| Flag | Description |
+|---|---|
+| `--tool <tool>` | Tool name (required): `Bash`, `Write`, `Edit`, `Read`, `WebFetch`, `Glob`, `Grep`, `NotebookEdit` |
+| `--input <json>` | Pre-tool JSON input from the AI tool |
+| `--post` | Post-tool mode (default is pre-tool) |
+| `--output <json>` | Post-tool JSON output |
+
+## Tool-to-Capability Mapping
+
+| Tool | Required Capability |
+|---|---|
+| `Bash` | `exec` |
+| `Write`, `Edit`, `NotebookEdit` | `file.write` |
+| `Read`, `Glob`, `Grep` | `file.read` |
+| `WebFetch` | `web_fetch` |
+
+## Behavior
+
+### Pre-Tool Mode
+
+Evaluates the action against the full security pipeline (capability gate, taint check, normalization, rules, LLM judge). Outputs nothing on ALLOW — the AI tool proceeds. On DENY, outputs a reason to stderr and exits with code 2.
+
+### Post-Tool Mode
+
+Updates taint tracking based on what the tool did. For example, if `Read` accessed a file in an untrusted directory, the session taint may be elevated. Always exits 0.
+
+### Learning Mode
+
+In learning mode, blocked actions are logged but allowed. The hook exits 0 with a warning to stderr.
+
+### Fail-Safe
+
+On unexpected errors, the hook blocks the action (exits 2). SecurityLayer never fails open.
+
+## Exit Codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Pre-tool: ALLOW (or learning mode). Post-tool: always 0 |
+| `2` | Pre-tool: DENY, REQUIRE_APPROVAL, or error |
+
+## See Also
+
+- [setup](/docs/commands/setup) — Install hooks automatically
+- [Claude Code Integration](/docs/integrations/claude-code)

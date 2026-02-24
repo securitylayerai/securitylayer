@@ -1,0 +1,79 @@
+---
+title: Shell shim
+description: Universal shell shim protection for any AI agent.
+icon: Terminal
+---
+
+The shell shim is a universal integration that protects **any** AI tool that runs shell commands — with zero integration effort from the tool's side.
+
+## How It Works
+
+`securitylayer shield enable` installs PATH-priority wrapper scripts in `~/.securitylayer/bin/`. Because this directory is prepended to PATH, all shell commands route through SecurityLayer before reaching the real binary.
+
+### Shimmed Binaries
+
+| Binary | Description |
+|---|---|
+| `bash` | Bash shell |
+| `sh` | POSIX shell |
+| `zsh` | Zsh shell |
+| `python` | Python interpreter |
+| `python3` | Python 3 interpreter |
+| `node` | Node.js runtime |
+| `ruby` | Ruby interpreter |
+| `perl` | Perl interpreter |
+
+### Execution Flow
+
+```
+AI Tool → shimmed bash → securitylayer check → real bash
+                              ↓ (if denied)
+                         error message
+```
+
+1. AI tool calls `bash -c "some command"`
+2. The shim in `~/.securitylayer/bin/bash` intercepts
+3. `securitylayer check` evaluates the command
+4. If allowed → forwarded to the real `/usr/bin/bash`
+5. If denied → error returned, command never executes
+
+### Caller Detection
+
+The shim identifies which AI tool triggered the command by checking:
+
+- Environment variables specific to each tool
+- Parent process names
+
+This allows different capability profiles for different tools (e.g., Claude Code gets `exec` + `file.write`, while an untrusted tool gets only `file.read`).
+
+## Setup
+
+```bash
+# Enable
+securitylayer shield enable
+
+# Verify
+securitylayer shield status
+
+# Disable
+securitylayer shield disable
+```
+
+After enabling, restart your shell or open a new terminal for the PATH change to take effect.
+
+## Supported AI Tools
+
+Any tool that executes shell commands is automatically protected:
+
+- Claude Code
+- Cursor
+- Aider
+- GitHub Copilot
+- Custom agents
+- Any tool running shell commands
+
+## See Also
+
+- [shield](/docs/commands/shield) — Shield command reference
+- [callers](/docs/commands/callers) — Caller detection profiles
+- [check](/docs/commands/check) — The check command used by shims

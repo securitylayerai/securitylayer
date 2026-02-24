@@ -1,0 +1,47 @@
+---
+title: status
+description: Show the security status dashboard.
+icon: ShieldCheck
+---
+
+Displays an overview of your SecurityLayer configuration, integration status, and active sessions.
+
+## Usage
+
+```bash
+securitylayer status
+```
+
+## Output
+
+The status dashboard shows:
+
+- **Configuration** — Whether config files are loaded and their locations
+- **Shield status** — Active or inactive
+- **Claude Code hooks** — Installed or not installed
+- **Sessions** — Count and details of configured sessions
+- **Learning mode** — Active duration and expiration (if enabled)
+
+## Example Output
+
+```
+SecurityLayer Status
+
+  ✓ Configuration loaded
+    config.yaml
+    capabilities/sessions.yaml
+    capabilities/channels.yaml
+    ai-tools.yaml
+    projects.yaml
+
+  Shield: active
+  Claude Code hooks: installed
+  Sessions: 1
+    claude-code (exec, file.read, file.write, web_fetch)
+```
+
+## Exit Codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Always exits successfully |

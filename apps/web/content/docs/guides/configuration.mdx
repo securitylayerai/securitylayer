@@ -1,0 +1,142 @@
+---
+title: Configuration
+description: Customize your SecurityLayer security policy.
+icon: Gear
+---
+
+SecurityLayer's configuration lives at `~/.securitylayer/`. All config files use YAML with a `version` field for schema compatibility.
+
+## Config Files
+
+| File | Purpose |
+|---|---|
+| `config.yaml` | Main configuration (mode, judge settings, logging) |
+| `capabilities/sessions.yaml` | Session capability grants |
+| `capabilities/channels.yaml` | Channel capability restrictions |
+| `capabilities/skills.yaml` | Skill capability declarations |
+| `ai-tools.yaml` | AI tool caller profiles and detection rules |
+| `projects.yaml` | Project directory trust rules |
+| `learned-rules.json` | Auto-approved patterns from "Approve & Remember" |
+
+## Main Config
+
+```yaml
+# ~/.securitylayer/config.yaml
+version: 1
+mode: enforce  # or "learning"
+
+judge:
+  enabled: true
+  provider: anthropic
+  model: claude-haiku-4-5-20251001
+  api_key_env: ANTHROPIC_API_KEY
+  timeout_ms: 500
+
+logging:
+  level: info  # debug, info, warn, error
+```
+
+## Session Capabilities
+
+```yaml
+# ~/.securitylayer/capabilities/sessions.yaml
+version: 1
+sessions:
+  claude-code:
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    default_taint: owner
+
+  restricted:
+    capabilities:
+      - file.read
+      - exec:owner  # exec only in owner-taint projects
+    default_taint: untrusted
+```
+
+## AI Tool Profiles
+
+```yaml
+# ~/.securitylayer/ai-tools.yaml
+version: 1
+callers:
+  claude-code:
+    display_name: Claude Code
+    default_taint: OWNER
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    detect:
+      env:
+        - CLAUDE_CODE
+      process:
+        - claude
+
+  cursor:
+    display_name: Cursor
+    default_taint: TRUSTED_CONTACT
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+    detect:
+      env:
+        - CURSOR_SESSION
+      process:
+        - cursor
+```
+
+## Project Trust
+
+```yaml
+# ~/.securitylayer/projects.yaml
+version: 1
+trust_rules:
+  - path: "~/Dev/Personal/**"
+    taint: OWNER
+  - path: "~/Dev/Work/**"
+    taint: TRUSTED_CONTACT
+  - path: "/tmp/**"
+    taint: WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+## Schema Versioning
+
+All config files include a `version` field. When SecurityLayer loads a config file:
+
+1. It checks the `version` field
+2. If the version is supported, it loads normally
+3. If the version is newer than expected, it runs any available migrations
+4. If the version is unsupported, it **refuses to load** rather than silently misinterpreting
+
+This prevents silent configuration breakage during upgrades.
+
+## Viewing Config
+
+```bash
+# Full status overview
+securitylayer status
+
+# Capabilities
+securitylayer capabilities show
+
+# Taint and project trust
+securitylayer taint show
+securitylayer projects list
+
+# Caller profiles
+securitylayer callers list
+```
+
+## See Also
+
+- [init](/docs/commands/init) — Interactive setup wizard
+- [Capabilities](/docs/concepts/capabilities) — How capabilities work
+- [Taint Levels](/docs/concepts/taint-levels) — How taint tracking works
+- [Project Trust](/docs/guides/project-trust) — Directory trust configuration

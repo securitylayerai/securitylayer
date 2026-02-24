@@ -1,0 +1,63 @@
+---
+title: projects
+description: Manage project directory trust rules.
+icon: Folder
+---
+
+Project trust rules assign taint levels to directory paths. When an AI agent operates in a directory, the trust rule determines the session's initial taint level.
+
+## Usage
+
+```bash
+securitylayer projects list
+securitylayer projects trust <path> [--taint <level>]
+securitylayer projects untrust <path>
+```
+
+## Subcommands
+
+### `projects list`
+
+Shows all configured project trust rules.
+
+```bash
+$ securitylayer projects list
+
+  Trust rules:
+    1. ~/Dev/Personal/** → OWNER
+    2. ~/Dev/Work/**     → TRUSTED_CONTACT
+    3. /tmp/**           → WEB_CONTENT
+
+  Default taint: UNTRUSTED_HUMAN
+```
+
+### `projects trust <path>`
+
+Adds or updates a trust rule for a directory path.
+
+```bash
+securitylayer projects trust ~/Dev/Personal/** --taint owner
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--taint <level>` | `owner` | Trust level: `owner`, `trusted`, `untrusted`, `web`, `skill`, `memory` |
+
+**Exit codes:** `0` on success, `1` if path argument is missing.
+
+### `projects untrust <path>`
+
+Removes a trust rule for a directory path.
+
+```bash
+$ securitylayer projects untrust /tmp/**
+Removed trust rule for: /tmp/**
+```
+
+**Exit codes:** Always `0`, `1` if path argument is missing.
+
+## See Also
+
+- [Project Trust Guide](/docs/guides/project-trust)
+- [Taint Levels](/docs/concepts/taint-levels)
+- [taint](/docs/commands/taint)

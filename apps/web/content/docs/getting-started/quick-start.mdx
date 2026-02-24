@@ -1,0 +1,75 @@
+---
+title: Quick start
+description: Get SecurityLayer protecting your AI agents in 5 minutes.
+icon: Lightning
+---
+
+This guide gets you from zero to protected in 5 minutes.
+
+## 1. Install
+
+```bash
+bun add -g securitylayer
+```
+
+## 2. Initialize
+
+```bash
+securitylayer init
+```
+
+Accept the defaults or customize your session capabilities. The wizard creates config files at `~/.securitylayer/`.
+
+## 3. Set Up Integration
+
+**Claude Code** — native hooks integration:
+
+```bash
+securitylayer setup claude-code
+```
+
+This installs PreToolUse and PostToolUse hooks into `~/.claude/hooks.json`. Every tool call Claude Code makes is evaluated against your security policy before execution.
+
+**Shell shim** — universal protection for any AI tool:
+
+```bash
+securitylayer shield enable
+```
+
+This installs PATH-priority wrapper scripts that intercept all shell commands. Works with any AI tool — Cursor, Aider, Copilot, or anything that runs shell commands.
+
+## 4. Verify
+
+```bash
+securitylayer status
+```
+
+You should see your configuration loaded, your session capabilities, and your integration status (hooks installed or shield active).
+
+## 5. Test It
+
+Run a dry-run policy check to see SecurityLayer in action:
+
+```bash
+securitylayer policy check "rm -rf /"
+```
+
+You'll see the full evaluation — capability gate, rules engine, and risk score — with the final decision.
+
+## What's Happening
+
+When an AI agent tries to execute a command:
+
+1. **Capability gate** — Is this action type allowed? (`exec`, `file.write`, etc.)
+2. **Taint check** — Is the session trust level sufficient?
+3. **Normalization** — Resolve paths, decode encodings, split command chains
+4. **Rules engine** — Match against deterministic patterns
+5. **LLM judge** — Semantic analysis for contextual anomalies (if enabled)
+6. **Decision** — Most restrictive result wins: ALLOW, DENY, or REQUIRE_APPROVAL
+
+## Next Steps
+
+- [Taint Levels](/docs/concepts/taint-levels) — Understand the trust model
+- [Capabilities](/docs/concepts/capabilities) — Learn about capability grants
+- [Learning Mode](/docs/guides/learning-mode) — Monitor before enforcing
+- [Configuration](/docs/guides/configuration) — Customize your security policy

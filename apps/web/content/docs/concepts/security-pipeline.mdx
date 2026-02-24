@@ -1,0 +1,91 @@
+---
+title: Security pipeline
+description: The 3-layer security pipeline — structural, semantic, and rules.
+icon: Stack
+---
+
+Every action an AI agent attempts passes through a 3-layer security pipeline. The layers are independent and complementary — each catches different categories of threats.
+
+## Layer 1: Structural Enforcement (The Walls)
+
+The primary defense. Structural enforcement makes dangerous actions **impossible** rather than trying to detect them.
+
+Components:
+
+- **Capability gate** — Pure function set-membership check. No capability = no action.
+- **Taint tracking** — Session trust level restricts available capabilities.
+- **Action normalization** — Paths resolved, encodings decoded, command chains split before evaluation.
+- **Gateway lockdown** — Prevents bypassing the security proxy entirely.
+- **Exec sandboxing** — Approved commands run in restricted environments (no network, read-only FS, ulimits).
+- **Egress scanning** — Outbound messages scanned for leaked secrets, PII, and high-entropy data.
+
+Structural enforcement cannot be bypassed by clever prompts, social engineering, or prompt injection.
+
+## Layer 2: Semantic Analysis (The Guards)
+
+The LLM judge analyzes whether a structurally-allowed action is **contextually anomalous**.
+
+The judge has a narrow job — it does NOT:
+- Detect injection patterns (taint tracking handles that)
+- Match known-bad commands (rules handle that)
+
+It only asks: **"Is this structurally-allowed action anomalous right now?"**
+
+The judge runs in **parallel** with the rules engine. If the judge is slow (>500ms), Layer 1 + Layer 3 decide immediately; the judge's result is used for async post-hoc review.
+
+Judge decisions:
+- `NORMAL` — Action looks expected
+- `ANOMALOUS` — Action is unusual → `REQUIRE_APPROVAL`
+- `DANGEROUS` (confidence ≥ 0.8) → `DENY`
+
+If the judge is unavailable and the risk score exceeds 0.3, the action requires approval.
+
+## Layer 3: Deterministic Rules (The Alarms)
+
+Known-bad command patterns and path blocks. Fast, zero-latency, zero-ambiguity.
+
+Rules are defined in YAML and loaded at runtime:
+
+```yaml
+# Example baseline rules
+version: 1
+rules:
+  - pattern: "rm -rf /"
+    action: DENY
+    reason: "Recursive delete of root"
+  - pattern: "chmod 777"
+    action: DENY
+    reason: "World-writable permissions"
+```
+
+Rules always win: if a rule says DENY, the action is denied regardless of what other layers decide.
+
+## Decision Merging
+
+Layer decisions merge by taking the **most restrictive** result:
+
+| Condition | Result |
+|---|---|
+| Rules DENY | **DENY** (always) |
+| LLM DANGEROUS (confidence ≥ 0.8) | **DENY** |
+| LLM ANOMALOUS | **REQUIRE_APPROVAL** |
+| LLM unavailable + risk > 0.3 | **REQUIRE_APPROVAL** |
+| All layers pass | **ALLOW** |
+
+## Fail-Safe Principle
+
+Every failure makes the system **more restrictive**, never less:
+
+- LLM down → require human approval
+- Config corrupt → refuse to start
+- Taint error → assume maximum taint
+- Normalization failure → treat as maximally dangerous
+
+## Pipeline Flow
+
+```
+Action → Capability Gate → Taint Check → Normalize → ┬─ Rules Engine ──┬→ Merge → Decision
+                                                      └─ LLM Judge ─────┘
+```
+
+The capability gate and taint check are synchronous and instant. Normalization prepares the action for parallel evaluation by the rules engine and LLM judge. The merger takes the most restrictive result.

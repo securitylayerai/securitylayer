@@ -1,0 +1,65 @@
+---
+title: policy check
+description: Dry-run policy simulation
+icon: ListChecks
+---
+
+Simulates policy evaluation for a command without executing it. Shows the full evaluation results from all layers.
+
+## Usage
+
+```bash
+securitylayer policy check "<cmd>" [--session <name>]
+```
+
+## Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--command <cmd>` | (positional) | The command to simulate |
+| `--session <name>` | `claude-code` | Session to evaluate against |
+
+## Output
+
+The command displays:
+
+- **Input** — Command, session, taint level, current working directory
+- **Layer results** — Capability gate, rules engine, LLM judge, risk score
+- **Timing** — Breakdown of time spent in each layer
+- **Final decision** — `ALLOW`, `DENY`, or `REQUIRE_APPROVAL`
+
+## Example
+
+```bash
+$ securitylayer policy check "rm -rf /"
+
+  Command:  rm -rf /
+  Session:  claude-code
+  Taint:    OWNER
+  CWD:      /home/user/project
+
+  Layer Results:
+    Capability gate: ALLOW (exec granted)
+    Rules:           DENY (recursive delete of root)
+    LLM judge:       DANGEROUS (confidence: 0.95)
+    Risk score:      1.0
+
+  Timing:
+    Total:      45ms
+    Capability: 0ms
+    Rules:      2ms
+    LLM:        43ms
+
+  Decision: DENY
+```
+
+## Exit Codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Always exits successfully |
+
+## See Also
+
+- [Security Pipeline](/docs/concepts/security-pipeline) — How the pipeline works
+- [check](/docs/commands/check) — Live policy check (used by shims)

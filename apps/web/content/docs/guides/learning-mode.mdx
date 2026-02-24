@@ -1,0 +1,68 @@
+---
+title: Learning mode
+description: Monitor what SecurityLayer would block before enforcing.
+icon: Brain
+---
+
+Learning mode lets you observe SecurityLayer's decisions without affecting your workflow. Everything is allowed — but blocked actions are logged so you can tune your policy before enforcing it.
+
+## Enabling
+
+```bash
+securitylayer learn --duration 7d
+```
+
+This sets `mode: learning` in your config and records a `learning_expires` timestamp. After the duration, SecurityLayer returns to enforcement mode.
+
+## What Gets Logged
+
+In learning mode, SecurityLayer evaluates every action through the full security pipeline and logs:
+
+- Actions that **would have been denied** and why
+- The layer that triggered the block (capability gate, rules, LLM judge)
+- Timing information for each layer
+- Caller identity and taint level
+
+## Checking Status
+
+```bash
+securitylayer status
+```
+
+Shows whether learning mode is active, when it expires, and how many actions have been logged.
+
+## Reviewing Results
+
+After the learning period:
+
+```bash
+securitylayer learn report
+```
+
+This shows:
+
+- **Actions that would have been blocked** — grouped by reason
+- **Recommended capability changes** — based on actual usage patterns
+- **Suggested rules** — patterns that appeared frequently
+
+## Workflow
+
+1. **Install and init** — `securitylayer init`
+2. **Enable learning** — `securitylayer learn --duration 7d`
+3. **Work normally** — Use your AI tools as usual
+4. **Review** — `securitylayer learn report`
+5. **Tune policy** — Adjust capabilities and rules based on findings
+6. **Enforce** — Learning mode expires, enforcement begins
+
+## Tips
+
+- Start with 7 days to capture a representative sample of your workflow
+- Use shorter durations (1-2 days) if you want to iterate quickly
+- Review the report before the learning period ends to make adjustments
+- You can disable learning mode early by editing `config.yaml` and removing the `mode: learning` line
+
+## See Also
+
+- [learn](/docs/commands/learn) — Command reference
+- [Configuration](/docs/guides/configuration) — Editing your policy
+- [Capabilities](/docs/concepts/capabilities) — Understanding capability grants
