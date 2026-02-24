@@ -1,0 +1,64 @@
+---
+title: learn
+description: Enable learning/monitor mode.
+icon: Brain
+---
+
+Learning mode monitors what SecurityLayer **would** block without actually blocking anything. Use it to understand your usage patterns before enforcing a policy.
+
+## Usage
+
+```bash
+securitylayer learn [--duration <duration>]
+```
+
+## Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--duration <duration>` | `7d` | How long to stay in learning mode |
+
+### Duration Format
+
+| Suffix | Unit | Examples |
+|---|---|---|
+| `m` | Minutes | `30m` |
+| `h` | Hours | `1h`, `12h` |
+| `d` | Days | `1d`, `7d`, `30d` |
+
+## Behavior
+
+When learning mode is active:
+
+- All actions are **allowed** (your existing capabilities are unchanged)
+- SecurityLayer logs what it **would have blocked** under recommended settings
+- The mode expires automatically after the specified duration
+- Config is updated with `mode: learning` and `learning_expires` timestamp
+
+After the learning period, use `securitylayer learn report` to see recommended capability changes based on actual usage.
+
+## Example
+
+```bash
+# Monitor for 7 days
+securitylayer learn --duration 7d
+
+# Check what was logged
+securitylayer learn report
+```
+
+## Exit Codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Learning mode enabled |
+| `1` | Invalid duration format |
+
+## Why Learning Mode?
+
+The #1 reason users disable security tools: "I installed it and it broke everything." Learning mode prevents this by letting you observe before enforcing.
+
+## See Also
+
+- [Learning Mode Guide](/docs/guides/learning-mode)
+- [status](/docs/commands/status) — Shows learning mode status

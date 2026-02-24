@@ -1,0 +1,49 @@
+---
+title: init
+description: Interactive guided setup wizard.
+icon: Gear
+---
+
+Creates configuration files at `~/.securitylayer/` through an interactive prompt-based wizard.
+
+## Usage
+
+```bash
+securitylayer init
+```
+
+## Prompts
+
+| Prompt | Default | Description |
+|---|---|---|
+| Session name | `claude-code` | Name for the default session (must match `^[a-z0-9-]+$`) |
+| Capabilities | `exec`, `file.read`, `file.write`, `web_fetch` | Multi-select capability grants |
+| Default taint | `owner` | Base trust level (`owner`, `trusted`, `untrusted`) |
+| LLM judge | No | Enable semantic analysis layer |
+| Provider | — | Anthropic, OpenAI, Google, xAI, or OpenAI-compatible |
+| Model | — | Model name (e.g., `claude-haiku-4-5-20251001`) |
+| API key env var | — | Environment variable for the API key |
+| Base URL | — | For OpenAI-compatible providers only |
+
+## Files Created
+
+| File | Purpose |
+|---|---|
+| `config.yaml` | Main configuration |
+| `capabilities/sessions.yaml` | Session capability grants |
+| `capabilities/channels.yaml` | Channel capability restrictions |
+| `capabilities/skills.yaml` | Skill capability declarations |
+| `ai-tools.yaml` | AI tool caller profiles |
+| `projects.yaml` | Project directory trust rules |
+| `learned-rules.json` | Auto-approved patterns (initially empty) |
+
+## Exit Codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Setup completed successfully |
+
+## See Also
+
+- [Quick Start](/docs/getting-started/quick-start)
+- [Configuration](/docs/guides/configuration)

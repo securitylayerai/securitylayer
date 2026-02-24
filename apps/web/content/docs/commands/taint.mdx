@@ -1,0 +1,54 @@
+---
+title: taint
+description: Show taint levels and clear taint state.
+icon: Fingerprint
+---
+
+View project trust rules, current taint levels, and clear taint state.
+
+## Usage
+
+```bash
+securitylayer taint show
+securitylayer taint clear
+```
+
+## Subcommands
+
+### `taint show`
+
+Displays project trust rules and the current working directory's taint level.
+
+```bash
+$ securitylayer taint show
+
+  Project trust rules:
+    ~/Dev/Personal/** → OWNER
+    ~/Dev/Work/**     → TRUSTED_CONTACT
+    /tmp/**           → WEB_CONTENT
+    ~/Downloads/**    → WEB_CONTENT
+
+  Default taint: UNTRUSTED_HUMAN
+
+  Current directory: ~/Dev/Personal/myproject
+  Current taint:    OWNER
+```
+
+### `taint clear`
+
+In CLI mode, taint is determined by project trust rules and doesn't accumulate across commands. This command provides guidance on managing taint:
+
+- For project-level trust changes, use `securitylayer projects trust <path>`
+- In daemon mode (proxy), taint clearing resets the session's accumulated taint
+
+## Exit Codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Always exits successfully |
+
+## See Also
+
+- [Taint Levels](/docs/concepts/taint-levels) — How taint tracking works
+- [projects](/docs/commands/projects) — Manage project trust rules
+- [Project Trust Guide](/docs/guides/project-trust)

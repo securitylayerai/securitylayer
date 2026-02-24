@@ -1,0 +1,46 @@
+---
+title: completions
+description: Output shell completion scripts.
+icon: Terminal
+---
+
+Generates shell completion scripts for tab-completion of SecurityLayer commands and arguments.
+
+## Usage
+
+```bash
+securitylayer completions <shell>
+```
+
+## Arguments
+
+| Argument | Default | Description |
+|---|---|---|
+| `<shell>` | `bash` | Shell type: `bash`, `zsh`, or `fish` |
+
+## Installation
+
+### Bash
+
+```bash
+securitylayer completions bash > /etc/bash_completion.d/securitylayer
+```
+
+### Zsh
+
+```bash
+securitylayer completions zsh > "${fpath[1]}/_securitylayer"
+```
+
+### Fish
+
+```bash
+securitylayer completions fish > ~/.config/fish/completions/securitylayer.fish
+```
+
+## Exit Codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Completion script output successfully |
+| `1` | Unsupported shell |

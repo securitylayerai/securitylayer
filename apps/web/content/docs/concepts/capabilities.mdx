@@ -1,0 +1,94 @@
+---
+title: Capabilities
+description: The 15 base capabilities that gate every agent action.
+icon: Key
+---
+
+SecurityLayer uses a **capability-based access control** model. Every action an AI agent takes must be explicitly granted — if a capability isn't in the set, the action is structurally impossible.
+
+## Base Capabilities
+
+| Capability | Description |
+|---|---|
+| `exec` | Run shell commands |
+| `exec.elevated` | Run commands with elevated privileges (sudo) |
+| `file.read` | Read files from the filesystem |
+| `file.write` | Write, edit, or create files |
+| `browser` | Browser automation |
+| `browser.login` | Browser automation with login credentials |
+| `channel.send` | Send messages to channels |
+| `channel.send.external` | Send messages to external channels |
+| `cron.create` | Create scheduled tasks |
+| `skill.install` | Install new skills/plugins |
+| `memory.read.all_zones` | Read from all memory zones |
+| `memory.write` | Write to persistent memory |
+| `web_fetch` | Fetch URLs |
+| `node.invoke` | Invoke Node.js functions |
+
+## Effective Capabilities
+
+The effective capability set for any action is the **intersection** of three sources:
+
+```
+Effective = Session ∩ Skill ∩ Channel
+```
+
+- **Session** — What the session is allowed to do (configured in `sessions.yaml`)
+- **Skill** — What the active skill declares it needs
+- **Channel** — What the source channel permits
+
+Anything not in the intersection is impossible, regardless of what any single source grants.
+
+## Taint-Restricted Capabilities
+
+Capabilities can require a minimum taint level using colon syntax:
+
+```yaml
+sessions:
+  claude-code:
+    capabilities:
+      - exec:trusted          # exec only when taint ≤ TRUSTED_CONTACT
+      - file.read             # file.read at any taint level
+      - file.write:owner      # file.write only when taint = OWNER
+      - web_fetch             # web_fetch at any taint level
+```
+
+## The Capability Gate
+
+The capability gate (`checkCapability()`) is a **pure synchronous function**:
+
+- No I/O
+- No network calls
+- No LLM invocation
+- Set membership check only
+
+This guarantees zero latency and zero ambiguity — either the capability is in the set or it isn't.
+
+## Special Rules
+
+- `cron.create` and `node.invoke` **always require approval** regardless of capability grants
+- Skills without SecurityLayer capability declarations get **minimum viable capabilities** (chat only, no tools)
+- `exec.elevated` implies `exec`, but `exec` does not imply `exec.elevated`
+
+## Configuration
+
+Capabilities are defined in YAML files at `~/.securitylayer/capabilities/`:
+
+```yaml
+# sessions.yaml
+version: 1
+sessions:
+  claude-code:
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    default_taint: owner
+```
+
+View your current capabilities:
+
+```bash
+securitylayer capabilities show
+```

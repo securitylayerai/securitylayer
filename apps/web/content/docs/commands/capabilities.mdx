@@ -1,0 +1,49 @@
+---
+title: capabilities
+description: Display capability grants for sessions, channels, and skills.
+icon: Key
+---
+
+Shows all granted capabilities organized by sessions, channels, and skills.
+
+## Usage
+
+```bash
+securitylayer capabilities show
+```
+
+## Output
+
+Displays capabilities grouped by:
+
+- **Sessions** — Each session's capability list and default taint level
+- **Channels** — Channel capability restrictions
+- **Skills** — Skill capability declarations
+
+## Example
+
+```bash
+$ securitylayer capabilities show
+
+  Sessions:
+    claude-code
+      capabilities: exec, file.read, file.write, web_fetch
+      default_taint: owner
+
+  Channels:
+    (none configured)
+
+  Skills:
+    (none configured)
+```
+
+## Exit Codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Always exits successfully |
+
+## See Also
+
+- [Capabilities Concept](/docs/concepts/capabilities) — How capabilities work
+- [Configuration](/docs/guides/configuration) — Editing capability files
