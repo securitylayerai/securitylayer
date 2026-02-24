@@ -16,7 +16,7 @@ These files contain the authoritative architecture, design principles, monorepo 
 
 - **Runtime:** Bun + TypeScript
 - **Monorepo:** Bun workspaces (`packages/*`)
-- **Testing:** Vitest (`bun test`)
+- **Testing:** Vitest (`bun run test`) — do NOT use `bun test` (that invokes Bun's built-in runner, not Vitest)
 - **CLI UX:** `@clack/prompts` + `@bomb.sh/args` + `@bomb.sh/tab`
 - **Packages:** `@securitylayer/core`, `cli`, `proxy`, `sdk`, `adapters`, `rules-baseline`
 - **Core philosophy:** Don't detect bad actions. Make them impossible.
