@@ -38,14 +38,14 @@ export async function runSetupClaudeCode(_args: CliArgs): Promise<void> {
     // No existing hooks file
   }
 
-  // Build SecurityLayer hooks
+  // Build Security Layer hooks
   const hooks = existingHooks as Record<string, Array<Record<string, unknown>>>;
 
   // Ensure hook arrays exist
   if (!Array.isArray(hooks.PreToolUse)) hooks.PreToolUse = [];
   if (!Array.isArray(hooks.PostToolUse)) hooks.PostToolUse = [];
 
-  // Remove existing SecurityLayer hooks (for idempotent setup)
+  // Remove existing Security Layer hooks (for idempotent setup)
   hooks.PreToolUse = hooks.PreToolUse.filter(
     (h) => !(typeof h.command === "string" && h.command.includes("securitylayer hook")),
   );
