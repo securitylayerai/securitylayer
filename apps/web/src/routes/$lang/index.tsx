@@ -13,7 +13,7 @@ function HomePage() {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-10 p-2">
       <div className="flex flex-col items-center gap-4">
-        <h1 className="font-bold text-3xl sm:text-4xl">SecurityLayer</h1>
+        <h1 className="font-bold text-3xl sm:text-4xl">Security Layer</h1>
         <div className="flex items-center gap-2 text-foreground/80 text-sm max-sm:flex-col">
           Agent security platform — make dangerous AI actions structurally
           impossible.
@@ -30,7 +30,7 @@ function HomePage() {
             className="text-foreground/80 underline hover:text-foreground max-sm:text-sm"
             href="https://github.com/securitylayer/securitylayer"
             target="_blank"
-            title="SecurityLayer on GitHub"
+            title="Security Layer on GitHub"
             rel="noreferrer noopener"
           >
             securitylayer/securitylayer
