@@ -1,7 +1,7 @@
 import { BookOpen } from "@phosphor-icons/react";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
-export function baseOptions(): BaseLayoutProps {
+export function baseOptions(locale: string): BaseLayoutProps {
   return {
     nav: {
       title: "SecurityLayer",
@@ -10,7 +10,7 @@ export function baseOptions(): BaseLayoutProps {
       {
         icon: <BookOpen weight="duotone" />,
         text: "Documentation",
-        url: "/docs",
+        url: `/${locale}/docs`,
         active: "nested-url",
       },
     ],
