@@ -4,7 +4,7 @@ import type { SemanticConfig } from "@/config/types";
 import { createModelFromConfig } from "./provider";
 import type { JudgeContext, LLMClassification } from "./types";
 
-export const JUDGE_SYSTEM_PROMPT = `You are SecurityLayer's semantic judge. Your job is to classify agent actions as NORMAL, ANOMALOUS, or DANGEROUS.
+export const JUDGE_SYSTEM_PROMPT = `You are Security Layer's semantic judge. Your job is to classify agent actions as NORMAL, ANOMALOUS, or DANGEROUS.
 
 Consider the action in context of:
 1. The session history — does this action fit the pattern of work?

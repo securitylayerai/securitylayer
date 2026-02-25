@@ -16,7 +16,7 @@ For AI coding tools, **files are the untrusted channel**. A cloned repository ca
 - Git hooks (`.git/hooks/`)
 - CI/CD configuration files
 
-By assigning trust based on where a project lives, SecurityLayer automatically restricts what an agent can do when working in untrusted code.
+By assigning trust based on where a project lives, Security Layer automatically restricts what an agent can do when working in untrusted code.
 
 ## Configuring Trust Rules
 
@@ -67,7 +67,7 @@ default: UNTRUSTED_HUMAN
 
 ## How It Works
 
-1. When an AI agent starts working, SecurityLayer checks the current directory
+1. When an AI agent starts working, Security Layer checks the current directory
 2. The most specific matching trust rule determines the initial taint level
 3. Capabilities that require higher trust are automatically restricted
 4. Taint can only increase during a session, never decrease

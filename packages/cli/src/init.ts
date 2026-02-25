@@ -18,11 +18,11 @@ import {
 } from "@/shared";
 
 export async function runInit(args: CliArgs): Promise<void> {
-  p.intro("SecurityLayer — Setup");
+  p.intro("Security Layer — Setup");
 
   if (configExists()) {
     const overwrite = await p.confirm({
-      message: "SecurityLayer is already configured. Overwrite?",
+      message: "Security Layer is already configured. Overwrite?",
     });
     if (p.isCancel(overwrite) || !overwrite) {
       p.outro("Setup cancelled.");
@@ -206,7 +206,7 @@ export async function runInit(args: CliArgs): Promise<void> {
   // Offer to setup detected AI tools
   if (detectedTools.includes("claude-code")) {
     const setupClaude = await p.confirm({
-      message: "Claude Code detected. Install SecurityLayer hooks?",
+      message: "Claude Code detected. Install Security Layer hooks?",
       initialValue: true,
     });
     if (!p.isCancel(setupClaude) && setupClaude) {
@@ -225,7 +225,7 @@ export async function runInit(args: CliArgs): Promise<void> {
     await runShieldEnable(args);
   }
 
-  p.outro("SecurityLayer is ready.");
+  p.outro("Security Layer is ready.");
 }
 
 function getCapHint(cap: string): string {

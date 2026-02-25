@@ -30,7 +30,7 @@ export async function runLearn(args: CliArgs): Promise<void> {
   console.log("Learning Mode Enabled");
   console.log("═".repeat(40));
   console.log();
-  console.log("SecurityLayer will now monitor all actions but allow everything.");
+  console.log("Security Layer will now monitor all actions but allow everything.");
   console.log("Actions that would have been blocked are logged for review.");
   console.log();
   console.log(`Duration: ${duration}`);

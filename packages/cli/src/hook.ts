@@ -133,14 +133,14 @@ async function handlePreToolUse(toolName: string, inputJson?: string): Promise<v
       result.layers.capability.reason ??
       result.layers.rules?.reason ??
       result.layers.llm?.reasoning ??
-      "Blocked by SecurityLayer policy";
+      "Blocked by Security Layer policy";
 
-    console.error(`SecurityLayer: ${result.decision} — ${reason}`);
+    console.error(`Security Layer: ${result.decision} — ${reason}`);
     process.exit(2);
   } catch (err) {
     // Fail safe — block on unexpected error
     console.error(
-      `SecurityLayer: error during check — blocking action (${err instanceof Error ? err.message : "unknown error"})`,
+      `Security Layer: error during check — blocking action (${err instanceof Error ? err.message : "unknown error"})`,
     );
     process.exit(2);
   }

@@ -122,7 +122,7 @@ export async function runCheck(args: CliArgs): Promise<void> {
     if (format === "json") {
       console.log(JSON.stringify({ decision: "DENY", reason: `Error: ${msg}` }));
     } else {
-      console.error(`SecurityLayer: error — ${msg}`);
+      console.error(`Security Layer: error — ${msg}`);
     }
     process.exit(1);
   }

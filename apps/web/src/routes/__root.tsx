@@ -137,11 +137,11 @@ export const Route = createRootRouteWithContext<{
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "SecurityLayer",
+        title: "Security Layer",
       },
       {
         name: "description",
-        content: "SecurityLayer - Agent security platform",
+        content: "Security Layer - Agent security platform",
       },
     ],
     links: [{ rel: "stylesheet", href: appCss }],

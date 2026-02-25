@@ -90,7 +90,7 @@ export async function runSetupCursor(_args: CliArgs): Promise<void> {
   console.log("─".repeat(40));
   console.log();
   console.log("Cursor doesn't support native hooks yet.");
-  console.log("Use SecurityLayer Shield for universal protection:");
+  console.log("Use Security Layer Shield for universal protection:");
   console.log();
   console.log("  securitylayer shield enable");
   console.log();

@@ -1,6 +1,6 @@
 ---
 title: Cursor
-description: Protecting Cursor with SecurityLayer.
+description: Protecting Cursor with Security Layer.
 icon: Code
 ---
 
@@ -20,13 +20,13 @@ This installs PATH-priority wrappers that evaluate every command before it reach
 
 1. Cursor runs a shell command (e.g., via terminal or code action)
 2. The shimmed binary intercepts the call
-3. SecurityLayer detects Cursor as the caller (via environment variables and process detection)
+3. Security Layer detects Cursor as the caller (via environment variables and process detection)
 4. The command is evaluated against Cursor's capability profile
 5. Allowed commands proceed; denied commands return an error
 
 ## Caller Detection
 
-SecurityLayer identifies Cursor by:
+Security Layer identifies Cursor by:
 
 - **Environment variable:** `CURSOR_SESSION`
 - **Process name:** `cursor`

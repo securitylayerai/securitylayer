@@ -4,7 +4,7 @@ description: Native hooks integration for Claude Code.
 icon: Code
 ---
 
-SecurityLayer integrates natively with Claude Code via its hooks system. PreToolUse hooks evaluate actions before execution; PostToolUse hooks track taint after execution.
+Security Layer integrates natively with Claude Code via its hooks system. PreToolUse hooks evaluate actions before execution; PostToolUse hooks track taint after execution.
 
 ## Setup
 
@@ -18,7 +18,7 @@ This writes hooks to `~/.claude/hooks.json`. No manual configuration needed.
 
 ### PreToolUse Hooks
 
-Before Claude Code executes a tool, SecurityLayer evaluates the action:
+Before Claude Code executes a tool, Security Layer evaluates the action:
 
 | Tool | Capability | What's Checked |
 |---|---|---|
@@ -32,7 +32,7 @@ If the action is denied, Claude Code receives an error message explaining why.
 
 ### PostToolUse Hooks
 
-After a tool completes, SecurityLayer updates taint tracking:
+After a tool completes, Security Layer updates taint tracking:
 
 | Tool | Effect |
 |---|---|
@@ -42,7 +42,7 @@ After a tool completes, SecurityLayer updates taint tracking:
 
 ### Hook Format
 
-Each hook calls the SecurityLayer CLI:
+Each hook calls the Security Layer CLI:
 
 ```bash
 # PreToolUse
@@ -64,7 +64,7 @@ Look for "Claude Code hooks: installed" in the output.
 
 ## Removing
 
-To remove SecurityLayer hooks from Claude Code, edit `~/.claude/hooks.json` and remove the SecurityLayer entries, or delete the file to remove all hooks.
+To remove Security Layer hooks from Claude Code, edit `~/.claude/hooks.json` and remove the Security Layer entries, or delete the file to remove all hooks.
 
 ## See Also
 

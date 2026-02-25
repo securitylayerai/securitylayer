@@ -4,7 +4,7 @@ description: List and inspect AI tool caller profiles.
 icon: Sparkle
 ---
 
-SecurityLayer auto-detects which AI tool triggered a command and applies the appropriate capability profile. The callers command lets you view these profiles.
+Security Layer auto-detects which AI tool triggered a command and applies the appropriate capability profile. The callers command lets you view these profiles.
 
 ## Usage
 
@@ -58,7 +58,7 @@ $ securitylayer callers profile claude-code
 
 ## How Detection Works
 
-When a command is intercepted (via shell shim or hook), SecurityLayer checks:
+When a command is intercepted (via shell shim or hook), Security Layer checks:
 
 1. **Environment variables** — Does the calling process have specific env vars set?
 2. **Process name** — Does the parent process match a known AI tool?
