@@ -131,7 +131,7 @@ describe("Init Command", () => {
     expect(mockWriteFile).toHaveBeenCalled();
     // Should write config.yaml, sessions.yaml, channels.yaml, skills.yaml, ai-tools.yaml, projects.yaml, learned-rules.json
     expect(mockWriteFile.mock.calls.length).toBeGreaterThanOrEqual(7);
-    expect(mockOutro).toHaveBeenCalledWith("SecurityLayer is ready.");
+    expect(mockOutro).toHaveBeenCalledWith("Security Layer is ready.");
   });
 
   it("cancel at session name returns early without writing files", async () => {
@@ -203,7 +203,7 @@ describe("Init Command", () => {
     await runInit({ _: ["init"] } as CliArgs);
 
     expect(mockWriteFile).toHaveBeenCalled();
-    expect(mockOutro).toHaveBeenCalledWith("SecurityLayer is ready.");
+    expect(mockOutro).toHaveBeenCalledWith("Security Layer is ready.");
   });
 
   it("semantic enabled prompts for provider, model, api key", async () => {

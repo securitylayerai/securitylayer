@@ -4,7 +4,7 @@ description: The 15 base capabilities that gate every agent action.
 icon: Key
 ---
 
-SecurityLayer uses a **capability-based access control** model. Every action an AI agent takes must be explicitly granted — if a capability isn't in the set, the action is structurally impossible.
+Security Layer uses a **capability-based access control** model. Every action an AI agent takes must be explicitly granted — if a capability isn't in the set, the action is structurally impossible.
 
 ## Base Capabilities
 
@@ -67,7 +67,7 @@ This guarantees zero latency and zero ambiguity — either the capability is in 
 ## Special Rules
 
 - `cron.create` and `node.invoke` **always require approval** regardless of capability grants
-- Skills without SecurityLayer capability declarations get **minimum viable capabilities** (chat only, no tools)
+- Skills without Security Layer capability declarations get **minimum viable capabilities** (chat only, no tools)
 - `exec.elevated` implies `exec`, but `exec` does not imply `exec.elevated`
 
 ## Configuration

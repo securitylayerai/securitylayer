@@ -92,7 +92,7 @@ describe("Setup Commands", () => {
       expect(slHooks.length).toBeGreaterThan(0);
     });
 
-    it("removes old SecurityLayer hooks before adding (idempotent)", async () => {
+    it("removes old Security Layer hooks before adding (idempotent)", async () => {
       await mkdir(CLAUDE_DIR, { recursive: true });
 
       // Run twice

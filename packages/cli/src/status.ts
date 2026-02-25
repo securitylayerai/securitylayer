@@ -5,7 +5,7 @@ import type { CliArgs } from "@/index";
 import { CLI_CONFIG_PATHS, configExists } from "@/shared";
 
 export async function runStatus(_args: CliArgs): Promise<void> {
-  console.log("SecurityLayer Status");
+  console.log("Security Layer Status");
   console.log("═".repeat(40));
 
   // Config

@@ -4,7 +4,7 @@ description: Enable learning/monitor mode.
 icon: Brain
 ---
 
-Learning mode monitors what SecurityLayer **would** block without actually blocking anything. Use it to understand your usage patterns before enforcing a policy.
+Learning mode monitors what Security Layer **would** block without actually blocking anything. Use it to understand your usage patterns before enforcing a policy.
 
 ## Usage
 
@@ -31,7 +31,7 @@ securitylayer learn [--duration <duration>]
 When learning mode is active:
 
 - All actions are **allowed** (your existing capabilities are unchanged)
-- SecurityLayer logs what it **would have blocked** under recommended settings
+- Security Layer logs what it **would have blocked** under recommended settings
 - The mode expires automatically after the specified duration
 - Config is updated with `mode: learning` and `learning_expires` timestamp
 

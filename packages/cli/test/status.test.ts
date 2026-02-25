@@ -177,7 +177,7 @@ describe("Status Command", () => {
 
     // Should not throw, status still displays
     const output = logSpy.mock.calls.map((c) => c[0]).join("\n");
-    expect(output).toContain("SecurityLayer Status");
+    expect(output).toContain("Security Layer Status");
   });
 
   it('shows "Run `securitylayer init` to get started" when no config', async () => {

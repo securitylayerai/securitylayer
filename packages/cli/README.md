@@ -1,6 +1,6 @@
 # @securitylayer/cli
 
-Command-line interface for SecurityLayer. Provides policy enforcement, shell shim protection, AI tool integration hooks, and configuration management.
+Command-line interface for Security Layer. Provides policy enforcement, shell shim protection, AI tool integration hooks, and configuration management.
 
 ## Installation
 
@@ -260,7 +260,7 @@ securitylayer shield  # 'status' is the default subcommand
 
 ### `securitylayer setup claude-code`
 
-Installs SecurityLayer as Claude Code hooks in `~/.claude/hooks.json`.
+Installs Security Layer as Claude Code hooks in `~/.claude/hooks.json`.
 
 ```bash
 securitylayer setup claude-code
@@ -273,7 +273,7 @@ securitylayer setup claude-code
 | PreToolUse | Bash, Write, Edit, WebFetch, NotebookEdit |
 | PostToolUse | Bash, Read, WebFetch |
 
-Setup is idempotent — existing SecurityLayer hooks are replaced, other hooks are preserved.
+Setup is idempotent — existing Security Layer hooks are replaced, other hooks are preserved.
 
 ### `securitylayer setup cursor`
 

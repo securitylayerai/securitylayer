@@ -1,6 +1,6 @@
 # @securitylayer/web
 
-The web application for SecurityLayer — handles the landing page, dashboard, documentation, authentication, and API.
+The web application for Security Layer — handles the landing page, dashboard, documentation, authentication, and API.
 
 ## Tech Stack
 

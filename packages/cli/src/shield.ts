@@ -21,8 +21,8 @@ const PATH_MARKER = "# SecurityLayer shell shim PATH";
 
 function generateShim(binaryName: string, realPath: string): string {
   return `#!/bin/sh
-# SecurityLayer shim for ${binaryName}
-# Intercepts AI agent commands through SecurityLayer policy check
+# Security Layer shim for ${binaryName}
+# Intercepts AI agent commands through Security Layer policy check
 
 # Recursion guard
 if [ -n "$SECURITYLAYER_CHECKING" ]; then
@@ -61,16 +61,16 @@ case "$DECISION" in
     exec "${realPath}" "$@"
     ;;
   DENY)
-    echo "SecurityLayer: command blocked by policy" >&2
+    echo "Security Layer: command blocked by policy" >&2
     exit 126
     ;;
   REQUIRE_APPROVAL)
-    echo "SecurityLayer: command requires approval" >&2
+    echo "Security Layer: command requires approval" >&2
     exit 126
     ;;
   *)
     # Fail safe — if we can't parse the result, block
-    echo "SecurityLayer: unable to verify command safety, blocking" >&2
+    echo "Security Layer: unable to verify command safety, blocking" >&2
     exit 126
     ;;
 esac
@@ -83,7 +83,7 @@ esac
 
 export async function runShieldEnable(_args: CliArgs): Promise<void> {
   if (!configExists()) {
-    console.error("SecurityLayer is not configured. Run `securitylayer init` first.");
+    console.error("Security Layer is not configured. Run `securitylayer init` first.");
     process.exit(1);
   }
 

@@ -1,4 +1,4 @@
-# SecurityLayer
+# Security Layer
 
 Agent security platform that makes dangerous AI agent actions **structurally impossible**.
 

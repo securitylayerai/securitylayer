@@ -34,7 +34,7 @@ export async function ensureConfigDir(): Promise<void> {
 
 export async function loadConfigOrSuggestInit(): Promise<LoadedConfig> {
   if (!configExists()) {
-    console.error("SecurityLayer is not configured. Run `securitylayer init` to get started.");
+    console.error("Security Layer is not configured. Run `securitylayer init` to get started.");
     process.exit(1);
   }
   return loadConfig();

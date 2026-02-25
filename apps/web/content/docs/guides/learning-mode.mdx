@@ -1,10 +1,10 @@
 ---
 title: Learning mode
-description: Monitor what SecurityLayer would block before enforcing.
+description: Monitor what Security Layer would block before enforcing.
 icon: Brain
 ---
 
-Learning mode lets you observe SecurityLayer's decisions without affecting your workflow. Everything is allowed — but blocked actions are logged so you can tune your policy before enforcing it.
+Learning mode lets you observe Security Layer's decisions without affecting your workflow. Everything is allowed — but blocked actions are logged so you can tune your policy before enforcing it.
 
 ## Enabling
 
@@ -12,11 +12,11 @@ Learning mode lets you observe SecurityLayer's decisions without affecting your 
 securitylayer learn --duration 7d
 ```
 
-This sets `mode: learning` in your config and records a `learning_expires` timestamp. After the duration, SecurityLayer returns to enforcement mode.
+This sets `mode: learning` in your config and records a `learning_expires` timestamp. After the duration, Security Layer returns to enforcement mode.
 
 ## What Gets Logged
 
-In learning mode, SecurityLayer evaluates every action through the full security pipeline and logs:
+In learning mode, Security Layer evaluates every action through the full security pipeline and logs:
 
 - Actions that **would have been denied** and why
 - The layer that triggered the block (capability gate, rules, LLM judge)
