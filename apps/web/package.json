@@ -3,9 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "kill:port": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true",
-    "predev": "bun run kill:port",
-    "dev": "vite dev --port 3000",
+    "dev": "portless $(git branch --show-current | sed 's|.*/||') vite dev",
     "build": "vite build",
     "preview": "vite preview",
     "start": "node .output/server/index.mjs",
