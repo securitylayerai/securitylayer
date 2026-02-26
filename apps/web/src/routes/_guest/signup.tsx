@@ -120,7 +120,7 @@ function SignupForm() {
                 id="confirm_password"
                 name="confirm_password"
                 type="password"
-                placeholder="Confirm Password"
+                placeholder="Confirm password"
                 readOnly={isPending}
                 required
               />

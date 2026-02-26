@@ -6,7 +6,7 @@ icon: Gear
 
 Security Layer's configuration lives at `~/.securitylayer/`. All config files use YAML with a `version` field for schema compatibility.
 
-## Config Files
+## Config files
 
 | File | Purpose |
 |---|---|
@@ -18,7 +18,7 @@ Security Layer's configuration lives at `~/.securitylayer/`. All config files us
 | `projects.yaml` | Project directory trust rules |
 | `learned-rules.json` | Auto-approved patterns from "Approve & Remember" |
 
-## Main Config
+## Main config
 
 ```yaml
 # ~/.securitylayer/config.yaml
@@ -36,7 +36,7 @@ logging:
   level: info  # debug, info, warn, error
 ```
 
-## Session Capabilities
+## Session capabilities
 
 ```yaml
 # ~/.securitylayer/capabilities/sessions.yaml
@@ -57,7 +57,7 @@ sessions:
     default_taint: untrusted
 ```
 
-## AI Tool Profiles
+## AI tool profiles
 
 ```yaml
 # ~/.securitylayer/ai-tools.yaml
@@ -91,7 +91,7 @@ callers:
         - cursor
 ```
 
-## Project Trust
+## Project trust
 
 ```yaml
 # ~/.securitylayer/projects.yaml
@@ -106,7 +106,7 @@ trust_rules:
 default: UNTRUSTED_HUMAN
 ```
 
-## Schema Versioning
+## Schema versioning
 
 All config files include a `version` field. When Security Layer loads a config file:
 
@@ -117,7 +117,7 @@ All config files include a `version` field. When Security Layer loads a config f
 
 This prevents silent configuration breakage during upgrades.
 
-## Viewing Config
+## Viewing config
 
 ```bash
 # Full status overview
@@ -134,9 +134,9 @@ securitylayer projects list
 securitylayer callers list
 ```
 
-## See Also
+## See also
 
 - [init](/docs/commands/init) — Interactive setup wizard
 - [Capabilities](/docs/concepts/capabilities) — How capabilities work
-- [Taint Levels](/docs/concepts/taint-levels) — How taint tracking works
-- [Project Trust](/docs/guides/project-trust) — Directory trust configuration
+- [Taint levels](/docs/concepts/taint-levels) — How taint tracking works
+- [Project trust](/docs/guides/project-trust) — Directory trust configuration

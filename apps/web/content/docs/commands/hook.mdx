@@ -25,7 +25,7 @@ securitylayer hook <agent> --tool <tool> --post --output <json>
 | `--post` | Post-tool mode (default is pre-tool) |
 | `--output <json>` | Post-tool JSON output |
 
-## Tool-to-Capability Mapping
+## Tool-to-capability mapping
 
 | Tool | Required Capability |
 |---|---|
@@ -36,30 +36,30 @@ securitylayer hook <agent> --tool <tool> --post --output <json>
 
 ## Behavior
 
-### Pre-Tool Mode
+### Pre-tool mode
 
 Evaluates the action against the full security pipeline (capability gate, taint check, normalization, rules, LLM judge). Outputs nothing on ALLOW — the AI tool proceeds. On DENY, outputs a reason to stderr and exits with code 2.
 
-### Post-Tool Mode
+### Post-tool mode
 
 Updates taint tracking based on what the tool did. For example, if `Read` accessed a file in an untrusted directory, the session taint may be elevated. Always exits 0.
 
-### Learning Mode
+### Learning mode
 
 In learning mode, blocked actions are logged but allowed. The hook exits 0 with a warning to stderr.
 
-### Fail-Safe
+### Fail-safe
 
 On unexpected errors, the hook blocks the action (exits 2). Security Layer never fails open.
 
-## Exit Codes
+## Exit codes
 
 | Code | Meaning |
 |---|---|
 | `0` | Pre-tool: ALLOW (or learning mode). Post-tool: always 0 |
 | `2` | Pre-tool: DENY, REQUIRE_APPROVAL, or error |
 
-## See Also
+## See also
 
 - [setup](/docs/commands/setup) — Install hooks automatically
-- [Claude Code Integration](/docs/integrations/claude-code)
+- [Claude Code integration](/docs/integrations/claude-code)

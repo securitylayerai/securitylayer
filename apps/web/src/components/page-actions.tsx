@@ -64,7 +64,7 @@ export function CopyButton({ markdownUrl }: { markdownUrl: string }) {
         disabled={isLoading}
       >
         <ClipboardText weight="bold" />
-        Copy Page
+        Copy page
         <CaretDown weight="bold" />
       </PopoverTrigger>
       <PopoverContent className="flex flex-col">
@@ -96,7 +96,7 @@ export function CopyButton({ markdownUrl }: { markdownUrl: string }) {
             <TextAa weight="bold" className="size-4 shrink-0" />
           )}
           <span className="flex flex-col items-start gap-0.5">
-            <span className="font-medium text-fd-foreground">Plain Text</span>
+            <span className="font-medium text-fd-foreground">Plain text</span>
             <span className="text-xs text-fd-muted-foreground">
               Clean text, no formatting
             </span>

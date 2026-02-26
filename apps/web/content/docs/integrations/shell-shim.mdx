@@ -6,11 +6,11 @@ icon: Terminal
 
 The shell shim is a universal integration that protects **any** AI tool that runs shell commands — with zero integration effort from the tool's side.
 
-## How It Works
+## How it works
 
 `securitylayer shield enable` installs PATH-priority wrapper scripts in `~/.securitylayer/bin/`. Because this directory is prepended to PATH, all shell commands route through Security Layer before reaching the real binary.
 
-### Shimmed Binaries
+### Shimmed binaries
 
 | Binary | Description |
 |---|---|
@@ -23,7 +23,7 @@ The shell shim is a universal integration that protects **any** AI tool that run
 | `ruby` | Ruby interpreter |
 | `perl` | Perl interpreter |
 
-### Execution Flow
+### Execution flow
 
 ```
 AI Tool → shimmed bash → securitylayer check → real bash
@@ -37,7 +37,7 @@ AI Tool → shimmed bash → securitylayer check → real bash
 4. If allowed → forwarded to the real `/usr/bin/bash`
 5. If denied → error returned, command never executes
 
-### Caller Detection
+### Caller detection
 
 The shim identifies which AI tool triggered the command by checking:
 
@@ -61,7 +61,7 @@ securitylayer shield disable
 
 After enabling, restart your shell or open a new terminal for the PATH change to take effect.
 
-## Supported AI Tools
+## Supported AI tools
 
 Any tool that executes shell commands is automatically protected:
 
@@ -72,7 +72,7 @@ Any tool that executes shell commands is automatically protected:
 - Custom agents
 - Any tool running shell commands
 
-## See Also
+## See also
 
 - [shield](/docs/commands/shield) — Shield command reference
 - [callers](/docs/commands/callers) — Caller detection profiles

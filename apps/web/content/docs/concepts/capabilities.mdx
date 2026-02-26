@@ -6,7 +6,7 @@ icon: Key
 
 Security Layer uses a **capability-based access control** model. Every action an AI agent takes must be explicitly granted — if a capability isn't in the set, the action is structurally impossible.
 
-## Base Capabilities
+## Base capabilities
 
 | Capability | Description |
 |---|---|
@@ -25,7 +25,7 @@ Security Layer uses a **capability-based access control** model. Every action an
 | `web_fetch` | Fetch URLs |
 | `node.invoke` | Invoke Node.js functions |
 
-## Effective Capabilities
+## Effective capabilities
 
 The effective capability set for any action is the **intersection** of three sources:
 
@@ -39,7 +39,7 @@ Effective = Session ∩ Skill ∩ Channel
 
 Anything not in the intersection is impossible, regardless of what any single source grants.
 
-## Taint-Restricted Capabilities
+## Taint-restricted capabilities
 
 Capabilities can require a minimum taint level using colon syntax:
 
@@ -53,7 +53,7 @@ sessions:
       - web_fetch             # web_fetch at any taint level
 ```
 
-## The Capability Gate
+## The capability gate
 
 The capability gate (`checkCapability()`) is a **pure synchronous function**:
 
@@ -64,7 +64,7 @@ The capability gate (`checkCapability()`) is a **pure synchronous function**:
 
 This guarantees zero latency and zero ambiguity — either the capability is in the set or it isn't.
 
-## Special Rules
+## Special rules
 
 - `cron.create` and `node.invoke` **always require approval** regardless of capability grants
 - Skills without Security Layer capability declarations get **minimum viable capabilities** (chat only, no tools)
