@@ -1,0 +1,142 @@
+---
+title: 配置
+description: 自定义你的 Security Layer 安全策略。
+icon: Gear
+---
+
+Security Layer 的配置位于 `~/.securitylayer/`。所有配置文件使用 YAML 格式，带有 `version` 字段用于 schema 兼容性。
+
+## 配置文件
+
+| 文件 | 用途 |
+|---|---|
+| `config.yaml` | 主配置（模式、判断器设置、日志） |
+| `capabilities/sessions.yaml` | 会话能力授权 |
+| `capabilities/channels.yaml` | 通道能力限制 |
+| `capabilities/skills.yaml` | 技能能力声明 |
+| `ai-tools.yaml` | AI 工具调用者配置和检测规则 |
+| `projects.yaml` | 项目目录信任规则 |
+| `learned-rules.json` | "审批并记住"自动批准的模式 |
+
+## 主配置
+
+```yaml
+# ~/.securitylayer/config.yaml
+version: 1
+mode: enforce  # or "learning"
+
+judge:
+  enabled: true
+  provider: anthropic
+  model: claude-haiku-4-5-20251001
+  api_key_env: ANTHROPIC_API_KEY
+  timeout_ms: 500
+
+logging:
+  level: info  # debug, info, warn, error
+```
+
+## 会话能力
+
+```yaml
+# ~/.securitylayer/capabilities/sessions.yaml
+version: 1
+sessions:
+  claude-code:
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    default_taint: owner
+
+  restricted:
+    capabilities:
+      - file.read
+      - exec:owner  # exec only in owner-taint projects
+    default_taint: untrusted
+```
+
+## AI 工具配置
+
+```yaml
+# ~/.securitylayer/ai-tools.yaml
+version: 1
+callers:
+  claude-code:
+    display_name: Claude Code
+    default_taint: OWNER
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    detect:
+      env:
+        - CLAUDE_CODE
+      process:
+        - claude
+
+  cursor:
+    display_name: Cursor
+    default_taint: TRUSTED_CONTACT
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+    detect:
+      env:
+        - CURSOR_SESSION
+      process:
+        - cursor
+```
+
+## 项目信任
+
+```yaml
+# ~/.securitylayer/projects.yaml
+version: 1
+trust_rules:
+  - path: "~/Dev/Personal/**"
+    taint: OWNER
+  - path: "~/Dev/Work/**"
+    taint: TRUSTED_CONTACT
+  - path: "/tmp/**"
+    taint: WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+## Schema 版本控制
+
+所有配置文件包含 `version` 字段。当 Security Layer 加载配置文件时：
+
+1. 检查 `version` 字段
+2. 如果版本受支持，正常加载
+3. 如果版本比预期更新，运行可用的迁移
+4. 如果版本不受支持，**拒绝加载**而非静默误解
+
+这可以防止升级时配置被静默破坏。
+
+## 查看配置
+
+```bash
+# 完整状态概览
+securitylayer status
+
+# 能力
+securitylayer capabilities show
+
+# 污点和项目信任
+securitylayer taint show
+securitylayer projects list
+
+# 调用者配置
+securitylayer callers list
+```
+
+## 参阅
+
+- [init](/zh/docs/commands/init) — 交互式设置向导
+- [能力](/zh/docs/concepts/capabilities) — 能力的工作原理
+- [污点级别](/zh/docs/concepts/taint-levels) — 污点追踪的工作原理
+- [项目信任](/zh/docs/guides/project-trust) — 目录信任配置

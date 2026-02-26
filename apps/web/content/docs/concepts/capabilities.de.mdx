@@ -1,0 +1,94 @@
+---
+title: Fähigkeiten
+description: Die 15 Basisfähigkeiten, die jede Agenten-Aktion steuern.
+icon: Key
+---
+
+Security Layer verwendet ein **fähigkeitsbasiertes Zugriffskontrollmodell**. Jede Aktion eines KI-Agenten muss explizit gewährt werden — wenn eine Fähigkeit nicht im Set ist, ist die Aktion strukturell unmöglich.
+
+## Basisfähigkeiten
+
+| Fähigkeit | Beschreibung |
+|---|---|
+| `exec` | Shell-Befehle ausführen |
+| `exec.elevated` | Befehle mit erhöhten Rechten ausführen (sudo) |
+| `file.read` | Dateien vom Dateisystem lesen |
+| `file.write` | Dateien schreiben, bearbeiten oder erstellen |
+| `browser` | Browser-Automatisierung |
+| `browser.login` | Browser-Automatisierung mit Login-Daten |
+| `channel.send` | Nachrichten an Channels senden |
+| `channel.send.external` | Nachrichten an externe Channels senden |
+| `cron.create` | Geplante Aufgaben erstellen |
+| `skill.install` | Neue Skills/Plugins installieren |
+| `memory.read.all_zones` | Aus allen Speicherzonen lesen |
+| `memory.write` | In persistenten Speicher schreiben |
+| `web_fetch` | URLs abrufen |
+| `node.invoke` | Node.js-Funktionen aufrufen |
+
+## Effektive Fähigkeiten
+
+Das effektive Fähigkeitsset für jede Aktion ist die **Schnittmenge** aus drei Quellen:
+
+```
+Effektiv = Session ∩ Skill ∩ Channel
+```
+
+- **Session** — Was die Session tun darf (konfiguriert in `sessions.yaml`)
+- **Skill** — Was der aktive Skill als benötigt deklariert
+- **Channel** — Was der Quell-Channel erlaubt
+
+Alles, was nicht in der Schnittmenge liegt, ist unmöglich, unabhängig davon, was eine einzelne Quelle gewährt.
+
+## Taint-eingeschränkte Fähigkeiten
+
+Fähigkeiten können ein Mindest-Taint-Level mit Doppelpunkt-Syntax erfordern:
+
+```yaml
+sessions:
+  claude-code:
+    capabilities:
+      - exec:trusted          # exec nur wenn Taint ≤ TRUSTED_CONTACT
+      - file.read             # file.read bei jedem Taint-Level
+      - file.write:owner      # file.write nur wenn Taint = OWNER
+      - web_fetch             # web_fetch bei jedem Taint-Level
+```
+
+## Das Capability-Gate
+
+Das Capability-Gate (`checkCapability()`) ist eine **reine synchrone Funktion**:
+
+- Kein I/O
+- Keine Netzwerkaufrufe
+- Kein LLM-Aufruf
+- Nur Set-Zugehörigkeitsprüfung
+
+Das garantiert null Latenz und null Mehrdeutigkeit — entweder ist die Fähigkeit im Set oder nicht.
+
+## Sonderregeln
+
+- `cron.create` und `node.invoke` **erfordern immer eine Genehmigung**, unabhängig von Fähigkeitsvergaben
+- Skills ohne Security Layer-Fähigkeitsdeklarationen erhalten **minimal notwendige Fähigkeiten** (nur Chat, keine Tools)
+- `exec.elevated` impliziert `exec`, aber `exec` impliziert nicht `exec.elevated`
+
+## Konfiguration
+
+Fähigkeiten werden in YAML-Dateien unter `~/.securitylayer/capabilities/` definiert:
+
+```yaml
+# sessions.yaml
+version: 1
+sessions:
+  claude-code:
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    default_taint: owner
+```
+
+Zeige deine aktuellen Fähigkeiten:
+
+```bash
+securitylayer capabilities show
+```

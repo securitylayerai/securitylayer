@@ -1,0 +1,73 @@
+---
+title: Taint 레벨
+description: 세션 내 신뢰 출처를 추적하는 6가지 taint 레벨입니다.
+icon: Fingerprint
+---
+
+taint 레벨은 세션 내 데이터의 **신뢰 출처**를 나타냅니다. AI 에이전트가 신뢰하지 않는 콘텐츠를 읽으면 세션의 taint 레벨이 상승하며, 명시적으로 초기화하기 전까지 다시 내려가지 않습니다.
+
+## 6가지 레벨
+
+신뢰도가 높은 순서에서 낮은 순서로 정렬:
+
+| 레벨 | 값 | 설명 |
+|---|---|---|
+| `OWNER` | 1 | 인증된 소유자로부터 직접 제공됨 |
+| `TRUSTED_CONTACT` | 2 | 허용 목록에 있는 연락처로부터 제공됨 |
+| `UNTRUSTED_HUMAN` | 3 | 알 수 없거나 검증되지 않은 사람으로부터 제공됨 |
+| `WEB_CONTENT` | 4 | 웹 가져오기, 브라우저, 이메일 등에서 제공됨 |
+| `SKILL_GENERATED` | 5 | 스킬의 지침에 의해 생성됨 |
+| `MEMORY_REPLAY` | 6 | 영구 메모리에서 로드됨 |
+
+## 핵심 속성
+
+### Taint는 상승만 합니다
+
+세션 수준의 taint는 **단조 증가**합니다. 세션이 `OWNER`에서 시작하여 웹 콘텐츠를 읽으면 `WEB_CONTENT`로 상승합니다. 자동으로 다시 내려가지 않습니다.
+
+```
+OWNER → 신뢰하지 않는 파일 읽기 → UNTRUSTED_HUMAN → URL 가져오기 → WEB_CONTENT
+```
+
+### Taint는 capability를 제한합니다
+
+콜론 구문을 사용하여 capability에 최소 taint 레벨을 요구할 수 있습니다:
+
+```yaml
+capabilities:
+  - exec:trusted        # taint가 TRUSTED_CONTACT 이하일 때만 허용
+  - file.write:owner    # taint가 OWNER일 때만 허용
+  - web_fetch           # 모든 taint 레벨에서 허용
+```
+
+세션의 taint가 capability의 임계값을 초과하면, 기본 capability가 부여되어 있더라도 동작이 거부됩니다.
+
+### Taint 초기화
+
+Taint는 명시적인 사용자 조작으로만 초기화할 수 있습니다:
+
+```bash
+securitylayer taint clear
+```
+
+데몬 모드(프록시)에서는 새 세션이 시작될 때 taint가 리셋됩니다. CLI 모드에서는 프로젝트 신뢰 규칙에 따라 평가마다 taint가 추적됩니다.
+
+## 프로젝트 기반 taint
+
+Security Layer는 프로젝트 디렉토리에 따라 초기 taint를 할당합니다:
+
+```yaml
+# ~/.securitylayer/projects.yaml
+trust_rules:
+  - path: "~/Dev/Personal/**"    # OWNER
+  - path: "~/Dev/Work/**"        # TRUSTED_CONTACT
+  - path: "/tmp/**"              # WEB_CONTENT
+  - path: "~/Downloads/**"       # WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+이는 **파일을 채널로 사용하는 위협 모델**을 반영합니다: 클론된 저장소에는 README, `.cursorrules`, `CLAUDE.md`, 코드 주석, `package.json` postinstall 스크립트, git 훅 등에 악의적인 지침이 포함될 수 있습니다.
+
+## 왜 중요한가
+
+Taint 추적 없이는, 악성 파일을 읽고 명령을 실행하는 AI 에이전트와 정당한 지침을 따르는 에이전트를 구분할 수 없습니다. Taint 추적은 에이전트의 컨텍스트가 신뢰하지 않는 콘텐츠에 영향을 받았음을 시스템에 알리고, 그에 따라 가능한 동작을 제한합니다.

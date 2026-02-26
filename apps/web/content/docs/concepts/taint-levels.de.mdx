@@ -1,0 +1,73 @@
+---
+title: Taint-Levels
+description: Die 6 Taint-Levels, die die Vertrauensherkunft durch eine Session verfolgen.
+icon: Fingerprint
+---
+
+Taint-Levels repräsentieren die **Vertrauensherkunft** von Daten in einer Session. Wenn ein KI-Agent nicht vertrauenswürdige Inhalte liest, steigt das Taint-Level der Session — und sinkt nie wieder, bis es explizit zurückgesetzt wird.
+
+## Die 6 Stufen
+
+Geordnet von vertrauenswürdigster zu am wenigsten vertrauenswürdig:
+
+| Level | Wert | Beschreibung |
+|---|---|---|
+| `OWNER` | 1 | Direkt vom authentifizierten Besitzer |
+| `TRUSTED_CONTACT` | 2 | Von einem erlaubten Kontakt |
+| `UNTRUSTED_HUMAN` | 3 | Von einem unbekannten oder nicht verifizierten Menschen |
+| `WEB_CONTENT` | 4 | Von Web-Abrufen, Browsern, E-Mail |
+| `SKILL_GENERATED` | 5 | Generiert durch Skill-Anweisungen |
+| `MEMORY_REPLAY` | 6 | Aus persistentem Speicher geladen |
+
+## Wichtige Eigenschaften
+
+### Taint steigt nur
+
+Der Session-Taint ist **monoton steigend**. Wenn eine Session bei `OWNER` startet und Web-Inhalte liest, steigt er auf `WEB_CONTENT`. Er fällt nie automatisch zurück.
+
+```
+OWNER → liest nicht vertrauenswürdige Datei → UNTRUSTED_HUMAN → ruft URL ab → WEB_CONTENT
+```
+
+### Taint schränkt Fähigkeiten ein
+
+Fähigkeiten können ein Mindest-Taint-Level mit Doppelpunkt-Syntax erfordern:
+
+```yaml
+capabilities:
+  - exec:trusted        # Nur erlaubt wenn Taint ≤ TRUSTED_CONTACT
+  - file.write:owner    # Nur erlaubt wenn Taint = OWNER
+  - web_fetch           # Bei jedem Taint-Level erlaubt
+```
+
+Wenn der Taint einer Session die Schwelle der Fähigkeit überschreitet, wird die Aktion verweigert — auch wenn die Basisfähigkeit gewährt ist.
+
+### Taint zurücksetzen
+
+Taint kann nur durch explizite menschliche Aktion zurückgesetzt werden:
+
+```bash
+securitylayer taint clear
+```
+
+Im Daemon-Modus (Proxy) wird der Taint beim Start einer neuen Session zurückgesetzt. Im CLI-Modus wird der Taint pro Auswertung basierend auf Projekt-Vertrauensregeln verfolgt.
+
+## Projektbasierter Taint
+
+Security Layer weist den initialen Taint basierend auf dem Projektverzeichnis zu:
+
+```yaml
+# ~/.securitylayer/projects.yaml
+trust_rules:
+  - path: "~/Dev/Personal/**"    # OWNER
+  - path: "~/Dev/Work/**"        # TRUSTED_CONTACT
+  - path: "/tmp/**"              # WEB_CONTENT
+  - path: "~/Downloads/**"       # WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+Dies modelliert die **Datei-als-Kanal-Bedrohung**: Ein geklontes Repository kann adversariale Anweisungen enthalten in READMEs, `.cursorrules`, `CLAUDE.md`, Code-Kommentaren, `package.json`-Postinstall-Skripten oder Git-Hooks.
+
+## Warum das wichtig ist
+
+Ohne Taint-Tracking ist ein KI-Agent, der eine bösartige Datei liest und dann einen Befehl ausführt, nicht von einem zu unterscheiden, der legitimen Anweisungen folgt. Taint-Tracking macht das System bewusst, dass der Kontext des Agenten durch nicht vertrauenswürdige Inhalte beeinflusst wurde — und schränkt ein, was er tun kann.

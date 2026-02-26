@@ -1,0 +1,73 @@
+---
+title: 污点级别
+description: 追踪会话中信任来源的 6 个污点级别。
+icon: Fingerprint
+---
+
+污点级别代表会话中数据的**信任来源**。当 AI 代理读取不受信任的内容时，会话的污点级别会上升 — 在显式清除之前永远不会降低。
+
+## 6 个级别
+
+从最受信任到最不受信任：
+
+| 级别 | 值 | 描述 |
+|---|---|---|
+| `OWNER` | 1 | 直接来自已认证的所有者 |
+| `TRUSTED_CONTACT` | 2 | 来自白名单联系人 |
+| `UNTRUSTED_HUMAN` | 3 | 来自未知或未验证的人类 |
+| `WEB_CONTENT` | 4 | 来自网页获取、浏览器、邮件 |
+| `SKILL_GENERATED` | 5 | 由技能的指令生成 |
+| `MEMORY_REPLAY` | 6 | 从持久化内存加载 |
+
+## 关键特性
+
+### 污点只会上升
+
+会话级别的污点是**单调递增**的。如果会话从 `OWNER` 开始并读取了网页内容，它会上升到 `WEB_CONTENT`。永远不会自动降低。
+
+```
+OWNER → 读取不受信任的文件 → UNTRUSTED_HUMAN → 获取 URL → WEB_CONTENT
+```
+
+### 污点限制能力
+
+能力可以通过冒号语法要求最低污点级别：
+
+```yaml
+capabilities:
+  - exec:trusted        # 仅当污点 ≤ TRUSTED_CONTACT 时允许
+  - file.write:owner    # 仅当污点 = OWNER 时允许
+  - web_fetch           # 任何污点级别下都允许
+```
+
+如果会话的污点超过能力的阈值，操作将被拒绝 — 即使基础能力已被授权。
+
+### 清除污点
+
+污点只能通过显式的人工操作清除：
+
+```bash
+securitylayer taint clear
+```
+
+在守护进程模式（代理）下，污点在新会话开始时重置。在 CLI 模式下，污点基于项目信任规则按每次评估进行追踪。
+
+## 基于项目的污点
+
+Security Layer 根据项目目录分配初始污点：
+
+```yaml
+# ~/.securitylayer/projects.yaml
+trust_rules:
+  - path: "~/Dev/Personal/**"    # OWNER
+  - path: "~/Dev/Work/**"        # TRUSTED_CONTACT
+  - path: "/tmp/**"              # WEB_CONTENT
+  - path: "~/Downloads/**"       # WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+这模拟了**文件即通道威胁**：克隆的仓库可能在 README、`.cursorrules`、`CLAUDE.md`、代码注释、`package.json` 的 postinstall 脚本或 git hooks 中包含对抗性指令。
+
+## 为什么这很重要
+
+没有污点追踪，读取了恶意文件后执行命令的 AI 代理与遵循合法指令的代理无法区分。污点追踪让系统意识到代理的上下文已被不受信任的内容影响 — 并相应地限制其操作权限。

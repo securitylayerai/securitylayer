@@ -1,0 +1,54 @@
+---
+title: taint
+description: テイントレベルの表示とテイント状態のクリア。
+icon: Fingerprint
+---
+
+プロジェクト信頼ルール、現在のテイントレベルの確認、テイント状態のクリアを行います。
+
+## 使い方
+
+```bash
+securitylayer taint show
+securitylayer taint clear
+```
+
+## サブコマンド
+
+### `taint show`
+
+プロジェクト信頼ルールと、カレントワーキングディレクトリのテイントレベルを表示します。
+
+```bash
+$ securitylayer taint show
+
+  Project trust rules:
+    ~/Dev/Personal/** → OWNER
+    ~/Dev/Work/**     → TRUSTED_CONTACT
+    /tmp/**           → WEB_CONTENT
+    ~/Downloads/**    → WEB_CONTENT
+
+  Default taint: UNTRUSTED_HUMAN
+
+  Current directory: ~/Dev/Personal/myproject
+  Current taint:    OWNER
+```
+
+### `taint clear`
+
+CLI モードでは、テイントはプロジェクト信頼ルールに基づいて決定され、コマンド間で蓄積されません。このコマンドはテイント管理に関するガイダンスを提供します:
+
+- プロジェクトレベルの信頼変更には `securitylayer projects trust <path>` を使用します
+- デーモンモード（プロキシ）では、テイントクリアによりセッションの蓄積テイントがリセットされます
+
+## 終了コード
+
+| コード | 意味 |
+|---|---|
+| `0` | 常に正常終了 |
+
+## 関連項目
+
+- [テイントレベル](/ja/docs/concepts/taint-levels) — テイントトラッキングの仕組み
+- [projects](/ja/docs/commands/projects) — プロジェクト信頼ルールの管理
+- [プロジェクト信頼ガイド](/ja/docs/guides/project-trust)

@@ -1,0 +1,79 @@
+---
+title: Shell shim
+description: Protecao universal via shell shim para qualquer agente de IA.
+icon: Terminal
+---
+
+O shell shim e uma integracao universal que protege **qualquer** ferramenta de IA que execute comandos no shell — com zero esforco de integracao do lado da ferramenta.
+
+## Como funciona
+
+`securitylayer shield enable` instala scripts wrapper com prioridade no PATH em `~/.securitylayer/bin/`. Como este diretorio e prefixado ao PATH, todos os comandos do shell passam pelo Security Layer antes de chegar ao binario real.
+
+### Binarios shimados
+
+| Binario | Descricao |
+|---|---|
+| `bash` | Shell Bash |
+| `sh` | Shell POSIX |
+| `zsh` | Shell Zsh |
+| `python` | Interpretador Python |
+| `python3` | Interpretador Python 3 |
+| `node` | Runtime Node.js |
+| `ruby` | Interpretador Ruby |
+| `perl` | Interpretador Perl |
+
+### Fluxo de execucao
+
+```
+AI Tool → shimmed bash → securitylayer check → real bash
+                              ↓ (if denied)
+                         error message
+```
+
+1. A ferramenta de IA chama `bash -c "some command"`
+2. O shim em `~/.securitylayer/bin/bash` intercepta
+3. `securitylayer check` avalia o comando
+4. Se permitido → encaminhado para o `/usr/bin/bash` real
+5. Se negado → erro retornado, comando nunca executa
+
+### Deteccao de caller
+
+O shim identifica qual ferramenta de IA acionou o comando verificando:
+
+- Variaveis de ambiente especificas de cada ferramenta
+- Nomes de processos pai
+
+Isso permite perfis de capabilities diferentes para ferramentas diferentes (ex: Claude Code recebe `exec` + `file.write`, enquanto uma ferramenta nao confiavel recebe apenas `file.read`).
+
+## Configuracao
+
+```bash
+# Habilitar
+securitylayer shield enable
+
+# Verificar
+securitylayer shield status
+
+# Desabilitar
+securitylayer shield disable
+```
+
+Apos habilitar, reinicie seu shell ou abra um novo terminal para que a mudanca no PATH tenha efeito.
+
+## Ferramentas de IA suportadas
+
+Qualquer ferramenta que execute comandos no shell e automaticamente protegida:
+
+- Claude Code
+- Cursor
+- Aider
+- GitHub Copilot
+- Agentes personalizados
+- Qualquer ferramenta que execute comandos no shell
+
+## Veja tambem
+
+- [shield](/pt/docs/commands/shield) — Referencia do comando shield
+- [callers](/pt/docs/commands/callers) — Perfis de deteccao de caller
+- [check](/pt/docs/commands/check) — O comando check usado pelos shims

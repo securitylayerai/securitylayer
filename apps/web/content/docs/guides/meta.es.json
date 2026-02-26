@@ -1,0 +1,5 @@
+{
+  "title": "Guías",
+  "icon": "BookOpen",
+  "pages": ["learning-mode", "project-trust", "configuration"]
+}

@@ -1,0 +1,142 @@
+---
+title: Configuración
+description: Personaliza tu política de seguridad de Security Layer.
+icon: Gear
+---
+
+La configuración de Security Layer se encuentra en `~/.securitylayer/`. Todos los archivos de configuración usan YAML con un campo `version` para compatibilidad de esquema.
+
+## Archivos de configuración
+
+| Archivo | Propósito |
+|---|---|
+| `config.yaml` | Configuración principal (modo, ajustes del judge, logging) |
+| `capabilities/sessions.yaml` | Grants de capacidades de sesión |
+| `capabilities/channels.yaml` | Restricciones de capacidades de canal |
+| `capabilities/skills.yaml` | Declaraciones de capacidades de skills |
+| `ai-tools.yaml` | Perfiles de callers de herramientas de IA y reglas de detección |
+| `projects.yaml` | Reglas de confianza de directorios de proyecto |
+| `learned-rules.json` | Patrones auto-aprobados de "Approve & Remember" |
+
+## Configuración principal
+
+```yaml
+# ~/.securitylayer/config.yaml
+version: 1
+mode: enforce  # or "learning"
+
+judge:
+  enabled: true
+  provider: anthropic
+  model: claude-haiku-4-5-20251001
+  api_key_env: ANTHROPIC_API_KEY
+  timeout_ms: 500
+
+logging:
+  level: info  # debug, info, warn, error
+```
+
+## Capacidades de sesión
+
+```yaml
+# ~/.securitylayer/capabilities/sessions.yaml
+version: 1
+sessions:
+  claude-code:
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    default_taint: owner
+
+  restricted:
+    capabilities:
+      - file.read
+      - exec:owner  # exec only in owner-taint projects
+    default_taint: untrusted
+```
+
+## Perfiles de herramientas de IA
+
+```yaml
+# ~/.securitylayer/ai-tools.yaml
+version: 1
+callers:
+  claude-code:
+    display_name: Claude Code
+    default_taint: OWNER
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    detect:
+      env:
+        - CLAUDE_CODE
+      process:
+        - claude
+
+  cursor:
+    display_name: Cursor
+    default_taint: TRUSTED_CONTACT
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+    detect:
+      env:
+        - CURSOR_SESSION
+      process:
+        - cursor
+```
+
+## Confianza de proyectos
+
+```yaml
+# ~/.securitylayer/projects.yaml
+version: 1
+trust_rules:
+  - path: "~/Dev/Personal/**"
+    taint: OWNER
+  - path: "~/Dev/Work/**"
+    taint: TRUSTED_CONTACT
+  - path: "/tmp/**"
+    taint: WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+## Versionado de esquema
+
+Todos los archivos de configuración incluyen un campo `version`. Cuando Security Layer carga un archivo de configuración:
+
+1. Verifica el campo `version`
+2. Si la versión es soportada, carga normalmente
+3. Si la versión es más nueva de lo esperado, ejecuta las migraciones disponibles
+4. Si la versión no es soportada, **se niega a cargar** en lugar de interpretarla silenciosamente de forma incorrecta
+
+Esto previene roturas silenciosas de configuración durante actualizaciones.
+
+## Ver la configuración
+
+```bash
+# Resumen completo del estado
+securitylayer status
+
+# Capacidades
+securitylayer capabilities show
+
+# Taint y confianza de proyectos
+securitylayer taint show
+securitylayer projects list
+
+# Perfiles de callers
+securitylayer callers list
+```
+
+## Ver también
+
+- [init](/es/docs/commands/init) -- Asistente de configuración interactivo
+- [Capacidades](/es/docs/concepts/capabilities) -- Cómo funcionan las capacidades
+- [Niveles de taint](/es/docs/concepts/taint-levels) -- Cómo funciona el seguimiento de taint
+- [Confianza de proyectos](/es/docs/guides/project-trust) -- Configuración de confianza de directorios

@@ -1,0 +1,49 @@
+---
+title: init
+description: Asistente interactivo de configuración guiada.
+icon: Gear
+---
+
+Crea archivos de configuración en `~/.securitylayer/` mediante un asistente interactivo basado en prompts.
+
+## Uso
+
+```bash
+securitylayer init
+```
+
+## Prompts
+
+| Prompt | Valor por defecto | Descripción |
+|---|---|---|
+| Nombre de sesión | `claude-code` | Nombre para la sesión por defecto (debe cumplir `^[a-z0-9-]+$`) |
+| Capacidades | `exec`, `file.read`, `file.write`, `web_fetch` | Selección múltiple de grants de capacidades |
+| Taint por defecto | `owner` | Nivel base de confianza (`owner`, `trusted`, `untrusted`) |
+| LLM judge | No | Habilitar la capa de análisis semántico |
+| Proveedor | — | Anthropic, OpenAI, Google, xAI u OpenAI-compatible |
+| Modelo | — | Nombre del modelo (ej. `claude-haiku-4-5-20251001`) |
+| Variable de entorno de API key | — | Variable de entorno para la clave de API |
+| URL base | — | Solo para proveedores OpenAI-compatible |
+
+## Archivos creados
+
+| Archivo | Propósito |
+|---|---|
+| `config.yaml` | Configuración principal |
+| `capabilities/sessions.yaml` | Grants de capacidades de sesión |
+| `capabilities/channels.yaml` | Restricciones de capacidades de canal |
+| `capabilities/skills.yaml` | Declaraciones de capacidades de skills |
+| `ai-tools.yaml` | Perfiles de herramientas de IA |
+| `projects.yaml` | Reglas de confianza de directorios de proyecto |
+| `learned-rules.json` | Patrones auto-aprobados (inicialmente vacío) |
+
+## Códigos de salida
+
+| Código | Significado |
+|---|---|
+| `0` | Configuración completada exitosamente |
+
+## Ver también
+
+- [Inicio rápido](/es/docs/getting-started/quick-start)
+- [Configuración](/es/docs/guides/configuration)

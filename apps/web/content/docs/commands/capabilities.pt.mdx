@@ -1,0 +1,49 @@
+---
+title: capabilities
+description: Exibir capabilities concedidas para sessoes, canais e skills.
+icon: Key
+---
+
+Mostra todas as capabilities concedidas organizadas por sessoes, canais e skills.
+
+## Uso
+
+```bash
+securitylayer capabilities show
+```
+
+## Saida
+
+Exibe as capabilities agrupadas por:
+
+- **Sessoes** — Lista de capabilities de cada sessao e taint level padrao
+- **Canais** — Restricoes de capabilities por canal
+- **Skills** — Declaracoes de capabilities por skill
+
+## Exemplo
+
+```bash
+$ securitylayer capabilities show
+
+  Sessions:
+    claude-code
+      capabilities: exec, file.read, file.write, web_fetch
+      default_taint: owner
+
+  Channels:
+    (none configured)
+
+  Skills:
+    (none configured)
+```
+
+## Codigos de saida
+
+| Codigo | Significado |
+|---|---|
+| `0` | Sempre sai com sucesso |
+
+## Veja tambem
+
+- [Conceito de capabilities](/pt/docs/concepts/capabilities) — Como as capabilities funcionam
+- [Configuracao](/pt/docs/guides/configuration) — Editando arquivos de capabilities

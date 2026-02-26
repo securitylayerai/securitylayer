@@ -1,0 +1,75 @@
+---
+title: クイックスタート
+description: 5 分で Security Layer による AI エージェント保護を開始します。
+icon: Lightning
+---
+
+このガイドでは、ゼロから保護状態まで 5 分で到達します。
+
+## 1. インストール
+
+```bash
+bun add -g securitylayer
+```
+
+## 2. 初期化
+
+```bash
+securitylayer init
+```
+
+デフォルト設定をそのまま使用するか、セッションケイパビリティをカスタマイズします。ウィザードが `~/.securitylayer/` に設定ファイルを作成します。
+
+## 3. インテグレーションの設定
+
+**Claude Code** — ネイティブフックインテグレーション:
+
+```bash
+securitylayer setup claude-code
+```
+
+これにより PreToolUse と PostToolUse フックが `~/.claude/hooks.json` にインストールされます。Claude Code のすべてのツール呼び出しが、実行前にセキュリティポリシーに対して評価されます。
+
+**シェルシム** — あらゆる AI ツールのユニバーサル保護:
+
+```bash
+securitylayer shield enable
+```
+
+これにより PATH 優先のラッパースクリプトがインストールされ、すべてのシェルコマンドがインターセプトされます。Cursor、Aider、Copilot など、シェルコマンドを実行するあらゆる AI ツールで動作します。
+
+## 4. 確認
+
+```bash
+securitylayer status
+```
+
+設定の読み込み状態、セッションケイパビリティ、インテグレーションステータス（フックのインストール状態またはシールドの有効状態）が表示されます。
+
+## 5. テスト
+
+ドライランのポリシーチェックで Security Layer の動作を確認します:
+
+```bash
+securitylayer policy check "rm -rf /"
+```
+
+ケイパビリティゲート、ルールエンジン、リスクスコアを含む完全な評価結果と最終判定が表示されます。
+
+## 動作の仕組み
+
+AI エージェントがコマンドを実行しようとすると:
+
+1. **ケイパビリティゲート** — このアクションタイプは許可されていますか?（`exec`、`file.write` など）
+2. **テイントチェック** — セッションの信頼レベルは十分ですか?
+3. **正規化** — パスの解決、エンコーディングのデコード、コマンドチェーンの分割
+4. **ルールエンジン** — 決定論的パターンとのマッチング
+5. **LLM ジャッジ** — コンテキスト上の異常に対するセマンティック分析（有効な場合）
+6. **判定** — 最も制限的な結果が適用: ALLOW、DENY、または REQUIRE_APPROVAL
+
+## 次のステップ
+
+- [テイントレベル](/ja/docs/concepts/taint-levels) — 信頼モデルを理解する
+- [ケイパビリティ](/ja/docs/concepts/capabilities) — ケイパビリティの付与について
+- [ラーニングモード](/ja/docs/guides/learning-mode) — 適用前にモニタリングする
+- [設定](/ja/docs/guides/configuration) — セキュリティポリシーをカスタマイズする

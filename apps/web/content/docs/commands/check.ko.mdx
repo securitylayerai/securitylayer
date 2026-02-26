@@ -1,0 +1,65 @@
+---
+title: check
+description: 셸 shim용 독립 정책 검사입니다.
+icon: Shield
+---
+
+명령을 실행하지 않고 보안 정책에 대해 평가합니다. 셸 shim에서 내부적으로 사용되지만, 테스트에도 유용합니다.
+
+## 사용법
+
+```bash
+securitylayer check --command "<cmd>" [--tool <type>] [--caller <name>] [--format json|text]
+```
+
+## 플래그
+
+| 플래그 | 기본값 | 설명 |
+|---|---|---|
+| `--command <cmd>` | (필수) | 평가할 명령 |
+| `--tool <type>` | `exec` | 검사할 도구 유형 |
+| `--caller <name>` | (자동 감지) | 호출자 ID — 제공하지 않으면 환경에서 자동 감지 |
+| `--format json\|text` | `text` | 출력 형식 |
+
+## 텍스트 출력
+
+```
+ALLOW — capability granted, no rules matched
+```
+
+## JSON 출력
+
+```json
+{
+  "decision": "ALLOW",
+  "reason": "capability granted, no rules matched",
+  "caller": "claude-code",
+  "taint": "OWNER",
+  "timing": { "total": 12 }
+}
+```
+
+학습 모드에서는 차단된 동작이 추가 컨텍스트와 함께 허용됩니다:
+
+```json
+{
+  "decision": "ALLOW",
+  "original_decision": "DENY",
+  "learning_mode": true,
+  "reason": "known dangerous pattern: rm -rf /",
+  "timing": { "total": 8 }
+}
+```
+
+## 종료 코드
+
+| 코드 | 의미 |
+|---|---|
+| `0` | ALLOW (또는 학습 모드 오버라이드) |
+| `1` | DENY 또는 오류 |
+| `2` | REQUIRE_APPROVAL |
+
+## 참고
+
+- [hook](/ko/docs/commands/hook) — Claude Code 통합을 위한 훅 핸들러
+- [셸 shim](/ko/docs/integrations/shell-shim) — 셸 shim에서 `check`를 사용하는 방법

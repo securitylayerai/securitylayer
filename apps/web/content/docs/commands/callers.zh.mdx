@@ -1,0 +1,71 @@
+---
+title: callers
+description: 列出和查看 AI 工具调用者配置。
+icon: Sparkle
+---
+
+Security Layer 会自动检测哪个 AI 工具触发了命令，并应用相应的能力配置。callers 命令用于查看这些配置。
+
+## 用法
+
+```bash
+securitylayer callers list
+securitylayer callers profile <name>
+```
+
+## 子命令
+
+### `callers list`
+
+显示所有已配置的 AI 工具调用者及其检测规则和能力。
+
+```bash
+$ securitylayer callers list
+
+  claude-code (Claude Code)
+    taint: OWNER
+    capabilities: exec, file.read, file.write, web_fetch
+    detect env: CLAUDE_CODE
+    detect process: claude
+
+  cursor (Cursor)
+    taint: TRUSTED_CONTACT
+    capabilities: exec, file.read, file.write
+    detect env: CURSOR_SESSION
+    detect process: cursor
+```
+
+### `callers profile <name>`
+
+显示特定调用者的详细信息。
+
+```bash
+$ securitylayer callers profile claude-code
+
+  ID:           claude-code
+  Display name: Claude Code
+  Default taint: OWNER
+
+  Capabilities:
+    exec, file.read, file.write, web_fetch
+
+  Detection:
+    Environment: CLAUDE_CODE
+    Process:     claude
+```
+
+**退出码：** 成功返回 `0`，调用者未知或缺少名称参数返回 `1`。
+
+## 检测原理
+
+当命令被拦截时（通过 shell shim 或 hook），Security Layer 会检查：
+
+1. **环境变量** — 调用进程是否设置了特定的环境变量？
+2. **进程名称** — 父进程是否匹配已知的 AI 工具？
+
+检测到的调用者决定应用哪个能力配置。
+
+## 参阅
+
+- [Shell shim](/zh/docs/integrations/shell-shim) — shim 如何检测调用者
+- [配置](/zh/docs/guides/configuration) — 编辑调用者配置

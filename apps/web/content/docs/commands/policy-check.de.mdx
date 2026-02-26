@@ -1,0 +1,65 @@
+---
+title: policy check
+description: Trockenlauf-Richtliniensimulation
+icon: ListChecks
+---
+
+Simuliert die Richtlinienauswertung für einen Befehl, ohne ihn auszuführen. Zeigt die vollständigen Auswertungsergebnisse aller Schichten.
+
+## Verwendung
+
+```bash
+securitylayer policy check "<cmd>" [--session <name>]
+```
+
+## Flags
+
+| Flag | Standard | Beschreibung |
+|---|---|---|
+| `--command <cmd>` | (positional) | Der zu simulierende Befehl |
+| `--session <name>` | `claude-code` | Session, gegen die ausgewertet wird |
+
+## Ausgabe
+
+Der Befehl zeigt:
+
+- **Eingabe** — Befehl, Session, Taint-Level, aktuelles Arbeitsverzeichnis
+- **Schichtergebnisse** — Capability-Gate, Regel-Engine, LLM-Judge, Risikobewertung
+- **Timing** — Aufschlüsselung der Zeitdauer pro Schicht
+- **Endentscheidung** — `ALLOW`, `DENY` oder `REQUIRE_APPROVAL`
+
+## Beispiel
+
+```bash
+$ securitylayer policy check "rm -rf /"
+
+  Command:  rm -rf /
+  Session:  claude-code
+  Taint:    OWNER
+  CWD:      /home/user/project
+
+  Layer Results:
+    Capability gate: ALLOW (exec granted)
+    Rules:           DENY (recursive delete of root)
+    LLM judge:       DANGEROUS (confidence: 0.95)
+    Risk score:      1.0
+
+  Timing:
+    Total:      45ms
+    Capability: 0ms
+    Rules:      2ms
+    LLM:        43ms
+
+  Decision: DENY
+```
+
+## Exit-Codes
+
+| Code | Bedeutung |
+|---|---|
+| `0` | Beendet immer erfolgreich |
+
+## Siehe auch
+
+- [Security-Pipeline](/de/docs/concepts/security-pipeline) — Wie die Pipeline funktioniert
+- [check](/de/docs/commands/check) — Live-Richtlinienprüfung (von Shims verwendet)

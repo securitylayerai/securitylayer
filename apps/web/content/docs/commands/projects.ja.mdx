@@ -1,0 +1,63 @@
+---
+title: projects
+description: プロジェクトディレクトリの信頼ルールを管理します。
+icon: Folder
+---
+
+プロジェクト信頼ルールは、ディレクトリパスにテイントレベルを割り当てます。AI エージェントがディレクトリ内で操作する際、信頼ルールがセッションの初期テイントレベルを決定します。
+
+## 使い方
+
+```bash
+securitylayer projects list
+securitylayer projects trust <path> [--taint <level>]
+securitylayer projects untrust <path>
+```
+
+## サブコマンド
+
+### `projects list`
+
+設定済みのすべてのプロジェクト信頼ルールを表示します。
+
+```bash
+$ securitylayer projects list
+
+  Trust rules:
+    1. ~/Dev/Personal/** → OWNER
+    2. ~/Dev/Work/**     → TRUSTED_CONTACT
+    3. /tmp/**           → WEB_CONTENT
+
+  Default taint: UNTRUSTED_HUMAN
+```
+
+### `projects trust <path>`
+
+ディレクトリパスの信頼ルールを追加または更新します。
+
+```bash
+securitylayer projects trust ~/Dev/Personal/** --taint owner
+```
+
+| フラグ | デフォルト | 説明 |
+|---|---|---|
+| `--taint <level>` | `owner` | 信頼レベル: `owner`, `trusted`, `untrusted`, `web`, `skill`, `memory` |
+
+**終了コード:** 成功時 `0`、パス引数が不足している場合 `1`。
+
+### `projects untrust <path>`
+
+ディレクトリパスの信頼ルールを削除します。
+
+```bash
+$ securitylayer projects untrust /tmp/**
+Removed trust rule for: /tmp/**
+```
+
+**終了コード:** 常に `0`、パス引数が不足している場合 `1`。
+
+## 関連項目
+
+- [プロジェクト信頼ガイド](/ja/docs/guides/project-trust)
+- [テイントレベル](/ja/docs/concepts/taint-levels)
+- [taint](/ja/docs/commands/taint)

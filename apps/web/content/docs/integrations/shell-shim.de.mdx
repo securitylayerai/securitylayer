@@ -1,0 +1,79 @@
+---
+title: Shell-Shim
+description: Universeller Shell-Shim-Schutz für jeden KI-Agenten.
+icon: Terminal
+---
+
+Der Shell-Shim ist eine universelle Integration, die **jedes** KI-Tool schützt, das Shell-Befehle ausführt — ohne jeglichen Integrationsaufwand seitens des Tools.
+
+## Wie es funktioniert
+
+`securitylayer shield enable` installiert PATH-priorisierte Wrapper-Skripte in `~/.securitylayer/bin/`. Da dieses Verzeichnis dem PATH vorangestellt wird, werden alle Shell-Befehle über Security Layer geleitet, bevor sie das echte Binary erreichen.
+
+### Geshimmte Binaries
+
+| Binary | Beschreibung |
+|---|---|
+| `bash` | Bash-Shell |
+| `sh` | POSIX-Shell |
+| `zsh` | Zsh-Shell |
+| `python` | Python-Interpreter |
+| `python3` | Python 3-Interpreter |
+| `node` | Node.js-Runtime |
+| `ruby` | Ruby-Interpreter |
+| `perl` | Perl-Interpreter |
+
+### Ausführungsablauf
+
+```
+AI Tool → shimmed bash → securitylayer check → real bash
+                              ↓ (if denied)
+                         error message
+```
+
+1. KI-Tool ruft `bash -c "some command"` auf
+2. Der Shim in `~/.securitylayer/bin/bash` fängt ab
+3. `securitylayer check` wertet den Befehl aus
+4. Bei Erlaubnis → Weiterleitung an das echte `/usr/bin/bash`
+5. Bei Verweigerung → Fehler zurückgegeben, Befehl wird nie ausgeführt
+
+### Caller-Erkennung
+
+Der Shim identifiziert, welches KI-Tool den Befehl ausgelöst hat, indem er prüft:
+
+- Umgebungsvariablen, die für jedes Tool spezifisch sind
+- Namen der übergeordneten Prozesse
+
+Dies ermöglicht unterschiedliche Fähigkeitsprofile für verschiedene Tools (z.B. Claude Code bekommt `exec` + `file.write`, während ein nicht vertrauenswürdiges Tool nur `file.read` erhält).
+
+## Einrichtung
+
+```bash
+# Aktivieren
+securitylayer shield enable
+
+# Überprüfen
+securitylayer shield status
+
+# Deaktivieren
+securitylayer shield disable
+```
+
+Nach dem Aktivieren starte deine Shell neu oder öffne ein neues Terminal, damit die PATH-Änderung wirksam wird.
+
+## Unterstützte KI-Tools
+
+Jedes Tool, das Shell-Befehle ausführt, wird automatisch geschützt:
+
+- Claude Code
+- Cursor
+- Aider
+- GitHub Copilot
+- Eigene Agenten
+- Jedes Tool, das Shell-Befehle ausführt
+
+## Siehe auch
+
+- [shield](/de/docs/commands/shield) — Shield-Befehlsreferenz
+- [callers](/de/docs/commands/callers) — Caller-Erkennungsprofile
+- [check](/de/docs/commands/check) — Der von Shims verwendete check-Befehl

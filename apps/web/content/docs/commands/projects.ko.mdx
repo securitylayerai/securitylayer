@@ -1,0 +1,63 @@
+---
+title: projects
+description: 프로젝트 디렉토리 신뢰 규칙을 관리합니다.
+icon: Folder
+---
+
+프로젝트 신뢰 규칙은 디렉토리 경로에 taint 레벨을 할당합니다. AI 에이전트가 특정 디렉토리에서 작업할 때, 신뢰 규칙이 세션의 초기 taint 레벨을 결정합니다.
+
+## 사용법
+
+```bash
+securitylayer projects list
+securitylayer projects trust <path> [--taint <level>]
+securitylayer projects untrust <path>
+```
+
+## 하위 명령
+
+### `projects list`
+
+설정된 모든 프로젝트 신뢰 규칙을 표시합니다.
+
+```bash
+$ securitylayer projects list
+
+  Trust rules:
+    1. ~/Dev/Personal/** → OWNER
+    2. ~/Dev/Work/**     → TRUSTED_CONTACT
+    3. /tmp/**           → WEB_CONTENT
+
+  Default taint: UNTRUSTED_HUMAN
+```
+
+### `projects trust <path>`
+
+디렉토리 경로에 대한 신뢰 규칙을 추가하거나 업데이트합니다.
+
+```bash
+securitylayer projects trust ~/Dev/Personal/** --taint owner
+```
+
+| 플래그 | 기본값 | 설명 |
+|---|---|---|
+| `--taint <level>` | `owner` | 신뢰 수준: `owner`, `trusted`, `untrusted`, `web`, `skill`, `memory` |
+
+**종료 코드:** 성공 시 `0`, 경로 인자 누락 시 `1`.
+
+### `projects untrust <path>`
+
+디렉토리 경로에 대한 신뢰 규칙을 제거합니다.
+
+```bash
+$ securitylayer projects untrust /tmp/**
+Removed trust rule for: /tmp/**
+```
+
+**종료 코드:** 항상 `0`, 경로 인자 누락 시 `1`.
+
+## 참고
+
+- [프로젝트 신뢰 가이드](/ko/docs/guides/project-trust)
+- [Taint 레벨](/ko/docs/concepts/taint-levels)
+- [taint](/ko/docs/commands/taint)

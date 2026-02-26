@@ -1,0 +1,68 @@
+---
+title: Modo aprendizaje
+description: Monitorea lo que Security Layer bloquearía antes de aplicar.
+icon: Brain
+---
+
+El modo aprendizaje te permite observar las decisiones de Security Layer sin afectar tu flujo de trabajo. Todo se permite -- pero las acciones bloqueadas se registran para que puedas ajustar tu política antes de aplicarla.
+
+## Habilitar
+
+```bash
+securitylayer learn --duration 7d
+```
+
+Esto establece `mode: learning` en tu configuración y registra un timestamp `learning_expires`. Después de la duración, Security Layer vuelve al modo de aplicación.
+
+## Qué se registra
+
+En modo aprendizaje, Security Layer evalúa cada acción a través del pipeline de seguridad completo y registra:
+
+- Acciones que **habrían sido denegadas** y por qué
+- La capa que disparó el bloqueo (capability gate, reglas, LLM judge)
+- Información de timing para cada capa
+- Identidad del caller y nivel de taint
+
+## Verificar el estado
+
+```bash
+securitylayer status
+```
+
+Muestra si el modo aprendizaje está activo, cuándo expira y cuántas acciones se han registrado.
+
+## Revisar los resultados
+
+Después del período de aprendizaje:
+
+```bash
+securitylayer learn report
+```
+
+Esto muestra:
+
+- **Acciones que habrían sido bloqueadas** -- agrupadas por razón
+- **Cambios de capacidades recomendados** -- basados en patrones de uso real
+- **Reglas sugeridas** -- patrones que aparecieron frecuentemente
+
+## Flujo de trabajo
+
+1. **Instalar e inicializar** -- `securitylayer init`
+2. **Habilitar aprendizaje** -- `securitylayer learn --duration 7d`
+3. **Trabajar normalmente** -- Usa tus herramientas de IA como de costumbre
+4. **Revisar** -- `securitylayer learn report`
+5. **Ajustar la política** -- Ajusta capacidades y reglas según los hallazgos
+6. **Aplicar** -- El modo aprendizaje expira, comienza la aplicación
+
+## Consejos
+
+- Comienza con 7 días para capturar una muestra representativa de tu flujo de trabajo
+- Usa duraciones más cortas (1-2 días) si quieres iterar rápido
+- Revisa el reporte antes de que termine el período de aprendizaje para hacer ajustes
+- Puedes desactivar el modo aprendizaje antes editando `config.yaml` y eliminando la línea `mode: learning`
+
+## Ver también
+
+- [learn](/es/docs/commands/learn) -- Referencia del comando
+- [Configuración](/es/docs/guides/configuration) -- Editar tu política
+- [Capacidades](/es/docs/concepts/capabilities) -- Entender los grants de capacidades

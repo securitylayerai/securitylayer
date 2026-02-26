@@ -1,0 +1,65 @@
+---
+title: hook
+description: AI ツールインテグレーションから呼び出されるフックハンドラー。
+icon: ArrowsClockwise
+---
+
+フックハンドラーは、AI ツールインテグレーション（Claude Code フックなど）によって呼び出され、実行前後のアクションを評価します。
+
+## 使い方
+
+```bash
+# ツール実行前チェック
+securitylayer hook <agent> --tool <tool> --input <json>
+
+# ツール実行後トラッキング
+securitylayer hook <agent> --tool <tool> --post --output <json>
+```
+
+## フラグ
+
+| フラグ | 説明 |
+|---|---|
+| `--tool <tool>` | ツール名（必須）: `Bash`, `Write`, `Edit`, `Read`, `WebFetch`, `Glob`, `Grep`, `NotebookEdit` |
+| `--input <json>` | AI ツールからのツール実行前 JSON 入力 |
+| `--post` | ツール実行後モード（デフォルトはツール実行前） |
+| `--output <json>` | ツール実行後の JSON 出力 |
+
+## ツールとケイパビリティの対応
+
+| ツール | 必要なケイパビリティ |
+|---|---|
+| `Bash` | `exec` |
+| `Write`, `Edit`, `NotebookEdit` | `file.write` |
+| `Read`, `Glob`, `Grep` | `file.read` |
+| `WebFetch` | `web_fetch` |
+
+## 動作
+
+### ツール実行前モード
+
+セキュリティパイプライン全体（ケイパビリティゲート、テイントチェック、正規化、ルール、LLM ジャッジ）に対してアクションを評価します。ALLOW の場合は何も出力せず、AI ツールはそのまま処理を続行します。DENY の場合は、理由を stderr に出力し、終了コード 2 で終了します。
+
+### ツール実行後モード
+
+ツールが実行した内容に基づいてテイントトラッキングを更新します。例えば、`Read` が信頼されていないディレクトリのファイルにアクセスした場合、セッションテイントが引き上げられることがあります。常に終了コード 0 で終了します。
+
+### ラーニングモード
+
+ラーニングモードでは、ブロックされたアクションはログに記録されますが許可されます。フックは stderr に警告を出力し、終了コード 0 で終了します。
+
+### フェイルセーフ
+
+予期しないエラーが発生した場合、フックはアクションをブロックします（終了コード 2）。Security Layer は決してフェイルオープンしません。
+
+## 終了コード
+
+| コード | 意味 |
+|---|---|
+| `0` | ツール実行前: ALLOW（またはラーニングモード）。ツール実行後: 常に 0 |
+| `2` | ツール実行前: DENY、REQUIRE_APPROVAL、またはエラー |
+
+## 関連項目
+
+- [setup](/ja/docs/commands/setup) — フックの自動インストール
+- [Claude Code インテグレーション](/ja/docs/integrations/claude-code)

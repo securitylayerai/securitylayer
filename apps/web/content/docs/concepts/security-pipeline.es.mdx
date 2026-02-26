@@ -1,0 +1,91 @@
+---
+title: Pipeline de seguridad
+description: El pipeline de seguridad de 3 capas -- estructural, semántica y reglas.
+icon: Stack
+---
+
+Cada acción que un agente de IA intenta pasa por un pipeline de seguridad de 3 capas. Las capas son independientes y complementarias -- cada una detecta categorías diferentes de amenazas.
+
+## Capa 1: Aplicación estructural (los muros)
+
+La defensa principal. La aplicación estructural hace que las acciones peligrosas sean **imposibles** en lugar de intentar detectarlas.
+
+Componentes:
+
+- **Capability gate** -- Verificación pura de pertenencia al conjunto. Sin capacidad = sin acción.
+- **Seguimiento de taint** -- El nivel de confianza de la sesión restringe las capacidades disponibles.
+- **Normalización de acciones** -- Rutas resueltas, encodings decodificados, cadenas de comandos divididas antes de la evaluación.
+- **Bloqueo de gateway** -- Previene evitar completamente el proxy de seguridad.
+- **Sandboxing de exec** -- Los comandos aprobados se ejecutan en entornos restringidos (sin red, FS de solo lectura, ulimits).
+- **Escaneo de egreso** -- Los mensajes salientes se escanean en busca de secretos filtrados, PII y datos de alta entropía.
+
+La aplicación estructural no puede ser evadida por prompts ingeniosos, ingeniería social ni inyección de prompts.
+
+## Capa 2: Análisis semántico (los guardias)
+
+El LLM judge analiza si una acción estructuralmente permitida es **contextualmente anómala**.
+
+El judge tiene un trabajo específico -- NO:
+- Detecta patrones de inyección (el seguimiento de taint se encarga)
+- Compara comandos conocidos como peligrosos (las reglas se encargan)
+
+Solo pregunta: **"¿Es esta acción estructuralmente permitida anómala en este momento?"**
+
+El judge se ejecuta en **paralelo** con el motor de reglas. Si el judge es lento (>500ms), la Capa 1 + Capa 3 deciden inmediatamente; el resultado del judge se usa para revisión asíncrona posterior.
+
+Decisiones del judge:
+- `NORMAL` -- La acción parece esperada
+- `ANOMALOUS` -- La acción es inusual → `REQUIRE_APPROVAL`
+- `DANGEROUS` (confianza ≥ 0.8) → `DENY`
+
+Si el judge no está disponible y la puntuación de riesgo excede 0.3, la acción requiere aprobación.
+
+## Capa 3: Reglas determinísticas (las alarmas)
+
+Patrones de comandos conocidos como peligrosos y bloqueos de rutas. Rápido, latencia cero, ambigüedad cero.
+
+Las reglas se definen en YAML y se cargan en tiempo de ejecución:
+
+```yaml
+# Example baseline rules
+version: 1
+rules:
+  - pattern: "rm -rf /"
+    action: DENY
+    reason: "Recursive delete of root"
+  - pattern: "chmod 777"
+    action: DENY
+    reason: "World-writable permissions"
+```
+
+Las reglas siempre ganan: si una regla dice DENY, la acción se deniega sin importar lo que otras capas decidan.
+
+## Fusión de decisiones
+
+Las decisiones de las capas se fusionan tomando el resultado **más restrictivo**:
+
+| Condición | Resultado |
+|---|---|
+| Rules DENY | **DENY** (siempre) |
+| LLM DANGEROUS (confianza ≥ 0.8) | **DENY** |
+| LLM ANOMALOUS | **REQUIRE_APPROVAL** |
+| LLM no disponible + riesgo > 0.3 | **REQUIRE_APPROVAL** |
+| Todas las capas pasan | **ALLOW** |
+
+## Principio fail-safe
+
+Cada fallo hace al sistema **más restrictivo**, nunca menos:
+
+- LLM caído → requiere aprobación humana
+- Configuración corrupta → se niega a iniciar
+- Error de taint → asume taint máximo
+- Fallo de normalización → trata como máximamente peligroso
+
+## Flujo del pipeline
+
+```
+Action → Capability Gate → Taint Check → Normalize → ┬─ Rules Engine ──┬→ Merge → Decision
+                                                      └─ LLM Judge ─────┘
+```
+
+El capability gate y la verificación de taint son síncronos e instantáneos. La normalización prepara la acción para la evaluación paralela por el motor de reglas y el LLM judge. El fusionador toma el resultado más restrictivo.

@@ -1,0 +1,73 @@
+---
+title: Claude Code
+description: Native Hooks-Integration für Claude Code.
+icon: Code
+---
+
+Security Layer integriert sich nativ mit Claude Code über dessen Hooks-System. PreToolUse-Hooks werten Aktionen vor der Ausführung aus; PostToolUse-Hooks tracken den Taint nach der Ausführung.
+
+## Einrichtung
+
+```bash
+securitylayer setup claude-code
+```
+
+Dies schreibt Hooks in `~/.claude/hooks.json`. Keine manuelle Konfiguration nötig.
+
+## Wie es funktioniert
+
+### PreToolUse-Hooks
+
+Bevor Claude Code ein Tool ausführt, wertet Security Layer die Aktion aus:
+
+| Tool | Fähigkeit | Was geprüft wird |
+|---|---|---|
+| `Bash` | `exec` | Vollständiger Befehl durch die Security-Pipeline |
+| `Write` | `file.write` | Dateipfad und Inhalt |
+| `Edit` | `file.write` | Dateipfad und Änderungen |
+| `WebFetch` | `web_fetch` | URL und Anfrage |
+| `NotebookEdit` | `file.write` | Notebook-Pfad und Zelländerungen |
+
+Wenn die Aktion verweigert wird, erhält Claude Code eine Fehlermeldung mit Begründung.
+
+### PostToolUse-Hooks
+
+Nach Abschluss eines Tools aktualisiert Security Layer das Taint-Tracking:
+
+| Tool | Effekt |
+|---|---|
+| `Bash` | Befehlsausführungskontext tracken |
+| `Read` | Taint erhöhen, wenn Datei aus nicht vertrauenswürdigem Verzeichnis |
+| `WebFetch` | Taint auf `WEB_CONTENT` erhöhen |
+
+### Hook-Format
+
+Jeder Hook ruft die Security Layer-CLI auf:
+
+```bash
+# PreToolUse
+securitylayer hook claude-code --tool Bash --input "$TOOL_INPUT"
+
+# PostToolUse
+securitylayer hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
+```
+
+## Überprüfung
+
+Prüfe, ob Hooks installiert sind:
+
+```bash
+securitylayer status
+```
+
+Achte auf „Claude Code hooks: installed" in der Ausgabe.
+
+## Entfernung
+
+Um Security Layer-Hooks aus Claude Code zu entfernen, bearbeite `~/.claude/hooks.json` und entferne die Security Layer-Einträge, oder lösche die Datei, um alle Hooks zu entfernen.
+
+## Siehe auch
+
+- [hook](/de/docs/commands/hook) — Hook-Handler-Referenz
+- [setup](/de/docs/commands/setup) — Auto-Setup-Befehl
+- [Shell-Shim](/de/docs/integrations/shell-shim) — Alternative Integrationsmethode

@@ -1,0 +1,64 @@
+---
+title: learn
+description: Habilitar o modo de aprendizado/monitoramento.
+icon: Brain
+---
+
+O modo de aprendizado monitora o que o Security Layer **bloquearia** sem realmente bloquear nada. Use-o para entender seus padroes de uso antes de aplicar uma politica.
+
+## Uso
+
+```bash
+securitylayer learn [--duration <duration>]
+```
+
+## Flags
+
+| Flag | Padrao | Descricao |
+|---|---|---|
+| `--duration <duration>` | `7d` | Quanto tempo ficar no modo de aprendizado |
+
+### Formato de duracao
+
+| Sufixo | Unidade | Exemplos |
+|---|---|---|
+| `m` | Minutos | `30m` |
+| `h` | Horas | `1h`, `12h` |
+| `d` | Dias | `1d`, `7d`, `30d` |
+
+## Comportamento
+
+Quando o modo de aprendizado esta ativo:
+
+- Todas as acoes sao **permitidas** (suas capabilities existentes nao mudam)
+- O Security Layer registra o que **teria bloqueado** nas configuracoes recomendadas
+- O modo expira automaticamente apos a duracao especificada
+- A configuracao e atualizada com `mode: learning` e o timestamp `learning_expires`
+
+Apos o periodo de aprendizado, use `securitylayer learn report` para ver as mudancas de capabilities recomendadas com base no uso real.
+
+## Exemplo
+
+```bash
+# Monitorar por 7 dias
+securitylayer learn --duration 7d
+
+# Verificar o que foi registrado
+securitylayer learn report
+```
+
+## Codigos de saida
+
+| Codigo | Significado |
+|---|---|
+| `0` | Modo de aprendizado habilitado |
+| `1` | Formato de duracao invalido |
+
+## Por que o modo de aprendizado?
+
+O motivo #1 pelo qual usuarios desabilitam ferramentas de seguranca: "Instalei e quebrou tudo." O modo de aprendizado evita isso permitindo que voce observe antes de aplicar.
+
+## Veja tambem
+
+- [Guia do modo de aprendizado](/pt/docs/guides/learning-mode)
+- [status](/pt/docs/commands/status) — Mostra o status do modo de aprendizado

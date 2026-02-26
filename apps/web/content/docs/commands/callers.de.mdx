@@ -1,0 +1,71 @@
+---
+title: callers
+description: KI-Tool-Caller-Profile auflisten und inspizieren.
+icon: Sparkle
+---
+
+Security Layer erkennt automatisch, welches KI-Tool einen Befehl ausgelöst hat, und wendet das entsprechende Fähigkeitsprofil an. Der callers-Befehl zeigt dir diese Profile.
+
+## Verwendung
+
+```bash
+securitylayer callers list
+securitylayer callers profile <name>
+```
+
+## Unterbefehle
+
+### `callers list`
+
+Zeigt alle konfigurierten KI-Tool-Caller mit ihren Erkennungsregeln und Fähigkeiten.
+
+```bash
+$ securitylayer callers list
+
+  claude-code (Claude Code)
+    taint: OWNER
+    capabilities: exec, file.read, file.write, web_fetch
+    detect env: CLAUDE_CODE
+    detect process: claude
+
+  cursor (Cursor)
+    taint: TRUSTED_CONTACT
+    capabilities: exec, file.read, file.write
+    detect env: CURSOR_SESSION
+    detect process: cursor
+```
+
+### `callers profile <name>`
+
+Zeigt detaillierte Informationen zu einem bestimmten Caller.
+
+```bash
+$ securitylayer callers profile claude-code
+
+  ID:           claude-code
+  Display name: Claude Code
+  Default taint: OWNER
+
+  Capabilities:
+    exec, file.read, file.write, web_fetch
+
+  Detection:
+    Environment: CLAUDE_CODE
+    Process:     claude
+```
+
+**Exit-Codes:** `0` bei Erfolg, `1` wenn der Caller unbekannt ist oder das Name-Argument fehlt.
+
+## Wie die Erkennung funktioniert
+
+Wenn ein Befehl abgefangen wird (über Shell-Shim oder Hook), prüft Security Layer:
+
+1. **Umgebungsvariablen** — Hat der aufrufende Prozess bestimmte Env-Vars gesetzt?
+2. **Prozessname** — Stimmt der übergeordnete Prozess mit einem bekannten KI-Tool überein?
+
+Der erkannte Caller bestimmt, welches Fähigkeitsprofil angewendet wird.
+
+## Siehe auch
+
+- [Shell-Shim](/de/docs/integrations/shell-shim) — Wie Shims Caller erkennen
+- [Konfiguration](/de/docs/guides/configuration) — Caller-Profile bearbeiten

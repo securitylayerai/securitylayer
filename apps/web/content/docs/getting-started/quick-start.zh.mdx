@@ -1,0 +1,75 @@
+---
+title: 快速入门
+description: 5 分钟内让 Security Layer 保护你的 AI 代理。
+icon: Lightning
+---
+
+本指南帮助你在 5 分钟内从零开始实现保护。
+
+## 1. 安装
+
+```bash
+bun add -g securitylayer
+```
+
+## 2. 初始化
+
+```bash
+securitylayer init
+```
+
+接受默认配置或自定义会话能力。向导会在 `~/.securitylayer/` 创建配置文件。
+
+## 3. 设置集成
+
+**Claude Code** — 原生 hooks 集成：
+
+```bash
+securitylayer setup claude-code
+```
+
+这会将 PreToolUse 和 PostToolUse hooks 安装到 `~/.claude/hooks.json`。Claude Code 的每个工具调用在执行前都会根据你的安全策略进行评估。
+
+**Shell shim** — 适用于任何 AI 工具的通用保护：
+
+```bash
+securitylayer shield enable
+```
+
+这会安装 PATH 优先级包装脚本来拦截所有 shell 命令。适用于任何 AI 工具 — Cursor、Aider、Copilot 或任何运行 shell 命令的工具。
+
+## 4. 验证
+
+```bash
+securitylayer status
+```
+
+你应该能看到已加载的配置、会话能力和集成状态（hooks 已安装或 shield 已激活）。
+
+## 5. 测试
+
+运行模拟策略检查，查看 Security Layer 的实际效果：
+
+```bash
+securitylayer policy check "rm -rf /"
+```
+
+你将看到完整的评估结果 — 能力门控、规则引擎和风险评分 — 以及最终决策。
+
+## 工作原理
+
+当 AI 代理尝试执行命令时：
+
+1. **能力门控** — 此操作类型是否被允许？（`exec`、`file.write` 等）
+2. **污点检查** — 会话信任级别是否足够？
+3. **规范化** — 解析路径、解码编码、拆分命令链
+4. **规则引擎** — 匹配确定性模式
+5. **LLM 判断器** — 语义分析，检测上下文异常（如已启用）
+6. **决策** — 最严格的结果胜出：ALLOW、DENY 或 REQUIRE_APPROVAL
+
+## 下一步
+
+- [污点级别](/zh/docs/concepts/taint-levels) — 了解信任模型
+- [能力](/zh/docs/concepts/capabilities) — 了解能力授权
+- [学习模式](/zh/docs/guides/learning-mode) — 先监控再执行
+- [配置](/zh/docs/guides/configuration) — 自定义安全策略

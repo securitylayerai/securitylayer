@@ -1,0 +1,47 @@
+---
+title: status
+description: セキュリティステータスダッシュボードを表示します。
+icon: ShieldCheck
+---
+
+Security Layer の設定、インテグレーションステータス、アクティブセッションの概要を表示します。
+
+## 使い方
+
+```bash
+securitylayer status
+```
+
+## 出力
+
+ステータスダッシュボードには以下が表示されます:
+
+- **設定** — 設定ファイルが読み込まれているかどうか、およびその場所
+- **シールドステータス** — 有効または無効
+- **Claude Code フック** — インストール済みまたは未インストール
+- **セッション** — 設定済みセッションの数と詳細
+- **ラーニングモード** — 有効期間と有効期限（有効な場合）
+
+## 出力例
+
+```
+Security Layer Status
+
+  ✓ Configuration loaded
+    config.yaml
+    capabilities/sessions.yaml
+    capabilities/channels.yaml
+    ai-tools.yaml
+    projects.yaml
+
+  Shield: active
+  Claude Code hooks: installed
+  Sessions: 1
+    claude-code (exec, file.read, file.write, web_fetch)
+```
+
+## 終了コード
+
+| コード | 意味 |
+|---|---|
+| `0` | 常に正常終了 |

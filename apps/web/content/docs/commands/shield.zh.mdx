@@ -1,0 +1,66 @@
+---
+title: shield
+description: 启用、禁用或检查 shell shim 保护状态。
+icon: ShieldCheck
+---
+
+shield 安装 PATH 优先级包装脚本，拦截任何 AI 工具执行的所有 shell 命令。通用保护 — 适用于任何运行 shell 命令的工具。
+
+## 用法
+
+```bash
+securitylayer shield enable
+securitylayer shield disable
+securitylayer shield status
+```
+
+## 子命令
+
+### `shield enable`
+
+在 `~/.securitylayer/bin/` 创建 shim 二进制包装器，并将该目录添加到你的 shell 配置的 PATH 中（前置以确保优先级）。
+
+**被 shim 的二进制文件：** `bash`、`sh`、`zsh`、`python`、`python3`、`node`、`ruby`、`perl`
+
+每个 shim 在转发到真实二进制文件之前调用 `securitylayer check`。
+
+**退出码：** 成功返回 `0`，未配置或未找到二进制文件返回 `1`。
+
+### `shield disable`
+
+从 `~/.securitylayer/bin/` 移除所有 shim 脚本，并从 shell 配置中移除 PATH 条目。
+
+**退出码：** 始终返回 `0`。
+
+### `shield status`
+
+显示 shield 是否激活、shim 目录状态以及哪些二进制文件被 shim。
+
+```
+Shield Status
+
+  Shim directory: ~/.securitylayer/bin/ (exists)
+  PATH includes shim dir: yes
+  Shimmed binaries: bash, sh, zsh, python, python3, node, ruby, perl
+
+  Status: ACTIVE
+```
+
+**退出码：** 始终返回 `0`。
+
+## 工作原理
+
+当 AI 工具（Claude Code、Cursor、Aider 等）运行 shell 命令时：
+
+1. 被 shim 的二进制文件拦截调用
+2. `securitylayer check` 根据你的策略评估命令
+3. 如果允许，真实二进制文件执行命令
+4. 如果拒绝，命令被阻止并返回错误消息
+
+调用者检测识别哪个 AI 工具触发了命令，并应用相应的能力配置。
+
+## 参阅
+
+- [Shell shim 集成](/zh/docs/integrations/shell-shim)
+- [check](/zh/docs/commands/check) — shim 使用的 check 命令
+- [callers](/zh/docs/commands/callers) — AI 工具调用者检测

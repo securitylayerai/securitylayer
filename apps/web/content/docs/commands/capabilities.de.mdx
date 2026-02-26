@@ -1,0 +1,49 @@
+---
+title: capabilities
+description: Fähigkeitsvergabe für Sessions, Channels und Skills anzeigen.
+icon: Key
+---
+
+Zeigt alle gewährten Fähigkeiten, organisiert nach Sessions, Channels und Skills.
+
+## Verwendung
+
+```bash
+securitylayer capabilities show
+```
+
+## Ausgabe
+
+Zeigt Fähigkeiten gruppiert nach:
+
+- **Sessions** — Fähigkeitsliste und Standard-Taint-Level jeder Session
+- **Channels** — Channel-Fähigkeitseinschränkungen
+- **Skills** — Fähigkeitsdeklarationen der Skills
+
+## Beispiel
+
+```bash
+$ securitylayer capabilities show
+
+  Sessions:
+    claude-code
+      capabilities: exec, file.read, file.write, web_fetch
+      default_taint: owner
+
+  Channels:
+    (none configured)
+
+  Skills:
+    (none configured)
+```
+
+## Exit-Codes
+
+| Code | Bedeutung |
+|---|---|
+| `0` | Beendet immer erfolgreich |
+
+## Siehe auch
+
+- [Fähigkeiten-Konzept](/de/docs/concepts/capabilities) — Wie Fähigkeiten funktionieren
+- [Konfiguration](/de/docs/guides/configuration) — Fähigkeitsdateien bearbeiten

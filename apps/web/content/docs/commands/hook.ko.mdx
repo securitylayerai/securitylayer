@@ -1,0 +1,65 @@
+---
+title: hook
+description: AI 도구 통합에서 호출되는 훅 핸들러입니다.
+icon: ArrowsClockwise
+---
+
+훅 핸들러는 AI 도구 통합(예: Claude Code 훅)에 의해 호출되어 실행 전후의 동작을 평가합니다.
+
+## 사용법
+
+```bash
+# 도구 실행 전 검사
+securitylayer hook <agent> --tool <tool> --input <json>
+
+# 도구 실행 후 추적
+securitylayer hook <agent> --tool <tool> --post --output <json>
+```
+
+## 플래그
+
+| 플래그 | 설명 |
+|---|---|
+| `--tool <tool>` | 도구 이름 (필수): `Bash`, `Write`, `Edit`, `Read`, `WebFetch`, `Glob`, `Grep`, `NotebookEdit` |
+| `--input <json>` | AI 도구의 도구 실행 전 JSON 입력 |
+| `--post` | 도구 실행 후 모드 (기본값은 실행 전) |
+| `--output <json>` | 도구 실행 후 JSON 출력 |
+
+## 도구-capability 매핑
+
+| 도구 | 필요한 Capability |
+|---|---|
+| `Bash` | `exec` |
+| `Write`, `Edit`, `NotebookEdit` | `file.write` |
+| `Read`, `Glob`, `Grep` | `file.read` |
+| `WebFetch` | `web_fetch` |
+
+## 동작
+
+### 도구 실행 전 모드
+
+전체 보안 파이프라인(capability 게이트, taint 검사, 정규화, 규칙, LLM 심판)에 따라 동작을 평가합니다. ALLOW 시 아무것도 출력하지 않으며 AI 도구가 진행됩니다. DENY 시 stderr에 이유를 출력하고 종료 코드 2로 종료합니다.
+
+### 도구 실행 후 모드
+
+도구가 수행한 작업에 따라 taint 추적을 업데이트합니다. 예를 들어, `Read`가 신뢰하지 않는 디렉토리의 파일에 접근하면 세션 taint가 상승할 수 있습니다. 항상 종료 코드 0으로 종료합니다.
+
+### 학습 모드
+
+학습 모드에서는 차단된 동작이 로깅되지만 허용됩니다. 훅은 stderr에 경고와 함께 종료 코드 0으로 종료합니다.
+
+### 안전 장치
+
+예상치 못한 오류 발생 시, 훅은 동작을 차단합니다(종료 코드 2). Security Layer는 절대 개방 실패하지 않습니다.
+
+## 종료 코드
+
+| 코드 | 의미 |
+|---|---|
+| `0` | 실행 전: ALLOW (또는 학습 모드). 실행 후: 항상 0 |
+| `2` | 실행 전: DENY, REQUIRE_APPROVAL 또는 오류 |
+
+## 참고
+
+- [setup](/ko/docs/commands/setup) — 훅 자동 설치
+- [Claude Code 통합](/ko/docs/integrations/claude-code)

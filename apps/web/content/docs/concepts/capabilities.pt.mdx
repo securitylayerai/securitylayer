@@ -1,0 +1,94 @@
+---
+title: Capabilities
+description: As 15 capabilities base que controlam cada acao do agente.
+icon: Key
+---
+
+O Security Layer usa um modelo de **controle de acesso baseado em capabilities**. Cada acao que um agente de IA executa deve ser explicitamente concedida — se uma capability nao esta no conjunto, a acao e estruturalmente impossivel.
+
+## Capabilities base
+
+| Capability | Descricao |
+|---|---|
+| `exec` | Executar comandos no shell |
+| `exec.elevated` | Executar comandos com privilegios elevados (sudo) |
+| `file.read` | Ler arquivos do sistema de arquivos |
+| `file.write` | Escrever, editar ou criar arquivos |
+| `browser` | Automacao de navegador |
+| `browser.login` | Automacao de navegador com credenciais de login |
+| `channel.send` | Enviar mensagens para canais |
+| `channel.send.external` | Enviar mensagens para canais externos |
+| `cron.create` | Criar tarefas agendadas |
+| `skill.install` | Instalar novas skills/plugins |
+| `memory.read.all_zones` | Ler de todas as zonas de memoria |
+| `memory.write` | Escrever na memoria persistente |
+| `web_fetch` | Buscar URLs |
+| `node.invoke` | Invocar funcoes Node.js |
+
+## Capabilities efetivas
+
+O conjunto de capabilities efetivas para qualquer acao e a **intersecao** de tres fontes:
+
+```
+Efetivo = Sessao ∩ Skill ∩ Canal
+```
+
+- **Sessao** — O que a sessao tem permissao para fazer (configurado em `sessions.yaml`)
+- **Skill** — O que a skill ativa declara que precisa
+- **Canal** — O que o canal de origem permite
+
+Qualquer coisa fora da intersecao e impossivel, independentemente do que qualquer fonte individual conceda.
+
+## Capabilities restritas por taint
+
+Capabilities podem exigir um taint level minimo usando a sintaxe com dois-pontos:
+
+```yaml
+sessions:
+  claude-code:
+    capabilities:
+      - exec:trusted          # exec apenas quando taint ≤ TRUSTED_CONTACT
+      - file.read             # file.read em qualquer taint level
+      - file.write:owner      # file.write apenas quando taint = OWNER
+      - web_fetch             # web_fetch em qualquer taint level
+```
+
+## O capability gate
+
+O capability gate (`checkCapability()`) e uma **funcao pura sincrona**:
+
+- Sem I/O
+- Sem chamadas de rede
+- Sem invocacao de LLM
+- Apenas verificacao de pertinencia ao conjunto
+
+Isso garante latencia zero e ambiguidade zero — ou a capability esta no conjunto ou nao esta.
+
+## Regras especiais
+
+- `cron.create` e `node.invoke` **sempre exigem aprovacao** independentemente das capabilities concedidas
+- Skills sem declaracoes de capability do Security Layer recebem **capabilities minimas viaveis** (apenas chat, sem ferramentas)
+- `exec.elevated` implica `exec`, mas `exec` nao implica `exec.elevated`
+
+## Configuracao
+
+Capabilities sao definidas em arquivos YAML em `~/.securitylayer/capabilities/`:
+
+```yaml
+# sessions.yaml
+version: 1
+sessions:
+  claude-code:
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    default_taint: owner
+```
+
+Visualize suas capabilities atuais:
+
+```bash
+securitylayer capabilities show
+```

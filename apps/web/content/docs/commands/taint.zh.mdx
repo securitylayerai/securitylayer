@@ -1,0 +1,54 @@
+---
+title: taint
+description: 查看污点级别和清除污点状态。
+icon: Fingerprint
+---
+
+查看项目信任规则、当前污点级别和清除污点状态。
+
+## 用法
+
+```bash
+securitylayer taint show
+securitylayer taint clear
+```
+
+## 子命令
+
+### `taint show`
+
+显示项目信任规则和当前工作目录的污点级别。
+
+```bash
+$ securitylayer taint show
+
+  Project trust rules:
+    ~/Dev/Personal/** → OWNER
+    ~/Dev/Work/**     → TRUSTED_CONTACT
+    /tmp/**           → WEB_CONTENT
+    ~/Downloads/**    → WEB_CONTENT
+
+  Default taint: UNTRUSTED_HUMAN
+
+  Current directory: ~/Dev/Personal/myproject
+  Current taint:    OWNER
+```
+
+### `taint clear`
+
+在 CLI 模式下，污点由项目信任规则决定，不会跨命令累积。此命令提供管理污点的指引：
+
+- 如需更改项目级别的信任，使用 `securitylayer projects trust <path>`
+- 在守护进程模式（代理）下，清除污点会重置会话的累积污点
+
+## 退出码
+
+| 代码 | 含义 |
+|---|---|
+| `0` | 始终成功退出 |
+
+## 参阅
+
+- [污点级别](/zh/docs/concepts/taint-levels) — 污点追踪的工作原理
+- [projects](/zh/docs/commands/projects) — 管理项目信任规则
+- [项目信任指南](/zh/docs/guides/project-trust)

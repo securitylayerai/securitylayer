@@ -1,0 +1,94 @@
+---
+title: 能力
+description: 控制每个代理操作的 15 种基础能力。
+icon: Key
+---
+
+Security Layer 使用**基于能力的访问控制**模型。AI 代理执行的每个操作都必须被显式授权 — 如果能力不在集合中，该操作在结构上就不可能发生。
+
+## 基础能力
+
+| 能力 | 描述 |
+|---|---|
+| `exec` | 运行 shell 命令 |
+| `exec.elevated` | 以提升权限运行命令（sudo） |
+| `file.read` | 读取文件系统中的文件 |
+| `file.write` | 写入、编辑或创建文件 |
+| `browser` | 浏览器自动化 |
+| `browser.login` | 使用登录凭证的浏览器自动化 |
+| `channel.send` | 向通道发送消息 |
+| `channel.send.external` | 向外部通道发送消息 |
+| `cron.create` | 创建定时任务 |
+| `skill.install` | 安装新的技能/插件 |
+| `memory.read.all_zones` | 读取所有内存区域 |
+| `memory.write` | 写入持久化内存 |
+| `web_fetch` | 获取 URL |
+| `node.invoke` | 调用 Node.js 函数 |
+
+## 有效能力
+
+任何操作的有效能力集是三个来源的**交集**：
+
+```
+Effective = Session ∩ Skill ∩ Channel
+```
+
+- **会话** — 会话被允许执行的操作（在 `sessions.yaml` 中配置）
+- **技能** — 活跃技能声明的所需能力
+- **通道** — 来源通道允许的操作
+
+不在交集中的操作不可能发生，无论单个来源授予了什么。
+
+## 污点限制的能力
+
+能力可以通过冒号语法要求最低污点级别：
+
+```yaml
+sessions:
+  claude-code:
+    capabilities:
+      - exec:trusted          # 仅当污点 ≤ TRUSTED_CONTACT 时允许 exec
+      - file.read             # 任何污点级别下都允许 file.read
+      - file.write:owner      # 仅当污点 = OWNER 时允许 file.write
+      - web_fetch             # 任何污点级别下都允许 web_fetch
+```
+
+## 能力门控
+
+能力门控（`checkCapability()`）是一个**纯同步函数**：
+
+- 无 I/O
+- 无网络调用
+- 无 LLM 调用
+- 仅做集合成员检查
+
+这保证了零延迟和零歧义 — 能力要么在集合中，要么不在。
+
+## 特殊规则
+
+- `cron.create` 和 `node.invoke` **始终需要审批**，无论能力授权如何
+- 没有 Security Layer 能力声明的技能获得**最低可用能力**（仅聊天，无工具）
+- `exec.elevated` 隐含 `exec`，但 `exec` 不隐含 `exec.elevated`
+
+## 配置
+
+能力在 `~/.securitylayer/capabilities/` 的 YAML 文件中定义：
+
+```yaml
+# sessions.yaml
+version: 1
+sessions:
+  claude-code:
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    default_taint: owner
+```
+
+查看当前能力：
+
+```bash
+securitylayer capabilities show
+```

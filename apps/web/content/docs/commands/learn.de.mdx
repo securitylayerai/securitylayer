@@ -1,0 +1,64 @@
+---
+title: learn
+description: Lern-/Überwachungsmodus aktivieren.
+icon: Brain
+---
+
+Der Lernmodus überwacht, was Security Layer blockieren **würde**, ohne tatsächlich etwas zu blockieren. Verwende ihn, um deine Nutzungsmuster zu verstehen, bevor du eine Richtlinie durchsetzt.
+
+## Verwendung
+
+```bash
+securitylayer learn [--duration <duration>]
+```
+
+## Flags
+
+| Flag | Standard | Beschreibung |
+|---|---|---|
+| `--duration <duration>` | `7d` | Wie lange der Lernmodus aktiv bleibt |
+
+### Dauerformat
+
+| Suffix | Einheit | Beispiele |
+|---|---|---|
+| `m` | Minuten | `30m` |
+| `h` | Stunden | `1h`, `12h` |
+| `d` | Tage | `1d`, `7d`, `30d` |
+
+## Verhalten
+
+Wenn der Lernmodus aktiv ist:
+
+- Alle Aktionen werden **erlaubt** (deine bestehenden Fähigkeiten bleiben unverändert)
+- Security Layer protokolliert, was unter empfohlenen Einstellungen **blockiert worden wäre**
+- Der Modus läuft nach der angegebenen Dauer automatisch ab
+- Die Konfiguration wird mit `mode: learning` und einem `learning_expires`-Zeitstempel aktualisiert
+
+Nach der Lernphase verwende `securitylayer learn report`, um empfohlene Fähigkeitsänderungen basierend auf der tatsächlichen Nutzung zu sehen.
+
+## Beispiel
+
+```bash
+# 7 Tage überwachen
+securitylayer learn --duration 7d
+
+# Prüfen, was protokolliert wurde
+securitylayer learn report
+```
+
+## Exit-Codes
+
+| Code | Bedeutung |
+|---|---|
+| `0` | Lernmodus aktiviert |
+| `1` | Ungültiges Dauerformat |
+
+## Warum Lernmodus?
+
+Der Hauptgrund, warum Nutzer Sicherheitstools deaktivieren: „Ich hab's installiert und es hat alles kaputtgemacht." Der Lernmodus verhindert das, indem du erst beobachten kannst, bevor durchgesetzt wird.
+
+## Siehe auch
+
+- [Lernmodus-Anleitung](/de/docs/guides/learning-mode)
+- [status](/de/docs/commands/status) — Zeigt den Lernmodus-Status

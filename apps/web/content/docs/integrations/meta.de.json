@@ -1,0 +1,5 @@
+{
+  "title": "Integrationen",
+  "icon": "Plug",
+  "pages": ["claude-code", "cursor", "shell-shim"]
+}

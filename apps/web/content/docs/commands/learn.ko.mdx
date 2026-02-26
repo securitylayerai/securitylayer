@@ -1,0 +1,64 @@
+---
+title: learn
+description: 학습/모니터링 모드를 활성화합니다.
+icon: Brain
+---
+
+학습 모드는 실제로 차단하지 않으면서 Security Layer가 **무엇을 차단했을지** 모니터링합니다. 정책을 적용하기 전에 사용 패턴을 파악하는 데 활용합니다.
+
+## 사용법
+
+```bash
+securitylayer learn [--duration <duration>]
+```
+
+## 플래그
+
+| 플래그 | 기본값 | 설명 |
+|---|---|---|
+| `--duration <duration>` | `7d` | 학습 모드를 유지할 기간 |
+
+### 기간 형식
+
+| 접미사 | 단위 | 예시 |
+|---|---|---|
+| `m` | 분 | `30m` |
+| `h` | 시간 | `1h`, `12h` |
+| `d` | 일 | `1d`, `7d`, `30d` |
+
+## 동작
+
+학습 모드가 활성화되면:
+
+- 모든 동작이 **허용됩니다** (기존 capability는 변경되지 않음)
+- Security Layer가 권장 설정에서 **차단했을 내용**을 로깅합니다
+- 지정된 기간이 지나면 모드가 자동으로 만료됩니다
+- 설정에 `mode: learning`과 `learning_expires` 타임스탬프가 업데이트됩니다
+
+학습 기간이 끝난 후, `securitylayer learn report`를 사용하면 실제 사용 패턴에 기반한 권장 capability 변경사항을 확인할 수 있습니다.
+
+## 예시
+
+```bash
+# 7일간 모니터링
+securitylayer learn --duration 7d
+
+# 로깅된 내용 확인
+securitylayer learn report
+```
+
+## 종료 코드
+
+| 코드 | 의미 |
+|---|---|
+| `0` | 학습 모드가 활성화됨 |
+| `1` | 잘못된 기간 형식 |
+
+## 학습 모드가 필요한 이유
+
+사용자가 보안 도구를 비활성화하는 가장 큰 이유: "설치했더니 모든 것이 망가졌다." 학습 모드는 적용 전에 관찰할 수 있게 하여 이를 방지합니다.
+
+## 참고
+
+- [학습 모드 가이드](/ko/docs/guides/learning-mode)
+- [status](/ko/docs/commands/status) — 학습 모드 상태 확인

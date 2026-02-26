@@ -1,0 +1,75 @@
+---
+title: Schnellstart
+description: Schütze deine KI-Agenten mit Security Layer in 5 Minuten.
+icon: Lightning
+---
+
+Diese Anleitung bringt dich in 5 Minuten von null auf geschützt.
+
+## 1. Installieren
+
+```bash
+bun add -g securitylayer
+```
+
+## 2. Initialisieren
+
+```bash
+securitylayer init
+```
+
+Akzeptiere die Standardwerte oder passe deine Session-Fähigkeiten an. Der Wizard erstellt Konfigurationsdateien unter `~/.securitylayer/`.
+
+## 3. Integration einrichten
+
+**Claude Code** — native Hooks-Integration:
+
+```bash
+securitylayer setup claude-code
+```
+
+Dies installiert PreToolUse- und PostToolUse-Hooks in `~/.claude/hooks.json`. Jeder Tool-Aufruf von Claude Code wird vor der Ausführung gegen deine Sicherheitsrichtlinie geprüft.
+
+**Shell-Shim** — universeller Schutz für jedes KI-Tool:
+
+```bash
+securitylayer shield enable
+```
+
+Dies installiert PATH-priorisierte Wrapper-Skripte, die alle Shell-Befehle abfangen. Funktioniert mit jedem KI-Tool — Cursor, Aider, Copilot oder allem, was Shell-Befehle ausführt.
+
+## 4. Überprüfen
+
+```bash
+securitylayer status
+```
+
+Du solltest deine geladene Konfiguration, deine Session-Fähigkeiten und deinen Integrationsstatus sehen (Hooks installiert oder Shield aktiv).
+
+## 5. Testen
+
+Führe einen Trockenlauf der Richtlinienprüfung durch, um Security Layer in Aktion zu sehen:
+
+```bash
+securitylayer policy check "rm -rf /"
+```
+
+Du siehst die vollständige Auswertung — Capability-Gate, Regel-Engine und Risikobewertung — mit der finalen Entscheidung.
+
+## Was passiert
+
+Wenn ein KI-Agent versucht, einen Befehl auszuführen:
+
+1. **Capability-Gate** — Ist dieser Aktionstyp erlaubt? (`exec`, `file.write`, etc.)
+2. **Taint-Check** — Ist die Vertrauensstufe der Session ausreichend?
+3. **Normalisierung** — Pfade auflösen, Kodierungen dekodieren, Befehlsketten aufteilen
+4. **Regel-Engine** — Abgleich mit deterministischen Mustern
+5. **LLM-Judge** — Semantische Analyse für kontextuelle Anomalien (falls aktiviert)
+6. **Entscheidung** — Das restriktivste Ergebnis gewinnt: ALLOW, DENY oder REQUIRE_APPROVAL
+
+## Nächste Schritte
+
+- [Taint-Levels](/de/docs/concepts/taint-levels) — Verstehe das Vertrauensmodell
+- [Fähigkeiten](/de/docs/concepts/capabilities) — Lerne über Fähigkeitsvergabe
+- [Lernmodus](/de/docs/guides/learning-mode) — Beobachten vor dem Durchsetzen
+- [Konfiguration](/de/docs/guides/configuration) — Passe deine Sicherheitsrichtlinie an

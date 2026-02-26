@@ -1,0 +1,91 @@
+---
+title: Security-Pipeline
+description: Die 3-schichtige Security-Pipeline — strukturell, semantisch und regelbasiert.
+icon: Stack
+---
+
+Jede Aktion, die ein KI-Agent versucht, durchläuft eine 3-schichtige Security-Pipeline. Die Schichten sind unabhängig und komplementär — jede fängt unterschiedliche Bedrohungskategorien ab.
+
+## Schicht 1: Strukturelle Durchsetzung (die Mauern)
+
+Die primäre Verteidigung. Strukturelle Durchsetzung macht gefährliche Aktionen **unmöglich**, statt sie zu erkennen.
+
+Komponenten:
+
+- **Capability-Gate** — Reine Funktions-Set-Zugehörigkeitsprüfung. Keine Fähigkeit = keine Aktion.
+- **Taint-Tracking** — Die Vertrauensstufe der Session schränkt verfügbare Fähigkeiten ein.
+- **Aktionsnormalisierung** — Pfade aufgelöst, Kodierungen dekodiert, Befehlsketten aufgeteilt vor der Auswertung.
+- **Gateway-Lockdown** — Verhindert das vollständige Umgehen des Security-Proxys.
+- **Exec-Sandboxing** — Genehmigte Befehle laufen in eingeschränkten Umgebungen (kein Netzwerk, nur-lesen FS, ulimits).
+- **Egress-Scanning** — Ausgehende Nachrichten werden auf geleakte Secrets, PII und hochentropische Daten gescannt.
+
+Strukturelle Durchsetzung kann nicht durch clevere Prompts, Social Engineering oder Prompt-Injection umgangen werden.
+
+## Schicht 2: Semantische Analyse (die Wächter)
+
+Der LLM-Judge analysiert, ob eine strukturell erlaubte Aktion **kontextuell anomal** ist.
+
+Der Judge hat eine enge Aufgabe — er erkennt NICHT:
+- Injection-Muster (das übernimmt Taint-Tracking)
+- Bekannte schädliche Befehle (das übernehmen die Regeln)
+
+Er fragt nur: **„Ist diese strukturell erlaubte Aktion gerade jetzt anomal?"**
+
+Der Judge läuft **parallel** zur Regel-Engine. Wenn der Judge langsam ist (>500ms), entscheiden Schicht 1 + Schicht 3 sofort; das Judge-Ergebnis wird für asynchrone Nachprüfung verwendet.
+
+Judge-Entscheidungen:
+- `NORMAL` — Aktion sieht erwartbar aus
+- `ANOMALOUS` — Aktion ist ungewöhnlich → `REQUIRE_APPROVAL`
+- `DANGEROUS` (Konfidenz ≥ 0.8) → `DENY`
+
+Wenn der Judge nicht verfügbar ist und der Risikoscore 0.3 überschreitet, erfordert die Aktion eine Genehmigung.
+
+## Schicht 3: Deterministische Regeln (die Alarme)
+
+Bekannte schädliche Befehlsmuster und Pfadblockierungen. Schnell, null Latenz, null Mehrdeutigkeit.
+
+Regeln werden in YAML definiert und zur Laufzeit geladen:
+
+```yaml
+# Beispiel Baseline-Regeln
+version: 1
+rules:
+  - pattern: "rm -rf /"
+    action: DENY
+    reason: "Recursive delete of root"
+  - pattern: "chmod 777"
+    action: DENY
+    reason: "World-writable permissions"
+```
+
+Regeln gewinnen immer: Wenn eine Regel DENY sagt, wird die Aktion verweigert, unabhängig davon, was andere Schichten entscheiden.
+
+## Entscheidungszusammenführung
+
+Schicht-Entscheidungen werden zusammengeführt, indem das **restriktivste** Ergebnis genommen wird:
+
+| Bedingung | Ergebnis |
+|---|---|
+| Regeln DENY | **DENY** (immer) |
+| LLM DANGEROUS (Konfidenz ≥ 0.8) | **DENY** |
+| LLM ANOMALOUS | **REQUIRE_APPROVAL** |
+| LLM nicht verfügbar + Risiko > 0.3 | **REQUIRE_APPROVAL** |
+| Alle Schichten bestanden | **ALLOW** |
+
+## Fail-Safe-Prinzip
+
+Jeder Fehler macht das System **restriktiver**, niemals weniger:
+
+- LLM ausgefallen → menschliche Genehmigung erforderlich
+- Konfiguration beschädigt → Start verweigern
+- Taint-Fehler → maximalen Taint annehmen
+- Normalisierungsfehler → als maximal gefährlich behandeln
+
+## Pipeline-Ablauf
+
+```
+Action → Capability Gate → Taint Check → Normalize → ┬─ Rules Engine ──┬→ Merge → Decision
+                                                      └─ LLM Judge ─────┘
+```
+
+Das Capability-Gate und der Taint-Check sind synchron und sofort. Die Normalisierung bereitet die Aktion für die parallele Auswertung durch die Regel-Engine und den LLM-Judge vor. Die Zusammenführung nimmt das restriktivste Ergebnis.

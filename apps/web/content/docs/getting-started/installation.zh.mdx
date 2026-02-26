@@ -1,0 +1,52 @@
+---
+title: 安装
+description: 安装 CLI 和系统要求。
+icon: Rocket
+---
+
+## 系统要求
+
+- **运行时：** [Bun](https://bun.sh) v1.0 或更高版本
+- **操作系统：** macOS 或 Linux
+- **可选：** Docker（用于 Web 仪表盘数据库）
+
+## 通过 npm 安装
+
+```bash
+bun add -g securitylayer
+```
+
+或使用 npm：
+
+```bash
+npm install -g securitylayer
+```
+
+## 验证安装
+
+```bash
+securitylayer --version
+```
+
+你也可以使用简短别名：
+
+```bash
+sl --version
+```
+
+## 包含内容
+
+`securitylayer` 包安装以下内容：
+
+- **`securitylayer` / `sl`** — CLI 二进制文件
+- **`@securitylayer/core`** — 安全引擎（能力门控、污点追踪器、规范化器、规则、LLM 判断器）
+
+## 下一步
+
+运行交互式设置向导：
+
+```bash
+securitylayer init
+```
+
+参阅 [Init](/zh/docs/getting-started/init) 了解完整流程，或跳转到[快速入门](/zh/docs/getting-started/quick-start)查看 5 分钟端到端指南。

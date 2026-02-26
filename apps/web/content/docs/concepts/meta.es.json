@@ -1,0 +1,5 @@
+{
+  "title": "Conceptos",
+  "icon": "Brain",
+  "pages": ["taint-levels", "capabilities", "security-pipeline"]
+}

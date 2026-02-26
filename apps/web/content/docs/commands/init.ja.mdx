@@ -1,0 +1,49 @@
+---
+title: init
+description: 対話型セットアップウィザード。
+icon: Gear
+---
+
+対話型のプロンプトベースウィザードを使用して、`~/.securitylayer/` に設定ファイルを作成します。
+
+## 使い方
+
+```bash
+securitylayer init
+```
+
+## プロンプト
+
+| プロンプト | デフォルト | 説明 |
+|---|---|---|
+| セッション名 | `claude-code` | デフォルトセッションの名前（`^[a-z0-9-]+$` に一致する必要があります） |
+| ケイパビリティ | `exec`, `file.read`, `file.write`, `web_fetch` | 複数選択のケイパビリティ付与 |
+| デフォルトテイント | `owner` | 基本信頼レベル（`owner`, `trusted`, `untrusted`） |
+| LLM ジャッジ | No | セマンティック分析レイヤーを有効にする |
+| プロバイダー | — | Anthropic、OpenAI、Google、xAI、または OpenAI 互換 |
+| モデル | — | モデル名（例: `claude-haiku-4-5-20251001`） |
+| API キー環境変数 | — | API キーの環境変数 |
+| ベース URL | — | OpenAI 互換プロバイダーのみ |
+
+## 作成されるファイル
+
+| ファイル | 用途 |
+|---|---|
+| `config.yaml` | メイン設定 |
+| `capabilities/sessions.yaml` | セッションケイパビリティの付与 |
+| `capabilities/channels.yaml` | チャネルケイパビリティの制限 |
+| `capabilities/skills.yaml` | スキルケイパビリティの宣言 |
+| `ai-tools.yaml` | AI ツールの呼び出し元プロファイル |
+| `projects.yaml` | プロジェクトディレクトリの信頼ルール |
+| `learned-rules.json` | 自動承認パターン（初期状態は空） |
+
+## 終了コード
+
+| コード | 意味 |
+|---|---|
+| `0` | セットアップが正常に完了 |
+
+## 関連項目
+
+- [クイックスタート](/ja/docs/getting-started/quick-start)
+- [設定](/ja/docs/guides/configuration)

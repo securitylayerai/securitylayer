@@ -1,0 +1,73 @@
+---
+title: Taint levels
+description: Os 6 taint levels que rastreiam a procedencia de confianca ao longo de uma sessao.
+icon: Fingerprint
+---
+
+Taint levels representam a **procedencia de confianca** dos dados em uma sessao. Quando um agente de IA le conteudo nao confiavel, o taint level da sessao sobe — e nunca volta a descer ate ser explicitamente limpo.
+
+## Os 6 niveis
+
+Ordenados do mais confiavel ao menos confiavel:
+
+| Nivel | Valor | Descricao |
+|---|---|---|
+| `OWNER` | 1 | Diretamente do proprietario autenticado |
+| `TRUSTED_CONTACT` | 2 | De um contato na lista de permissoes |
+| `UNTRUSTED_HUMAN` | 3 | De um humano desconhecido ou nao verificado |
+| `WEB_CONTENT` | 4 | De buscas web, navegadores, email |
+| `SKILL_GENERATED` | 5 | Gerado pelas instrucoes de uma skill |
+| `MEMORY_REPLAY` | 6 | Carregado da memoria persistente |
+
+## Propriedades principais
+
+### O taint so sobe
+
+O taint no nivel da sessao e **monotonicamente crescente**. Se uma sessao comeca em `OWNER` e le conteudo web, sobe para `WEB_CONTENT`. Ele nunca desce automaticamente.
+
+```
+OWNER → le arquivo nao confiavel → UNTRUSTED_HUMAN → busca URL → WEB_CONTENT
+```
+
+### O taint restringe capabilities
+
+Capabilities podem exigir um taint level minimo usando a sintaxe com dois-pontos:
+
+```yaml
+capabilities:
+  - exec:trusted        # Permitido apenas quando taint ≤ TRUSTED_CONTACT
+  - file.write:owner    # Permitido apenas quando taint = OWNER
+  - web_fetch           # Permitido em qualquer taint level
+```
+
+Se o taint de uma sessao exceder o limite da capability, a acao e negada — mesmo que a capability base esteja concedida.
+
+### Limpando o taint
+
+O taint so pode ser limpo por acao humana explicita:
+
+```bash
+securitylayer taint clear
+```
+
+No modo daemon (proxy), o taint e resetado quando uma nova sessao comeca. No modo CLI, o taint e rastreado por avaliacao com base nas regras de confianca de projetos.
+
+## Taint baseado em projeto
+
+O Security Layer atribui o taint inicial com base no diretorio do projeto:
+
+```yaml
+# ~/.securitylayer/projects.yaml
+trust_rules:
+  - path: "~/Dev/Personal/**"    # OWNER
+  - path: "~/Dev/Work/**"        # TRUSTED_CONTACT
+  - path: "/tmp/**"              # WEB_CONTENT
+  - path: "~/Downloads/**"       # WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+Isso modela a **ameaca de arquivo-como-canal**: um repositorio clonado pode conter instrucoes adversarias em READMEs, `.cursorrules`, `CLAUDE.md`, comentarios no codigo, scripts postinstall do `package.json` ou git hooks.
+
+## Por que isso importa
+
+Sem rastreamento de taint, um agente de IA que le um arquivo malicioso e depois executa um comando e indistinguivel de um que segue instrucoes legitimas. O rastreamento de taint faz o sistema perceber que o contexto do agente foi influenciado por conteudo nao confiavel — e restringe o que ele pode fazer de acordo.

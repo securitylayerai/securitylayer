@@ -1,0 +1,97 @@
+---
+title: Confianza de proyectos
+description: Configura niveles de confianza para directorios de proyecto.
+icon: Folder
+---
+
+Las reglas de confianza de proyectos asignan niveles de taint a directorios. Esto determina el nivel de confianza inicial cuando un agente de IA opera en un proyecto dado.
+
+## Por qué confianza de proyectos
+
+Para herramientas de IA de programación, **los archivos son el canal no confiable**. Un repositorio clonado puede contener instrucciones adversariales en:
+
+- `README.md`, `CLAUDE.md`, `.cursorrules`
+- Comentarios de código y docstrings
+- Scripts postinstall de `package.json`
+- Git hooks (`.git/hooks/`)
+- Archivos de configuración CI/CD
+
+Al asignar confianza basada en dónde vive un proyecto, Security Layer automáticamente restringe lo que un agente puede hacer cuando trabaja en código no confiable.
+
+## Configurar reglas de confianza
+
+### Via CLI
+
+```bash
+# Confiar en tus proyectos personales
+securitylayer projects trust "~/Dev/Personal/**" --taint owner
+
+# Confiar en proyectos de trabajo a un nivel menor
+securitylayer projects trust "~/Dev/Work/**" --taint trusted
+
+# Marcar directorios temporales como no confiables
+securitylayer projects trust "/tmp/**" --taint web
+
+# Eliminar una regla de confianza
+securitylayer projects untrust "/tmp/**"
+```
+
+### Via archivo de configuración
+
+Edita `~/.securitylayer/projects.yaml`:
+
+```yaml
+version: 1
+trust_rules:
+  - path: "~/Dev/Personal/**"
+    taint: OWNER
+  - path: "~/Dev/Work/**"
+    taint: TRUSTED_CONTACT
+  - path: "/tmp/**"
+    taint: WEB_CONTENT
+  - path: "~/Downloads/**"
+    taint: WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+## Mapeo de niveles de taint
+
+| Valor CLI | Nivel de taint | Caso de uso |
+|---|---|---|
+| `owner` | `OWNER` | Tus propios proyectos |
+| `trusted` | `TRUSTED_CONTACT` | Proyectos de colaboradores conocidos |
+| `untrusted` | `UNTRUSTED_HUMAN` | Fuentes desconocidas |
+| `web` | `WEB_CONTENT` | Descargados/clonados de internet |
+| `skill` | `SKILL_GENERATED` | Generados por skills |
+| `memory` | `MEMORY_REPLAY` | De memoria persistente |
+
+## Cómo funciona
+
+1. Cuando un agente de IA comienza a trabajar, Security Layer verifica el directorio actual
+2. La regla de confianza más específica que coincida determina el nivel de taint inicial
+3. Las capacidades que requieren mayor confianza se restringen automáticamente
+4. El taint solo puede aumentar durante una sesión, nunca disminuir
+
+## Ver la confianza actual
+
+```bash
+# Listar todas las reglas de confianza
+securitylayer projects list
+
+# Verificar el taint del directorio actual
+securitylayer taint show
+```
+
+## Mejores prácticas
+
+- **Proyectos personales** → `OWNER` -- Capacidades completas
+- **Proyectos de trabajo** → `TRUSTED_CONTACT` -- La mayoría de capacidades, algunas restricciones
+- **Contribuciones open-source** → `UNTRUSTED_HUMAN` -- Capacidades limitadas
+- **Repos descargados** → `WEB_CONTENT` -- Capacidades mínimas
+- **Directorios temporales** → `WEB_CONTENT` -- Capacidades mínimas
+
+## Ver también
+
+- [Niveles de taint](/es/docs/concepts/taint-levels) -- Referencia completa de niveles de taint
+- [projects](/es/docs/commands/projects) -- Referencia del comando CLI
+- [taint](/es/docs/commands/taint) -- Ver el estado de taint

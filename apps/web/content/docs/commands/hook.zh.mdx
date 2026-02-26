@@ -1,0 +1,65 @@
+---
+title: hook
+description: 由 AI 工具集成调用的 hook 处理器。
+icon: ArrowsClockwise
+---
+
+hook 处理器由 AI 工具集成（如 Claude Code hooks）调用，在执行前后评估操作。
+
+## 用法
+
+```bash
+# 工具执行前检查
+securitylayer hook <agent> --tool <tool> --input <json>
+
+# 工具执行后追踪
+securitylayer hook <agent> --tool <tool> --post --output <json>
+```
+
+## 参数
+
+| 参数 | 描述 |
+|---|---|
+| `--tool <tool>` | 工具名称（必填）：`Bash`、`Write`、`Edit`、`Read`、`WebFetch`、`Glob`、`Grep`、`NotebookEdit` |
+| `--input <json>` | 来自 AI 工具的执行前 JSON 输入 |
+| `--post` | 执行后模式（默认为执行前） |
+| `--output <json>` | 执行后 JSON 输出 |
+
+## 工具与能力映射
+
+| 工具 | 所需能力 |
+|---|---|
+| `Bash` | `exec` |
+| `Write`、`Edit`、`NotebookEdit` | `file.write` |
+| `Read`、`Glob`、`Grep` | `file.read` |
+| `WebFetch` | `web_fetch` |
+
+## 行为
+
+### 执行前模式
+
+根据完整的安全管道（能力门控、污点检查、规范化、规则、LLM 判断器）评估操作。ALLOW 时不输出任何内容 — AI 工具正常继续。DENY 时，将原因输出到 stderr 并以退出码 2 退出。
+
+### 执行后模式
+
+根据工具执行的操作更新污点追踪。例如，如果 `Read` 访问了不受信任目录中的文件，会话污点可能会被提升。始终以 0 退出。
+
+### 学习模式
+
+在学习模式下，被阻止的操作会被记录但仍被允许。hook 以 0 退出并在 stderr 输出警告。
+
+### 失败安全
+
+发生意外错误时，hook 会阻止操作（以 2 退出）。Security Layer 永远不会在失败时放行。
+
+## 退出码
+
+| 代码 | 含义 |
+|---|---|
+| `0` | 执行前：ALLOW（或学习模式）。执行后：始终为 0 |
+| `2` | 执行前：DENY、REQUIRE_APPROVAL 或错误 |
+
+## 参阅
+
+- [setup](/zh/docs/commands/setup) — 自动安装 hooks
+- [Claude Code 集成](/zh/docs/integrations/claude-code)

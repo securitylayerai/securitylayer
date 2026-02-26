@@ -1,0 +1,62 @@
+---
+title: Cursor
+description: Cursor mit Security Layer schützen.
+icon: Code
+---
+
+Cursor kann mit dem universellen Shell-Shim geschützt werden. Eine native VS Code-Extension ist für v1 geplant.
+
+## Aktuelle Integration (Shell-Shim)
+
+Der Shell-Shim fängt alle Befehle ab, die Cursor über das Terminal ausführt:
+
+```bash
+securitylayer shield enable
+```
+
+Dies installiert PATH-priorisierte Wrapper, die jeden Befehl auswerten, bevor er das echte Binary erreicht.
+
+## Wie es funktioniert
+
+1. Cursor führt einen Shell-Befehl aus (z.B. über Terminal oder Code-Aktion)
+2. Das geshimmte Binary fängt den Aufruf ab
+3. Security Layer erkennt Cursor als Caller (über Umgebungsvariablen und Prozesserkennung)
+4. Der Befehl wird gegen Cursors Fähigkeitsprofil ausgewertet
+5. Erlaubte Befehle werden ausgeführt; verweigerte Befehle geben einen Fehler zurück
+
+## Caller-Erkennung
+
+Security Layer identifiziert Cursor durch:
+
+- **Umgebungsvariable:** `CURSOR_SESSION`
+- **Prozessname:** `cursor`
+
+## Fähigkeitsprofil
+
+Cursor erhält sein eigenes Fähigkeitsprofil, definiert in `~/.securitylayer/ai-tools.yaml`. Das Standardprofil gewährt gängige Entwicklungsfähigkeiten und schränkt gefährliche Operationen ein.
+
+## Zukunft: native Extension (v1)
+
+Eine VS Code-Extension (`@securitylayer/vscode`), die sich einklinkt in:
+
+- Terminalerstellung und Befehlsausführung
+- Dateisystem-API-Aufrufe
+- Netzwerkanfragen
+
+Die Extension wird `@securitylayer/sdk` im Prozess für latenzfreie Prüfungen verwenden.
+
+## Einrichtung
+
+```bash
+# Shell-Shim-Schutz aktivieren
+securitylayer shield enable
+
+# Überprüfen
+securitylayer status
+```
+
+## Siehe auch
+
+- [shield](/de/docs/commands/shield) — Shell-Shim-Verwaltung
+- [Shell-Shim-Integration](/de/docs/integrations/shell-shim)
+- [callers](/de/docs/commands/callers) — Caller-Erkennungsprofile

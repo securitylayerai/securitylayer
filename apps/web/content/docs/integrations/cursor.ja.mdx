@@ -1,0 +1,62 @@
+---
+title: Cursor
+description: Security Layer で Cursor を保護します。
+icon: Code
+---
+
+Cursor はユニバーサルシェルシムを使用して保護できます。ネイティブ VS Code 拡張機能は v1 で予定されています。
+
+## 現在のインテグレーション（シェルシム）
+
+シェルシムは、Cursor がターミナルで実行するすべてのコマンドをインターセプトします:
+
+```bash
+securitylayer shield enable
+```
+
+リアルバイナリに到達する前にすべてのコマンドを評価する PATH 優先のラッパーがインストールされます。
+
+## 動作の仕組み
+
+1. Cursor がシェルコマンドを実行（ターミナルやコードアクション経由など）
+2. シム化されたバイナリが呼び出しをインターセプト
+3. Security Layer が Cursor を呼び出し元として検出（環境変数とプロセス検出経由）
+4. Cursor のケイパビリティプロファイルに対してコマンドを評価
+5. 許可されたコマンドは実行され、拒否されたコマンドはエラーを返す
+
+## 呼び出し元検出
+
+Security Layer は以下で Cursor を識別します:
+
+- **環境変数:** `CURSOR_SESSION`
+- **プロセス名:** `cursor`
+
+## ケイパビリティプロファイル
+
+Cursor は `~/.securitylayer/ai-tools.yaml` で定義された独自のケイパビリティプロファイルを持ちます。デフォルトプロファイルは一般的な開発ケイパビリティを付与しつつ、危険な操作を制限します。
+
+## 将来: ネイティブ拡張機能（v1）
+
+以下にフックする VS Code 拡張機能（`@securitylayer/vscode`）:
+
+- ターミナルの作成とコマンド実行
+- ファイルシステム API の呼び出し
+- ネットワークリクエスト
+
+拡張機能は `@securitylayer/sdk` をインプロセスで使用し、ゼロレイテンシーのチェックを実現します。
+
+## セットアップ
+
+```bash
+# シェルシム保護を有効化
+securitylayer shield enable
+
+# 確認
+securitylayer status
+```
+
+## 関連項目
+
+- [shield](/ja/docs/commands/shield) — シェルシムの管理
+- [シェルシムインテグレーション](/ja/docs/integrations/shell-shim)
+- [callers](/ja/docs/commands/callers) — 呼び出し元検出プロファイル

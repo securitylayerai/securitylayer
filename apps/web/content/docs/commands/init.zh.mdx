@@ -1,0 +1,49 @@
+---
+title: init
+description: 交互式引导设置向导。
+icon: Gear
+---
+
+通过交互式提示向导在 `~/.securitylayer/` 创建配置文件。
+
+## 用法
+
+```bash
+securitylayer init
+```
+
+## 提示项
+
+| 提示 | 默认值 | 描述 |
+|---|---|---|
+| 会话名称 | `claude-code` | 默认会话的名称（需匹配 `^[a-z0-9-]+$`） |
+| 能力 | `exec`、`file.read`、`file.write`、`web_fetch` | 多选能力授权 |
+| 默认污点 | `owner` | 基础信任级别（`owner`、`trusted`、`untrusted`） |
+| LLM 判断器 | 否 | 是否启用语义分析层 |
+| 提供商 | — | Anthropic、OpenAI、Google、xAI 或 OpenAI 兼容 |
+| 模型 | — | 模型名称（如 `claude-haiku-4-5-20251001`） |
+| API key 环境变量 | — | API key 的环境变量名 |
+| Base URL | — | 仅用于 OpenAI 兼容提供商 |
+
+## 创建的文件
+
+| 文件 | 用途 |
+|---|---|
+| `config.yaml` | 主配置 |
+| `capabilities/sessions.yaml` | 会话能力授权 |
+| `capabilities/channels.yaml` | 通道能力限制 |
+| `capabilities/skills.yaml` | 技能能力声明 |
+| `ai-tools.yaml` | AI 工具调用者配置 |
+| `projects.yaml` | 项目目录信任规则 |
+| `learned-rules.json` | 自动审批的模式（初始为空） |
+
+## 退出码
+
+| 代码 | 含义 |
+|---|---|
+| `0` | 设置成功完成 |
+
+## 参阅
+
+- [快速入门](/zh/docs/getting-started/quick-start)
+- [配置](/zh/docs/guides/configuration)

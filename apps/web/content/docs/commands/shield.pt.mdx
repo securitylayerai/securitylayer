@@ -1,0 +1,66 @@
+---
+title: shield
+description: Habilitar, desabilitar ou verificar a protecao do shell shim.
+icon: ShieldCheck
+---
+
+O shield instala scripts wrapper com prioridade no PATH que interceptam todos os comandos do shell executados por qualquer ferramenta de IA. Protecao universal — funciona com qualquer ferramenta que execute comandos no shell.
+
+## Uso
+
+```bash
+securitylayer shield enable
+securitylayer shield disable
+securitylayer shield status
+```
+
+## Subcomandos
+
+### `shield enable`
+
+Cria wrappers de binarios shimados em `~/.securitylayer/bin/` e adiciona o diretorio ao PATH do seu perfil de shell (prefixado para ter prioridade).
+
+**Binarios shimados:** `bash`, `sh`, `zsh`, `python`, `python3`, `node`, `ruby`, `perl`
+
+Cada shim chama `securitylayer check` antes de encaminhar para o binario real.
+
+**Codigos de saida:** `0` em caso de sucesso, `1` se nao configurado ou nenhum binario encontrado.
+
+### `shield disable`
+
+Remove todos os scripts de shim de `~/.securitylayer/bin/` e remove a entrada do PATH do seu perfil de shell.
+
+**Codigos de saida:** Sempre `0`.
+
+### `shield status`
+
+Mostra se o shield esta ativo, o status do diretorio de shims e quais binarios estao shimados.
+
+```
+Shield Status
+
+  Shim directory: ~/.securitylayer/bin/ (exists)
+  PATH includes shim dir: yes
+  Shimmed binaries: bash, sh, zsh, python, python3, node, ruby, perl
+
+  Status: ACTIVE
+```
+
+**Codigos de saida:** Sempre `0`.
+
+## Como funciona
+
+Quando uma ferramenta de IA (Claude Code, Cursor, Aider, etc.) executa um comando no shell:
+
+1. O binario shimado intercepta a chamada
+2. `securitylayer check` avalia o comando contra sua politica
+3. Se permitido, o binario real executa o comando
+4. Se negado, o comando e bloqueado com uma mensagem de erro
+
+A deteccao de caller identifica qual ferramenta de IA acionou o comando e aplica o perfil de capabilities apropriado.
+
+## Veja tambem
+
+- [Integracao shell shim](/pt/docs/integrations/shell-shim)
+- [check](/pt/docs/commands/check) — O comando check usado pelos shims
+- [callers](/pt/docs/commands/callers) — Deteccao de caller de ferramentas de IA

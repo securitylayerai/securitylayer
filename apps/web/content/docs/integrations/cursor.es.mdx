@@ -1,0 +1,62 @@
+---
+title: Cursor
+description: Proteger Cursor con Security Layer.
+icon: Code
+---
+
+Cursor se puede proteger usando el shell shim universal. Una extensión nativa de VS Code está planificada para v1.
+
+## Integración actual (shell shim)
+
+El shell shim intercepta todos los comandos que Cursor ejecuta a través de la terminal:
+
+```bash
+securitylayer shield enable
+```
+
+Esto instala wrappers con prioridad en el PATH que evalúan cada comando antes de que llegue al binario real.
+
+## Cómo funciona
+
+1. Cursor ejecuta un comando de shell (ej. via terminal o acción de código)
+2. El binario con shim intercepta la llamada
+3. Security Layer detecta Cursor como el caller (mediante variables de entorno y detección de procesos)
+4. El comando se evalúa contra el perfil de capacidades de Cursor
+5. Los comandos permitidos proceden; los denegados devuelven un error
+
+## Detección de caller
+
+Security Layer identifica Cursor mediante:
+
+- **Variable de entorno:** `CURSOR_SESSION`
+- **Nombre del proceso:** `cursor`
+
+## Perfil de capacidades
+
+Cursor tiene su propio perfil de capacidades definido en `~/.securitylayer/ai-tools.yaml`. El perfil por defecto otorga capacidades comunes de desarrollo mientras restringe operaciones peligrosas.
+
+## Futuro: extensión nativa (v1)
+
+Una extensión de VS Code (`@securitylayer/vscode`) que se conecta a:
+
+- Creación de terminales y ejecución de comandos
+- Llamadas a la API del sistema de archivos
+- Peticiones de red
+
+La extensión usará `@securitylayer/sdk` en proceso para verificaciones con latencia cero.
+
+## Configuración
+
+```bash
+# Habilitar protección con shell shim
+securitylayer shield enable
+
+# Verificar
+securitylayer status
+```
+
+## Ver también
+
+- [shield](/es/docs/commands/shield) -- Gestión del shell shim
+- [Integración shell shim](/es/docs/integrations/shell-shim)
+- [callers](/es/docs/commands/callers) -- Perfiles de detección de callers

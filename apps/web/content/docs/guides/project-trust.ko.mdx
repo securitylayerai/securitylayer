@@ -1,0 +1,97 @@
+---
+title: 프로젝트 신뢰
+description: 프로젝트 디렉토리의 신뢰 수준을 설정합니다.
+icon: Folder
+---
+
+프로젝트 신뢰 규칙은 디렉토리에 taint 레벨을 할당합니다. 이를 통해 AI 에이전트가 특정 프로젝트에서 작업할 때의 초기 신뢰 수준이 결정됩니다.
+
+## 프로젝트 신뢰가 필요한 이유
+
+AI 코딩 도구에서 **파일은 신뢰하지 않는 채널**입니다. 클론된 저장소에는 다음과 같은 곳에 악의적인 지침이 포함될 수 있습니다:
+
+- `README.md`, `CLAUDE.md`, `.cursorrules`
+- 코드 주석 및 독스트링
+- `package.json` postinstall 스크립트
+- Git 훅 (`.git/hooks/`)
+- CI/CD 설정 파일
+
+프로젝트가 위치한 디렉토리에 따라 신뢰를 할당하면, Security Layer가 신뢰하지 않는 코드에서 작업할 때 에이전트가 할 수 있는 것을 자동으로 제한합니다.
+
+## 신뢰 규칙 설정
+
+### CLI를 통해
+
+```bash
+# 개인 프로젝트 신뢰
+securitylayer projects trust "~/Dev/Personal/**" --taint owner
+
+# 업무 프로젝트를 낮은 수준으로 신뢰
+securitylayer projects trust "~/Dev/Work/**" --taint trusted
+
+# 임시 디렉토리를 신뢰하지 않음으로 설정
+securitylayer projects trust "/tmp/**" --taint web
+
+# 신뢰 규칙 제거
+securitylayer projects untrust "/tmp/**"
+```
+
+### 설정 파일을 통해
+
+`~/.securitylayer/projects.yaml`을 편집합니다:
+
+```yaml
+version: 1
+trust_rules:
+  - path: "~/Dev/Personal/**"
+    taint: OWNER
+  - path: "~/Dev/Work/**"
+    taint: TRUSTED_CONTACT
+  - path: "/tmp/**"
+    taint: WEB_CONTENT
+  - path: "~/Downloads/**"
+    taint: WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+## Taint 레벨 매핑
+
+| CLI 값 | Taint 레벨 | 사용 사례 |
+|---|---|---|
+| `owner` | `OWNER` | 본인의 프로젝트 |
+| `trusted` | `TRUSTED_CONTACT` | 알려진 협업자의 프로젝트 |
+| `untrusted` | `UNTRUSTED_HUMAN` | 알 수 없는 출처 |
+| `web` | `WEB_CONTENT` | 인터넷에서 다운로드/클론한 항목 |
+| `skill` | `SKILL_GENERATED` | 스킬에 의해 생성됨 |
+| `memory` | `MEMORY_REPLAY` | 영구 메모리에서 가져옴 |
+
+## 동작 원리
+
+1. AI 에이전트가 작업을 시작하면, Security Layer가 현재 디렉토리를 확인합니다
+2. 가장 구체적으로 일치하는 신뢰 규칙이 초기 taint 레벨을 결정합니다
+3. 더 높은 신뢰가 필요한 capability는 자동으로 제한됩니다
+4. 세션 중 taint는 상승만 가능하며, 절대 하락하지 않습니다
+
+## 현재 신뢰 확인
+
+```bash
+# 모든 신뢰 규칙 조회
+securitylayer projects list
+
+# 현재 디렉토리의 taint 확인
+securitylayer taint show
+```
+
+## 모범 사례
+
+- **개인 프로젝트** → `OWNER` — 전체 capability
+- **업무 프로젝트** → `TRUSTED_CONTACT` — 대부분의 capability, 일부 제한
+- **오픈소스 기여** → `UNTRUSTED_HUMAN` — 제한된 capability
+- **다운로드한 저장소** → `WEB_CONTENT` — 최소 capability
+- **임시 디렉토리** → `WEB_CONTENT` — 최소 capability
+
+## 참고
+
+- [Taint 레벨](/ko/docs/concepts/taint-levels) — 전체 taint 레벨 레퍼런스
+- [projects](/ko/docs/commands/projects) — CLI 명령 레퍼런스
+- [taint](/ko/docs/commands/taint) — taint 상태 확인

@@ -1,0 +1,65 @@
+---
+title: hook
+description: Handler de hook chamado pelas integracoes de ferramentas de IA.
+icon: ArrowsClockwise
+---
+
+O handler de hook e chamado pelas integracoes de ferramentas de IA (como hooks do Claude Code) para avaliar acoes antes e depois da execucao.
+
+## Uso
+
+```bash
+# Verificacao pre-tool
+securitylayer hook <agent> --tool <tool> --input <json>
+
+# Rastreamento post-tool
+securitylayer hook <agent> --tool <tool> --post --output <json>
+```
+
+## Flags
+
+| Flag | Descricao |
+|---|---|
+| `--tool <tool>` | Nome da ferramenta (obrigatorio): `Bash`, `Write`, `Edit`, `Read`, `WebFetch`, `Glob`, `Grep`, `NotebookEdit` |
+| `--input <json>` | Entrada JSON pre-tool da ferramenta de IA |
+| `--post` | Modo post-tool (padrao e pre-tool) |
+| `--output <json>` | Saida JSON post-tool |
+
+## Mapeamento de ferramenta para capability
+
+| Ferramenta | Capability necessaria |
+|---|---|
+| `Bash` | `exec` |
+| `Write`, `Edit`, `NotebookEdit` | `file.write` |
+| `Read`, `Glob`, `Grep` | `file.read` |
+| `WebFetch` | `web_fetch` |
+
+## Comportamento
+
+### Modo pre-tool
+
+Avalia a acao contra o pipeline de seguranca completo (capability gate, verificacao de taint, normalizacao, rules, LLM judge). Nao produz saida em caso de ALLOW — a ferramenta de IA prossegue. Em caso de DENY, envia o motivo para stderr e sai com codigo 2.
+
+### Modo post-tool
+
+Atualiza o rastreamento de taint com base no que a ferramenta fez. Por exemplo, se `Read` acessou um arquivo em um diretorio nao confiavel, o taint da sessao pode ser elevado. Sempre sai com codigo 0.
+
+### Modo de aprendizado
+
+No modo de aprendizado, acoes bloqueadas sao registradas mas permitidas. O hook sai com codigo 0 e um aviso no stderr.
+
+### Fail-safe
+
+Em caso de erros inesperados, o hook bloqueia a acao (sai com codigo 2). O Security Layer nunca falha de forma aberta.
+
+## Codigos de saida
+
+| Codigo | Significado |
+|---|---|
+| `0` | Pre-tool: ALLOW (ou modo de aprendizado). Post-tool: sempre 0 |
+| `2` | Pre-tool: DENY, REQUIRE_APPROVAL ou erro |
+
+## Veja tambem
+
+- [setup](/pt/docs/commands/setup) — Instalar hooks automaticamente
+- [Integracao com Claude Code](/pt/docs/integrations/claude-code)

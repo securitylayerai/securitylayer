@@ -1,0 +1,47 @@
+---
+title: status
+description: Muestra el panel de estado de seguridad.
+icon: ShieldCheck
+---
+
+Muestra un resumen de tu configuración de Security Layer, el estado de las integraciones y las sesiones activas.
+
+## Uso
+
+```bash
+securitylayer status
+```
+
+## Salida
+
+El panel de estado muestra:
+
+- **Configuración** -- Si los archivos de configuración están cargados y sus ubicaciones
+- **Estado del shield** -- Activo o inactivo
+- **Hooks de Claude Code** -- Instalados o no instalados
+- **Sesiones** -- Cantidad y detalles de las sesiones configuradas
+- **Modo aprendizaje** -- Duración activa y expiración (si está habilitado)
+
+## Ejemplo de salida
+
+```
+Security Layer Status
+
+  ✓ Configuration loaded
+    config.yaml
+    capabilities/sessions.yaml
+    capabilities/channels.yaml
+    ai-tools.yaml
+    projects.yaml
+
+  Shield: active
+  Claude Code hooks: installed
+  Sessions: 1
+    claude-code (exec, file.read, file.write, web_fetch)
+```
+
+## Códigos de salida
+
+| Código | Significado |
+|---|---|
+| `0` | Siempre termina exitosamente |

@@ -1,0 +1,65 @@
+---
+title: hook
+description: Hook-Handler, der von KI-Tool-Integrationen aufgerufen wird.
+icon: ArrowsClockwise
+---
+
+Der Hook-Handler wird von KI-Tool-Integrationen (wie Claude Code Hooks) aufgerufen, um Aktionen vor und nach der Ausführung auszuwerten.
+
+## Verwendung
+
+```bash
+# Pre-Tool-Prüfung
+securitylayer hook <agent> --tool <tool> --input <json>
+
+# Post-Tool-Tracking
+securitylayer hook <agent> --tool <tool> --post --output <json>
+```
+
+## Flags
+
+| Flag | Beschreibung |
+|---|---|
+| `--tool <tool>` | Tool-Name (erforderlich): `Bash`, `Write`, `Edit`, `Read`, `WebFetch`, `Glob`, `Grep`, `NotebookEdit` |
+| `--input <json>` | Pre-Tool-JSON-Input vom KI-Tool |
+| `--post` | Post-Tool-Modus (Standard ist Pre-Tool) |
+| `--output <json>` | Post-Tool-JSON-Output |
+
+## Tool-zu-Fähigkeits-Zuordnung
+
+| Tool | Benötigte Fähigkeit |
+|---|---|
+| `Bash` | `exec` |
+| `Write`, `Edit`, `NotebookEdit` | `file.write` |
+| `Read`, `Glob`, `Grep` | `file.read` |
+| `WebFetch` | `web_fetch` |
+
+## Verhalten
+
+### Pre-Tool-Modus
+
+Wertet die Aktion gegen die gesamte Security-Pipeline aus (Capability-Gate, Taint-Check, Normalisierung, Regeln, LLM-Judge). Gibt bei ALLOW nichts aus — das KI-Tool fährt fort. Bei DENY wird ein Grund nach stderr ausgegeben und mit Code 2 beendet.
+
+### Post-Tool-Modus
+
+Aktualisiert das Taint-Tracking basierend auf dem, was das Tool getan hat. Wenn zum Beispiel `Read` auf eine Datei in einem nicht vertrauenswürdigen Verzeichnis zugegriffen hat, kann der Session-Taint erhöht werden. Beendet immer mit 0.
+
+### Lernmodus
+
+Im Lernmodus werden blockierte Aktionen protokolliert, aber erlaubt. Der Hook beendet mit 0 und einer Warnung nach stderr.
+
+### Fail-Safe
+
+Bei unerwarteten Fehlern blockiert der Hook die Aktion (beendet mit 2). Security Layer scheitert niemals offen.
+
+## Exit-Codes
+
+| Code | Bedeutung |
+|---|---|
+| `0` | Pre-Tool: ALLOW (oder Lernmodus). Post-Tool: immer 0 |
+| `2` | Pre-Tool: DENY, REQUIRE_APPROVAL oder Fehler |
+
+## Siehe auch
+
+- [setup](/de/docs/commands/setup) — Hooks automatisch installieren
+- [Claude Code-Integration](/de/docs/integrations/claude-code)

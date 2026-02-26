@@ -1,0 +1,65 @@
+---
+title: policy check
+description: dry-run 정책 시뮬레이션입니다.
+icon: ListChecks
+---
+
+명령을 실행하지 않고 정책 평가를 시뮬레이션합니다. 모든 레이어의 전체 평가 결과를 보여줍니다.
+
+## 사용법
+
+```bash
+securitylayer policy check "<cmd>" [--session <name>]
+```
+
+## 플래그
+
+| 플래그 | 기본값 | 설명 |
+|---|---|---|
+| `--command <cmd>` | (위치 인자) | 시뮬레이션할 명령 |
+| `--session <name>` | `claude-code` | 평가에 사용할 세션 |
+
+## 출력
+
+명령이 표시하는 항목:
+
+- **입력** — 명령, 세션, taint 레벨, 현재 작업 디렉토리
+- **레이어 결과** — Capability 게이트, 규칙 엔진, LLM 심판, 위험 점수
+- **타이밍** — 각 레이어에 소요된 시간 분석
+- **최종 결정** — `ALLOW`, `DENY` 또는 `REQUIRE_APPROVAL`
+
+## 예시
+
+```bash
+$ securitylayer policy check "rm -rf /"
+
+  Command:  rm -rf /
+  Session:  claude-code
+  Taint:    OWNER
+  CWD:      /home/user/project
+
+  Layer Results:
+    Capability gate: ALLOW (exec granted)
+    Rules:           DENY (recursive delete of root)
+    LLM judge:       DANGEROUS (confidence: 0.95)
+    Risk score:      1.0
+
+  Timing:
+    Total:      45ms
+    Capability: 0ms
+    Rules:      2ms
+    LLM:        43ms
+
+  Decision: DENY
+```
+
+## 종료 코드
+
+| 코드 | 의미 |
+|---|---|
+| `0` | 항상 성공적으로 종료됨 |
+
+## 참고
+
+- [보안 파이프라인](/ko/docs/concepts/security-pipeline) — 파이프라인의 동작 원리
+- [check](/ko/docs/commands/check) — 실시간 정책 검사 (shim에서 사용)
