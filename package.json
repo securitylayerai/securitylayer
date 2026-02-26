@@ -23,6 +23,7 @@
     "@commitlint/config-conventional": "^20.4.2",
     "@vitest/coverage-v8": "^4.0.18",
     "lefthook": "^2.1.1",
+    "portless": "^0.4.2",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.18"
   }
