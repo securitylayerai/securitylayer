@@ -22,7 +22,7 @@ const ui = defineI18nUI(i18n, {
   translations: {
     en: {
       displayName: "English",
-      search: "Search documentation...",
+      search: "Search...",
       searchNoResult: "No results found",
       toc: "On this page",
       tocNoHeadings: "No headings",
@@ -35,7 +35,7 @@ const ui = defineI18nUI(i18n, {
     },
     zh: {
       displayName: "中文",
-      search: "搜索文档...",
+      search: "搜索...",
       searchNoResult: "未找到结果",
       toc: "本页目录",
       tocNoHeadings: "无标题",
@@ -48,7 +48,7 @@ const ui = defineI18nUI(i18n, {
     },
     ja: {
       displayName: "日本語",
-      search: "ドキュメントを検索...",
+      search: "検索...",
       searchNoResult: "結果が見つかりません",
       toc: "目次",
       tocNoHeadings: "見出しなし",
@@ -61,7 +61,7 @@ const ui = defineI18nUI(i18n, {
     },
     es: {
       displayName: "Español",
-      search: "Buscar documentación...",
+      search: "Buscar...",
       searchNoResult: "No se encontraron resultados",
       toc: "En esta página",
       tocNoHeadings: "Sin encabezados",
@@ -74,7 +74,7 @@ const ui = defineI18nUI(i18n, {
     },
     ko: {
       displayName: "한국어",
-      search: "문서 검색...",
+      search: "검색...",
       searchNoResult: "결과 없음",
       toc: "이 페이지에서",
       tocNoHeadings: "제목 없음",
@@ -87,7 +87,7 @@ const ui = defineI18nUI(i18n, {
     },
     pt: {
       displayName: "Português",
-      search: "Pesquisar documentação...",
+      search: "Pesquisar...",
       searchNoResult: "Nenhum resultado encontrado",
       toc: "Nesta página",
       tocNoHeadings: "Sem títulos",
@@ -100,7 +100,7 @@ const ui = defineI18nUI(i18n, {
     },
     de: {
       displayName: "Deutsch",
-      search: "Dokumentation durchsuchen...",
+      search: "Suchen...",
       searchNoResult: "Keine Ergebnisse gefunden",
       toc: "Auf dieser Seite",
       tocNoHeadings: "Keine Überschriften",

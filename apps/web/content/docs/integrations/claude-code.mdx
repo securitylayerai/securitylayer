@@ -14,9 +14,9 @@ securitylayer setup claude-code
 
 This writes hooks to `~/.claude/hooks.json`. No manual configuration needed.
 
-## How It Works
+## How it works
 
-### PreToolUse Hooks
+### PreToolUse hooks
 
 Before Claude Code executes a tool, Security Layer evaluates the action:
 
@@ -30,7 +30,7 @@ Before Claude Code executes a tool, Security Layer evaluates the action:
 
 If the action is denied, Claude Code receives an error message explaining why.
 
-### PostToolUse Hooks
+### PostToolUse hooks
 
 After a tool completes, Security Layer updates taint tracking:
 
@@ -40,7 +40,7 @@ After a tool completes, Security Layer updates taint tracking:
 | `Read` | Elevate taint if file is from untrusted directory |
 | `WebFetch` | Elevate taint to `WEB_CONTENT` |
 
-### Hook Format
+### Hook format
 
 Each hook calls the Security Layer CLI:
 
@@ -66,8 +66,8 @@ Look for "Claude Code hooks: installed" in the output.
 
 To remove Security Layer hooks from Claude Code, edit `~/.claude/hooks.json` and remove the Security Layer entries, or delete the file to remove all hooks.
 
-## See Also
+## See also
 
 - [hook](/docs/commands/hook) — Hook handler reference
 - [setup](/docs/commands/setup) — Auto-setup command
-- [Shell Shim](/docs/integrations/shell-shim) — Alternative integration method
+- [Shell shim](/docs/integrations/shell-shim) — Alternative integration method

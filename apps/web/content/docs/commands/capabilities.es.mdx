@@ -1,0 +1,49 @@
+---
+title: capabilities
+description: Muestra los grants de capacidades para sesiones, canales y skills.
+icon: Key
+---
+
+Muestra todas las capacidades otorgadas organizadas por sesiones, canales y skills.
+
+## Uso
+
+```bash
+securitylayer capabilities show
+```
+
+## Salida
+
+Muestra las capacidades agrupadas por:
+
+- **Sesiones** -- Lista de capacidades de cada sesión y su nivel de taint por defecto
+- **Canales** -- Restricciones de capacidades de canal
+- **Skills** -- Declaraciones de capacidades de skills
+
+## Ejemplo
+
+```bash
+$ securitylayer capabilities show
+
+  Sessions:
+    claude-code
+      capabilities: exec, file.read, file.write, web_fetch
+      default_taint: owner
+
+  Channels:
+    (none configured)
+
+  Skills:
+    (none configured)
+```
+
+## Códigos de salida
+
+| Código | Significado |
+|---|---|
+| `0` | Siempre termina exitosamente |
+
+## Ver también
+
+- [Concepto de capacidades](/es/docs/concepts/capabilities) -- Cómo funcionan las capacidades
+- [Configuración](/es/docs/guides/configuration) -- Editar archivos de capacidades

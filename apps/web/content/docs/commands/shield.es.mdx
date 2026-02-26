@@ -1,0 +1,66 @@
+---
+title: shield
+description: Habilitar, deshabilitar o verificar la protección del shell shim.
+icon: ShieldCheck
+---
+
+El shield instala scripts wrapper con prioridad en el PATH que interceptan todos los comandos de shell que cualquier herramienta de IA ejecute. Protección universal -- funciona con cualquier herramienta que ejecute comandos de shell.
+
+## Uso
+
+```bash
+securitylayer shield enable
+securitylayer shield disable
+securitylayer shield status
+```
+
+## Subcomandos
+
+### `shield enable`
+
+Crea wrappers de binarios con shim en `~/.securitylayer/bin/` y agrega el directorio al PATH de tu perfil de shell (antepuesto para tener prioridad).
+
+**Binarios con shim:** `bash`, `sh`, `zsh`, `python`, `python3`, `node`, `ruby`, `perl`
+
+Cada shim llama a `securitylayer check` antes de reenviar al binario real.
+
+**Códigos de salida:** `0` en caso de éxito, `1` si no está configurado o no se encontraron binarios.
+
+### `shield disable`
+
+Elimina todos los scripts shim de `~/.securitylayer/bin/` y remueve la entrada del PATH de tu perfil de shell.
+
+**Códigos de salida:** Siempre `0`.
+
+### `shield status`
+
+Muestra si el shield está activo, el estado del directorio de shims y qué binarios tienen shim.
+
+```
+Shield Status
+
+  Shim directory: ~/.securitylayer/bin/ (exists)
+  PATH includes shim dir: yes
+  Shimmed binaries: bash, sh, zsh, python, python3, node, ruby, perl
+
+  Status: ACTIVE
+```
+
+**Códigos de salida:** Siempre `0`.
+
+## Cómo funciona
+
+Cuando una herramienta de IA (Claude Code, Cursor, Aider, etc.) ejecuta un comando de shell:
+
+1. El binario con shim intercepta la llamada
+2. `securitylayer check` evalúa el comando contra tu política
+3. Si se permite, el binario real ejecuta el comando
+4. Si se deniega, el comando se bloquea con un mensaje de error
+
+La detección de callers identifica qué herramienta de IA disparó el comando y aplica el perfil de capacidades correspondiente.
+
+## Ver también
+
+- [Integración shell shim](/es/docs/integrations/shell-shim)
+- [check](/es/docs/commands/check) -- El comando check usado por los shims
+- [callers](/es/docs/commands/callers) -- Detección de callers de herramientas de IA

@@ -1,0 +1,54 @@
+---
+title: taint
+description: Taint-Levels anzeigen und Taint-Status löschen.
+icon: Fingerprint
+---
+
+Zeige Projekt-Vertrauensregeln, aktuelle Taint-Levels und lösche den Taint-Status.
+
+## Verwendung
+
+```bash
+securitylayer taint show
+securitylayer taint clear
+```
+
+## Unterbefehle
+
+### `taint show`
+
+Zeigt Projekt-Vertrauensregeln und das Taint-Level des aktuellen Arbeitsverzeichnisses.
+
+```bash
+$ securitylayer taint show
+
+  Project trust rules:
+    ~/Dev/Personal/** → OWNER
+    ~/Dev/Work/**     → TRUSTED_CONTACT
+    /tmp/**           → WEB_CONTENT
+    ~/Downloads/**    → WEB_CONTENT
+
+  Default taint: UNTRUSTED_HUMAN
+
+  Current directory: ~/Dev/Personal/myproject
+  Current taint:    OWNER
+```
+
+### `taint clear`
+
+Im CLI-Modus wird der Taint durch Projekt-Vertrauensregeln bestimmt und akkumuliert sich nicht über Befehle hinweg. Dieser Befehl gibt Hinweise zur Taint-Verwaltung:
+
+- Für Änderungen am Projektvertrauen verwende `securitylayer projects trust <path>`
+- Im Daemon-Modus (Proxy) setzt das Taint-Clearing den akkumulierten Taint der Session zurück
+
+## Exit-Codes
+
+| Code | Bedeutung |
+|---|---|
+| `0` | Beendet immer erfolgreich |
+
+## Siehe auch
+
+- [Taint-Levels](/de/docs/concepts/taint-levels) — Wie Taint-Tracking funktioniert
+- [projects](/de/docs/commands/projects) — Projekt-Vertrauensregeln verwalten
+- [Projekt-Vertrauensanleitung](/de/docs/guides/project-trust)

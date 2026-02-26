@@ -1,0 +1,94 @@
+---
+title: ケイパビリティ
+description: すべてのエージェントアクションをゲートする 15 の基本ケイパビリティ。
+icon: Key
+---
+
+Security Layer は**ケイパビリティベースのアクセス制御**モデルを使用します。AI エージェントが実行するすべてのアクションは明示的に付与される必要があり、セットにないケイパビリティのアクションは構造的に不可能です。
+
+## 基本ケイパビリティ
+
+| ケイパビリティ | 説明 |
+|---|---|
+| `exec` | シェルコマンドの実行 |
+| `exec.elevated` | 昇格権限（sudo）でのコマンド実行 |
+| `file.read` | ファイルシステムからのファイル読み取り |
+| `file.write` | ファイルの書き込み、編集、作成 |
+| `browser` | ブラウザ自動化 |
+| `browser.login` | ログイン認証情報を使用したブラウザ自動化 |
+| `channel.send` | チャネルへのメッセージ送信 |
+| `channel.send.external` | 外部チャネルへのメッセージ送信 |
+| `cron.create` | スケジュールタスクの作成 |
+| `skill.install` | 新しいスキル/プラグインのインストール |
+| `memory.read.all_zones` | すべてのメモリゾーンからの読み取り |
+| `memory.write` | 永続メモリへの書き込み |
+| `web_fetch` | URL のフェッチ |
+| `node.invoke` | Node.js 関数の呼び出し |
+
+## 有効ケイパビリティ
+
+任意のアクションに対する有効ケイパビリティセットは、3 つのソースの**共通部分（交差）**です:
+
+```
+Effective = Session ∩ Skill ∩ Channel
+```
+
+- **セッション** — セッションで許可されている操作（`sessions.yaml` で設定）
+- **スキル** — アクティブなスキルが必要と宣言している操作
+- **チャネル** — ソースチャネルが許可する操作
+
+いずれかのソースが個別に付与していても、共通部分にないものは不可能です。
+
+## テイント制限付きケイパビリティ
+
+コロン構文を使用して、最低テイントレベルを要求できます:
+
+```yaml
+sessions:
+  claude-code:
+    capabilities:
+      - exec:trusted          # テイントが TRUSTED_CONTACT 以下の場合のみ exec を許可
+      - file.read             # どのテイントレベルでも file.read を許可
+      - file.write:owner      # テイントが OWNER の場合のみ file.write を許可
+      - web_fetch             # どのテイントレベルでも web_fetch を許可
+```
+
+## ケイパビリティゲート
+
+ケイパビリティゲート（`checkCapability()`）は**純粋な同期関数**です:
+
+- I/O なし
+- ネットワーク呼び出しなし
+- LLM 呼び出しなし
+- セットメンバーシップチェックのみ
+
+これによりゼロレイテンシーとゼロアンビギュイティが保証されます。ケイパビリティがセットに含まれるか否かのいずれかです。
+
+## 特別なルール
+
+- `cron.create` と `node.invoke` はケイパビリティの付与に関わらず、**常に承認が必要**です
+- Security Layer のケイパビリティ宣言がないスキルは**最小限のケイパビリティ**（チャットのみ、ツールなし）を取得します
+- `exec.elevated` は `exec` を含意しますが、`exec` は `exec.elevated` を含意しません
+
+## 設定
+
+ケイパビリティは `~/.securitylayer/capabilities/` の YAML ファイルで定義されます:
+
+```yaml
+# sessions.yaml
+version: 1
+sessions:
+  claude-code:
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    default_taint: owner
+```
+
+現在のケイパビリティを確認するには:
+
+```bash
+securitylayer capabilities show
+```

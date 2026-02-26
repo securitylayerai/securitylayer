@@ -1,0 +1,94 @@
+---
+title: Capability
+description: 모든 에이전트 동작을 제어하는 15가지 기본 capability입니다.
+icon: Key
+---
+
+Security Layer는 **capability 기반 접근 제어** 모델을 사용합니다. AI 에이전트가 수행하는 모든 동작은 명시적으로 부여되어야 하며, capability가 집합에 없으면 해당 동작은 구조적으로 불가능합니다.
+
+## 기본 capability
+
+| Capability | 설명 |
+|---|---|
+| `exec` | 셸 명령 실행 |
+| `exec.elevated` | 관리자 권한(sudo)으로 명령 실행 |
+| `file.read` | 파일 시스템에서 파일 읽기 |
+| `file.write` | 파일 쓰기, 편집 또는 생성 |
+| `browser` | 브라우저 자동화 |
+| `browser.login` | 로그인 자격 증명을 사용한 브라우저 자동화 |
+| `channel.send` | 채널에 메시지 전송 |
+| `channel.send.external` | 외부 채널에 메시지 전송 |
+| `cron.create` | 예약된 작업 생성 |
+| `skill.install` | 새 스킬/플러그인 설치 |
+| `memory.read.all_zones` | 모든 메모리 영역에서 읽기 |
+| `memory.write` | 영구 메모리에 쓰기 |
+| `web_fetch` | URL 가져오기 |
+| `node.invoke` | Node.js 함수 호출 |
+
+## 유효 capability
+
+모든 동작에 대한 유효 capability 집합은 세 가지 소스의 **교집합**입니다:
+
+```
+유효 = 세션 ∩ 스킬 ∩ 채널
+```
+
+- **세션** — 세션에서 허용된 동작 (`sessions.yaml`에서 설정)
+- **스킬** — 활성 스킬이 필요하다고 선언한 항목
+- **채널** — 소스 채널이 허용하는 항목
+
+교집합에 없는 것은 어떤 단일 소스가 부여하든 상관없이 불가능합니다.
+
+## Taint 제한 capability
+
+콜론 구문을 사용하여 capability에 최소 taint 레벨을 요구할 수 있습니다:
+
+```yaml
+sessions:
+  claude-code:
+    capabilities:
+      - exec:trusted          # taint가 TRUSTED_CONTACT 이하일 때만 exec 허용
+      - file.read             # 모든 taint 레벨에서 file.read 허용
+      - file.write:owner      # taint가 OWNER일 때만 file.write 허용
+      - web_fetch             # 모든 taint 레벨에서 web_fetch 허용
+```
+
+## Capability 게이트
+
+capability 게이트(`checkCapability()`)는 **순수 동기 함수**입니다:
+
+- I/O 없음
+- 네트워크 호출 없음
+- LLM 호출 없음
+- 집합 소속 검사만 수행
+
+이로써 지연 시간 제로, 모호성 제로가 보장됩니다 — capability가 집합에 있거나 없거나 둘 중 하나입니다.
+
+## 특별 규칙
+
+- `cron.create`와 `node.invoke`는 capability 부여와 관계없이 **항상 승인이 필요합니다**
+- Security Layer capability 선언이 없는 스킬은 **최소한의 capability**만 부여됩니다 (채팅만 가능, 도구 사용 불가)
+- `exec.elevated`는 `exec`를 포함하지만, `exec`는 `exec.elevated`를 포함하지 않습니다
+
+## 설정
+
+Capability는 `~/.securitylayer/capabilities/`의 YAML 파일에서 정의합니다:
+
+```yaml
+# sessions.yaml
+version: 1
+sessions:
+  claude-code:
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    default_taint: owner
+```
+
+현재 capability를 확인합니다:
+
+```bash
+securitylayer capabilities show
+```

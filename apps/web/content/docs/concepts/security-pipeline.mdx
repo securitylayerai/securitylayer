@@ -6,7 +6,7 @@ icon: Stack
 
 Every action an AI agent attempts passes through a 3-layer security pipeline. The layers are independent and complementary — each catches different categories of threats.
 
-## Layer 1: Structural Enforcement (The Walls)
+## Layer 1: Structural enforcement (the walls)
 
 The primary defense. Structural enforcement makes dangerous actions **impossible** rather than trying to detect them.
 
@@ -21,7 +21,7 @@ Components:
 
 Structural enforcement cannot be bypassed by clever prompts, social engineering, or prompt injection.
 
-## Layer 2: Semantic Analysis (The Guards)
+## Layer 2: Semantic analysis (the guards)
 
 The LLM judge analyzes whether a structurally-allowed action is **contextually anomalous**.
 
@@ -40,7 +40,7 @@ Judge decisions:
 
 If the judge is unavailable and the risk score exceeds 0.3, the action requires approval.
 
-## Layer 3: Deterministic Rules (The Alarms)
+## Layer 3: Deterministic rules (the alarms)
 
 Known-bad command patterns and path blocks. Fast, zero-latency, zero-ambiguity.
 
@@ -60,7 +60,7 @@ rules:
 
 Rules always win: if a rule says DENY, the action is denied regardless of what other layers decide.
 
-## Decision Merging
+## Decision merging
 
 Layer decisions merge by taking the **most restrictive** result:
 
@@ -72,7 +72,7 @@ Layer decisions merge by taking the **most restrictive** result:
 | LLM unavailable + risk > 0.3 | **REQUIRE_APPROVAL** |
 | All layers pass | **ALLOW** |
 
-## Fail-Safe Principle
+## Fail-safe principle
 
 Every failure makes the system **more restrictive**, never less:
 
@@ -81,7 +81,7 @@ Every failure makes the system **more restrictive**, never less:
 - Taint error → assume maximum taint
 - Normalization failure → treat as maximally dangerous
 
-## Pipeline Flow
+## Pipeline flow
 
 ```
 Action → Capability Gate → Taint Check → Normalize → ┬─ Rules Engine ──┬→ Merge → Decision

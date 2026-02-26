@@ -1,0 +1,73 @@
+---
+title: Claude Code
+description: Claude Code용 네이티브 훅 통합입니다.
+icon: Code
+---
+
+Security Layer는 Claude Code의 훅 시스템을 통해 네이티브로 통합됩니다. PreToolUse 훅은 실행 전에 동작을 평가하고, PostToolUse 훅은 실행 후 taint를 추적합니다.
+
+## 설정
+
+```bash
+securitylayer setup claude-code
+```
+
+이 명령은 `~/.claude/hooks.json`에 훅을 작성합니다. 별도의 수동 설정이 필요하지 않습니다.
+
+## 동작 원리
+
+### PreToolUse 훅
+
+Claude Code가 도구를 실행하기 전에, Security Layer가 동작을 평가합니다:
+
+| 도구 | Capability | 검사 대상 |
+|---|---|---|
+| `Bash` | `exec` | 전체 보안 파이프라인을 통한 명령 |
+| `Write` | `file.write` | 파일 경로 및 콘텐츠 |
+| `Edit` | `file.write` | 파일 경로 및 수정 사항 |
+| `WebFetch` | `web_fetch` | URL 및 요청 |
+| `NotebookEdit` | `file.write` | 노트북 경로 및 셀 변경 |
+
+동작이 거부되면, Claude Code는 거부 사유를 설명하는 오류 메시지를 수신합니다.
+
+### PostToolUse 훅
+
+도구가 완료된 후, Security Layer가 taint 추적을 업데이트합니다:
+
+| 도구 | 효과 |
+|---|---|
+| `Bash` | 명령 실행 컨텍스트 추적 |
+| `Read` | 신뢰하지 않는 디렉토리의 파일인 경우 taint 상승 |
+| `WebFetch` | taint를 `WEB_CONTENT`로 상승 |
+
+### 훅 형식
+
+각 훅은 Security Layer CLI를 호출합니다:
+
+```bash
+# PreToolUse
+securitylayer hook claude-code --tool Bash --input "$TOOL_INPUT"
+
+# PostToolUse
+securitylayer hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
+```
+
+## 확인
+
+훅이 설치되었는지 확인합니다:
+
+```bash
+securitylayer status
+```
+
+출력에서 "Claude Code hooks: installed"를 확인합니다.
+
+## 제거
+
+Claude Code에서 Security Layer 훅을 제거하려면, `~/.claude/hooks.json`을 편집하여 Security Layer 항목을 제거하거나, 파일을 삭제하여 모든 훅을 제거합니다.
+
+## 참고
+
+- [hook](/ko/docs/commands/hook) — 훅 핸들러 레퍼런스
+- [setup](/ko/docs/commands/setup) — 자동 설정 명령
+- [셸 shim](/ko/docs/integrations/shell-shim) — 대체 통합 방법

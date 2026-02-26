@@ -1,0 +1,71 @@
+---
+title: callers
+description: Listar e inspecionar perfis de caller de ferramentas de IA.
+icon: Sparkle
+---
+
+O Security Layer auto-detecta qual ferramenta de IA acionou um comando e aplica o perfil de capabilities apropriado. O comando callers permite que voce visualize esses perfis.
+
+## Uso
+
+```bash
+securitylayer callers list
+securitylayer callers profile <name>
+```
+
+## Subcomandos
+
+### `callers list`
+
+Mostra todos os callers de ferramentas de IA configurados com suas regras de deteccao e capabilities.
+
+```bash
+$ securitylayer callers list
+
+  claude-code (Claude Code)
+    taint: OWNER
+    capabilities: exec, file.read, file.write, web_fetch
+    detect env: CLAUDE_CODE
+    detect process: claude
+
+  cursor (Cursor)
+    taint: TRUSTED_CONTACT
+    capabilities: exec, file.read, file.write
+    detect env: CURSOR_SESSION
+    detect process: cursor
+```
+
+### `callers profile <name>`
+
+Mostra informacoes detalhadas de um caller especifico.
+
+```bash
+$ securitylayer callers profile claude-code
+
+  ID:           claude-code
+  Display name: Claude Code
+  Default taint: OWNER
+
+  Capabilities:
+    exec, file.read, file.write, web_fetch
+
+  Detection:
+    Environment: CLAUDE_CODE
+    Process:     claude
+```
+
+**Codigos de saida:** `0` em caso de sucesso, `1` se o caller for desconhecido ou o argumento de nome estiver ausente.
+
+## Como a deteccao funciona
+
+Quando um comando e interceptado (via shell shim ou hook), o Security Layer verifica:
+
+1. **Variaveis de ambiente** — O processo chamador possui variaveis de ambiente especificas?
+2. **Nome do processo** — O processo pai corresponde a uma ferramenta de IA conhecida?
+
+O caller detectado determina qual perfil de capabilities e aplicado.
+
+## Veja tambem
+
+- [Shell shim](/pt/docs/integrations/shell-shim) — Como os shims detectam callers
+- [Configuracao](/pt/docs/guides/configuration) — Editando perfis de caller

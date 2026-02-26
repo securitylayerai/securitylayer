@@ -1,0 +1,58 @@
+---
+title: Cursor
+description: Security Layer로 Cursor를 보호합니다.
+icon: Code
+---
+
+Cursor는 범용 셸 shim을 사용하여 보호할 수 있습니다. 네이티브 VS Code 확장은 v1에서 계획되어 있습니다.
+
+## 현재 통합 (셸 shim)
+
+셸 shim은 Cursor가 터미널을 통해 실행하는 모든 명령을 가로챕니다:
+
+```bash
+securitylayer shield enable
+```
+
+이 명령은 모든 명령이 실제 바이너리에 도달하기 전에 평가하는 PATH 우선순위 래퍼를 설치합니다.
+
+## 동작 원리
+
+1. Cursor가 셸 명령을 실행합니다 (예: 터미널 또는 코드 액션을 통해)
+2. shim 바이너리가 호출을 가로챕니다
+3. Security Layer가 환경 변수와 프로세스 감지를 통해 Cursor를 호출자로 식별합니다
+4. Cursor의 capability 프로필에 따라 명령이 평가됩니다
+5. 허용된 명령은 진행되고, 거부된 명령은 오류를 반환합니다
+
+## 호출자 감지
+
+Security Layer는 다음을 통해 Cursor를 식별합니다:
+
+- **환경 변수:** `CURSOR_SESSION`
+- **프로세스 이름:** `cursor`
+
+## Capability 프로필
+
+Cursor는 `~/.securitylayer/ai-tools.yaml`에서 정의된 자체 capability 프로필을 갖습니다. 기본 프로필은 위험한 작업을 제한하면서 일반적인 개발 capability를 부여합니다.
+
+## 향후 계획: 네이티브 확장 (v1)
+
+터미널 생성 및 명령 실행, 파일 시스템 API 호출, 네트워크 요청에 연결되는 VS Code 확장(`@securitylayer/vscode`)이 계획되어 있습니다.
+
+이 확장은 지연 시간 제로 검사를 위해 `@securitylayer/sdk`를 인프로세스로 사용할 예정입니다.
+
+## 설정
+
+```bash
+# 셸 shim 보호 활성화
+securitylayer shield enable
+
+# 확인
+securitylayer status
+```
+
+## 참고
+
+- [shield](/ko/docs/commands/shield) — 셸 shim 관리
+- [셸 shim 통합](/ko/docs/integrations/shell-shim)
+- [callers](/ko/docs/commands/callers) — 호출자 감지 프로필

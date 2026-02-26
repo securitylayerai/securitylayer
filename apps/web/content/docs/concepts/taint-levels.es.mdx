@@ -1,0 +1,73 @@
+---
+title: Niveles de taint
+description: Los 6 niveles de taint que rastrean la procedencia de confianza a través de una sesión.
+icon: Fingerprint
+---
+
+Los niveles de taint representan la **procedencia de confianza** de los datos en una sesión. Cuando un agente de IA lee contenido no confiable, el nivel de taint de la sesión sube -- y nunca baja hasta que se limpia explícitamente.
+
+## Los 6 niveles
+
+Ordenados de mayor a menor confianza:
+
+| Nivel | Valor | Descripción |
+|---|---|---|
+| `OWNER` | 1 | Directamente del propietario autenticado |
+| `TRUSTED_CONTACT` | 2 | De un contacto en la lista de permitidos |
+| `UNTRUSTED_HUMAN` | 3 | De un humano desconocido o no verificado |
+| `WEB_CONTENT` | 4 | De web fetches, navegadores, email |
+| `SKILL_GENERATED` | 5 | Generado por instrucciones de un skill |
+| `MEMORY_REPLAY` | 6 | Cargado desde memoria persistente |
+
+## Propiedades clave
+
+### El taint solo sube
+
+El taint a nivel de sesión es **monotónicamente creciente**. Si una sesión comienza en `OWNER` y lee contenido web, sube a `WEB_CONTENT`. Nunca baja automáticamente.
+
+```
+OWNER → lee archivo no confiable → UNTRUSTED_HUMAN → obtiene URL → WEB_CONTENT
+```
+
+### El taint restringe capacidades
+
+Las capacidades pueden requerir un nivel mínimo de taint usando la sintaxis con dos puntos:
+
+```yaml
+capabilities:
+  - exec:trusted        # Solo permitido cuando taint ≤ TRUSTED_CONTACT
+  - file.write:owner    # Solo permitido cuando taint = OWNER
+  - web_fetch           # Permitido en cualquier nivel de taint
+```
+
+Si el taint de una sesión excede el umbral de la capacidad, la acción se deniega -- incluso si la capacidad base está otorgada.
+
+### Limpiar el taint
+
+El taint solo se puede limpiar mediante una acción humana explícita:
+
+```bash
+securitylayer taint clear
+```
+
+En modo daemon (proxy), el taint se restablece cuando comienza una nueva sesión. En modo CLI, el taint se rastrea por evaluación basado en las reglas de confianza de proyectos.
+
+## Taint basado en proyectos
+
+Security Layer asigna el taint inicial basándose en el directorio del proyecto:
+
+```yaml
+# ~/.securitylayer/projects.yaml
+trust_rules:
+  - path: "~/Dev/Personal/**"    # OWNER
+  - path: "~/Dev/Work/**"        # TRUSTED_CONTACT
+  - path: "/tmp/**"              # WEB_CONTENT
+  - path: "~/Downloads/**"       # WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+Esto modela la **amenaza de archivo como canal**: un repositorio clonado puede contener instrucciones adversariales en READMEs, `.cursorrules`, `CLAUDE.md`, comentarios de código, scripts postinstall de `package.json` o git hooks.
+
+## Por qué importa
+
+Sin seguimiento de taint, un agente de IA que lee un archivo malicioso y luego ejecuta un comando es indistinguible de uno que sigue instrucciones legítimas. El seguimiento de taint hace que el sistema sea consciente de que el contexto del agente ha sido influenciado por contenido no confiable -- y restringe lo que puede hacer en consecuencia.

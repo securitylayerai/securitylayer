@@ -1,0 +1,97 @@
+---
+title: Projektvertrauen
+description: Vertrauensstufen für Projektverzeichnisse konfigurieren.
+icon: Folder
+---
+
+Projekt-Vertrauensregeln weisen Verzeichnissen Taint-Levels zu. Das bestimmt die initiale Vertrauensstufe, wenn ein KI-Agent in einem bestimmten Projekt arbeitet.
+
+## Warum Projektvertrauen?
+
+Für KI-Coding-Tools sind **Dateien der nicht vertrauenswürdige Kanal**. Ein geklontes Repository kann adversariale Anweisungen enthalten in:
+
+- `README.md`, `CLAUDE.md`, `.cursorrules`
+- Code-Kommentaren und Docstrings
+- `package.json`-Postinstall-Skripten
+- Git-Hooks (`.git/hooks/`)
+- CI/CD-Konfigurationsdateien
+
+Durch die Zuweisung von Vertrauen basierend auf dem Speicherort eines Projekts schränkt Security Layer automatisch ein, was ein Agent beim Arbeiten in nicht vertrauenswürdigem Code tun kann.
+
+## Vertrauensregeln konfigurieren
+
+### Über CLI
+
+```bash
+# Eigenen Projekten vertrauen
+securitylayer projects trust "~/Dev/Personal/**" --taint owner
+
+# Arbeitsprojekten auf niedrigerem Level vertrauen
+securitylayer projects trust "~/Dev/Work/**" --taint trusted
+
+# Temporäre Verzeichnisse als nicht vertrauenswürdig markieren
+securitylayer projects trust "/tmp/**" --taint web
+
+# Vertrauensregel entfernen
+securitylayer projects untrust "/tmp/**"
+```
+
+### Über Konfigurationsdatei
+
+Bearbeite `~/.securitylayer/projects.yaml`:
+
+```yaml
+version: 1
+trust_rules:
+  - path: "~/Dev/Personal/**"
+    taint: OWNER
+  - path: "~/Dev/Work/**"
+    taint: TRUSTED_CONTACT
+  - path: "/tmp/**"
+    taint: WEB_CONTENT
+  - path: "~/Downloads/**"
+    taint: WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+## Taint-Level-Zuordnung
+
+| CLI-Wert | Taint-Level | Anwendungsfall |
+|---|---|---|
+| `owner` | `OWNER` | Eigene Projekte |
+| `trusted` | `TRUSTED_CONTACT` | Projekte bekannter Mitarbeiter |
+| `untrusted` | `UNTRUSTED_HUMAN` | Unbekannte Quellen |
+| `web` | `WEB_CONTENT` | Aus dem Internet heruntergeladen/geklont |
+| `skill` | `SKILL_GENERATED` | Von Skills generiert |
+| `memory` | `MEMORY_REPLAY` | Aus persistentem Speicher |
+
+## Wie es funktioniert
+
+1. Wenn ein KI-Agent zu arbeiten beginnt, prüft Security Layer das aktuelle Verzeichnis
+2. Die spezifischste passende Vertrauensregel bestimmt das initiale Taint-Level
+3. Fähigkeiten, die höheres Vertrauen erfordern, werden automatisch eingeschränkt
+4. Taint kann während einer Session nur steigen, nie sinken
+
+## Aktuelles Vertrauen anzeigen
+
+```bash
+# Alle Vertrauensregeln auflisten
+securitylayer projects list
+
+# Taint des aktuellen Verzeichnisses prüfen
+securitylayer taint show
+```
+
+## Best Practices
+
+- **Eigene Projekte** → `OWNER` — Volle Fähigkeiten
+- **Arbeitsprojekte** → `TRUSTED_CONTACT` — Die meisten Fähigkeiten, einige Einschränkungen
+- **Open-Source-Beiträge** → `UNTRUSTED_HUMAN` — Eingeschränkte Fähigkeiten
+- **Heruntergeladene Repos** → `WEB_CONTENT` — Minimale Fähigkeiten
+- **Temporäre Verzeichnisse** → `WEB_CONTENT` — Minimale Fähigkeiten
+
+## Siehe auch
+
+- [Taint-Levels](/de/docs/concepts/taint-levels) — Vollständige Taint-Level-Referenz
+- [projects](/de/docs/commands/projects) — CLI-Befehlsreferenz
+- [taint](/de/docs/commands/taint) — Taint-Status anzeigen

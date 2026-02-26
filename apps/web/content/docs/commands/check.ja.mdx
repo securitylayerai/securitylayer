@@ -1,0 +1,65 @@
+---
+title: check
+description: シェルシム用のスタンドアロンポリシーチェック。
+icon: Shield
+---
+
+コマンドを実行せずにセキュリティポリシーに対して評価します。内部的にはシェルシムが使用しますが、テスト用にも便利です。
+
+## 使い方
+
+```bash
+securitylayer check --command "<cmd>" [--tool <type>] [--caller <name>] [--format json|text]
+```
+
+## フラグ
+
+| フラグ | デフォルト | 説明 |
+|---|---|---|
+| `--command <cmd>` | (必須) | 評価するコマンド |
+| `--tool <type>` | `exec` | チェックするツールタイプ |
+| `--caller <name>` | (自動検出) | 呼び出し元の識別子 — 指定しない場合は環境から自動検出 |
+| `--format json\|text` | `text` | 出力形式 |
+
+## テキスト出力
+
+```
+ALLOW — capability granted, no rules matched
+```
+
+## JSON 出力
+
+```json
+{
+  "decision": "ALLOW",
+  "reason": "capability granted, no rules matched",
+  "caller": "claude-code",
+  "taint": "OWNER",
+  "timing": { "total": 12 }
+}
+```
+
+ラーニングモードでは、ブロックされたアクションは追加のコンテキスト付きで許可されます:
+
+```json
+{
+  "decision": "ALLOW",
+  "original_decision": "DENY",
+  "learning_mode": true,
+  "reason": "known dangerous pattern: rm -rf /",
+  "timing": { "total": 8 }
+}
+```
+
+## 終了コード
+
+| コード | 意味 |
+|---|---|
+| `0` | ALLOW（またはラーニングモードのオーバーライド） |
+| `1` | DENY またはエラー |
+| `2` | REQUIRE_APPROVAL |
+
+## 関連項目
+
+- [hook](/ja/docs/commands/hook) — Claude Code インテグレーション用のフックハンドラー
+- [シェルシム](/ja/docs/integrations/shell-shim) — シェルシムが `check` を使用する仕組み

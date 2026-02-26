@@ -1,0 +1,75 @@
+---
+title: Inicio rápido
+description: Protege tus agentes de IA con Security Layer en 5 minutos.
+icon: Lightning
+---
+
+Esta guía te lleva de cero a protegido en 5 minutos.
+
+## 1. Instalar
+
+```bash
+bun add -g securitylayer
+```
+
+## 2. Inicializar
+
+```bash
+securitylayer init
+```
+
+Acepta los valores por defecto o personaliza las capacidades de tu sesión. El asistente crea archivos de configuración en `~/.securitylayer/`.
+
+## 3. Configurar la integración
+
+**Claude Code** -- integración nativa con hooks:
+
+```bash
+securitylayer setup claude-code
+```
+
+Esto instala hooks PreToolUse y PostToolUse en `~/.claude/hooks.json`. Cada llamada a herramienta que Claude Code realice se evalúa contra tu política de seguridad antes de ejecutarse.
+
+**Shell shim** -- protección universal para cualquier herramienta de IA:
+
+```bash
+securitylayer shield enable
+```
+
+Esto instala scripts wrapper con prioridad en el PATH que interceptan todos los comandos de shell. Funciona con cualquier herramienta de IA: Cursor, Aider, Copilot, o cualquier cosa que ejecute comandos de shell.
+
+## 4. Verificar
+
+```bash
+securitylayer status
+```
+
+Deberías ver tu configuración cargada, las capacidades de tu sesión y el estado de la integración (hooks instalados o shield activo).
+
+## 5. Probarlo
+
+Ejecuta una verificación de política en modo simulación para ver Security Layer en acción:
+
+```bash
+securitylayer policy check "rm -rf /"
+```
+
+Verás la evaluación completa -- capability gate, motor de reglas y puntuación de riesgo -- con la decisión final.
+
+## Qué está pasando
+
+Cuando un agente de IA intenta ejecutar un comando:
+
+1. **Capability gate** -- ¿Está permitido este tipo de acción? (`exec`, `file.write`, etc.)
+2. **Verificación de taint** -- ¿Es suficiente el nivel de confianza de la sesión?
+3. **Normalización** -- Resolver rutas, decodificar encodings, dividir cadenas de comandos
+4. **Motor de reglas** -- Comparar contra patrones determinísticos
+5. **LLM judge** -- Análisis semántico para anomalías contextuales (si está habilitado)
+6. **Decisión** -- Gana el resultado más restrictivo: ALLOW, DENY o REQUIRE_APPROVAL
+
+## Siguientes pasos
+
+- [Niveles de taint](/es/docs/concepts/taint-levels) -- Comprende el modelo de confianza
+- [Capacidades](/es/docs/concepts/capabilities) -- Aprende sobre los grants de capacidades
+- [Modo aprendizaje](/es/docs/guides/learning-mode) -- Monitorea antes de aplicar
+- [Configuración](/es/docs/guides/configuration) -- Personaliza tu política de seguridad

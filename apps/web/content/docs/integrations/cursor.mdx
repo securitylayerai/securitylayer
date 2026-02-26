@@ -6,7 +6,7 @@ icon: Code
 
 Cursor can be protected using the universal shell shim. A native VS Code extension is planned for v1.
 
-## Current Integration (Shell Shim)
+## Current integration (shell shim)
 
 The shell shim intercepts all commands Cursor executes through the terminal:
 
@@ -16,7 +16,7 @@ securitylayer shield enable
 
 This installs PATH-priority wrappers that evaluate every command before it reaches the real binary.
 
-## How It Works
+## How it works
 
 1. Cursor runs a shell command (e.g., via terminal or code action)
 2. The shimmed binary intercepts the call
@@ -24,18 +24,18 @@ This installs PATH-priority wrappers that evaluate every command before it reach
 4. The command is evaluated against Cursor's capability profile
 5. Allowed commands proceed; denied commands return an error
 
-## Caller Detection
+## Caller detection
 
 Security Layer identifies Cursor by:
 
 - **Environment variable:** `CURSOR_SESSION`
 - **Process name:** `cursor`
 
-## Capability Profile
+## Capability profile
 
 Cursor gets its own capability profile defined in `~/.securitylayer/ai-tools.yaml`. The default profile grants common development capabilities while restricting dangerous operations.
 
-## Future: Native Extension (v1)
+## Future: native extension (v1)
 
 A VS Code extension (`@securitylayer/vscode`) that hooks into:
 
@@ -55,8 +55,8 @@ securitylayer shield enable
 securitylayer status
 ```
 
-## See Also
+## See also
 
 - [shield](/docs/commands/shield) — Shell shim management
-- [Shell Shim Integration](/docs/integrations/shell-shim)
+- [Shell shim integration](/docs/integrations/shell-shim)
 - [callers](/docs/commands/callers) — Caller detection profiles

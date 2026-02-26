@@ -20,7 +20,7 @@ securitylayer init
 
 Accept the defaults or customize your session capabilities. The wizard creates config files at `~/.securitylayer/`.
 
-## 3. Set Up Integration
+## 3. Set up integration
 
 **Claude Code** — native hooks integration:
 
@@ -46,7 +46,7 @@ securitylayer status
 
 You should see your configuration loaded, your session capabilities, and your integration status (hooks installed or shield active).
 
-## 5. Test It
+## 5. Test it
 
 Run a dry-run policy check to see Security Layer in action:
 
@@ -56,7 +56,7 @@ securitylayer policy check "rm -rf /"
 
 You'll see the full evaluation — capability gate, rules engine, and risk score — with the final decision.
 
-## What's Happening
+## What's happening
 
 When an AI agent tries to execute a command:
 
@@ -67,9 +67,9 @@ When an AI agent tries to execute a command:
 5. **LLM judge** — Semantic analysis for contextual anomalies (if enabled)
 6. **Decision** — Most restrictive result wins: ALLOW, DENY, or REQUIRE_APPROVAL
 
-## Next Steps
+## Next steps
 
-- [Taint Levels](/docs/concepts/taint-levels) — Understand the trust model
+- [Taint levels](/docs/concepts/taint-levels) — Understand the trust model
 - [Capabilities](/docs/concepts/capabilities) — Learn about capability grants
-- [Learning Mode](/docs/guides/learning-mode) — Monitor before enforcing
+- [Learning mode](/docs/guides/learning-mode) — Monitor before enforcing
 - [Configuration](/docs/guides/configuration) — Customize your security policy

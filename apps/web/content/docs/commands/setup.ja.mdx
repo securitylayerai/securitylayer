@@ -1,0 +1,52 @@
+---
+title: setup
+description: Claude Code、Cursor などのインテグレーション自動セットアップ。
+icon: Plug
+---
+
+AI ツールとの Security Layer インテグレーションを自動設定します。
+
+## 使い方
+
+```bash
+securitylayer setup claude-code
+securitylayer setup cursor
+```
+
+## サブコマンド
+
+### `setup claude-code`
+
+`~/.claude/hooks.json` に Security Layer フックをインストールします。
+
+**PreToolUse フック**（ツール実行前に評価）:
+- `Bash` — シェルコマンドの実行
+- `Write` — ファイルの作成
+- `Edit` — ファイルの変更
+- `WebFetch` — URL の取得
+- `NotebookEdit` — Jupyter ノートブックの編集
+
+**PostToolUse フック**（ツール完了後に実行）:
+- `Bash` — コマンド実行コンテキストのトラッキング
+- `Read` — テイント引き上げのためのファイル読み取りトラッキング
+- `WebFetch` — テイント引き上げのための Web コンテンツ取得トラッキング
+
+各フックは適切なフラグ付きで `securitylayer hook claude-code` を呼び出します。
+
+**終了コード:** 成功時または Claude Code が見つからない場合 `0`。
+
+### `setup cursor`
+
+Cursor の保護手順を表示します。ネイティブフックインテグレーションは v1 で予定されています。現在はシェルシムを使用してください:
+
+```bash
+securitylayer shield enable
+```
+
+**終了コード:** 常に `0`。
+
+## 関連項目
+
+- [Claude Code インテグレーション](/ja/docs/integrations/claude-code)
+- [Cursor インテグレーション](/ja/docs/integrations/cursor)
+- [hook](/ja/docs/commands/hook) — フックハンドラー

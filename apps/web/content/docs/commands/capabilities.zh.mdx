@@ -1,0 +1,49 @@
+---
+title: capabilities
+description: 显示会话、通道和技能的能力授权。
+icon: Key
+---
+
+显示按会话、通道和技能分组的所有已授权能力。
+
+## 用法
+
+```bash
+securitylayer capabilities show
+```
+
+## 输出
+
+按以下分组显示能力：
+
+- **会话** — 每个会话的能力列表和默认污点级别
+- **通道** — 通道能力限制
+- **技能** — 技能能力声明
+
+## 示例
+
+```bash
+$ securitylayer capabilities show
+
+  Sessions:
+    claude-code
+      capabilities: exec, file.read, file.write, web_fetch
+      default_taint: owner
+
+  Channels:
+    (none configured)
+
+  Skills:
+    (none configured)
+```
+
+## 退出码
+
+| 代码 | 含义 |
+|---|---|
+| `0` | 始终成功退出 |
+
+## 参阅
+
+- [能力概念](/zh/docs/concepts/capabilities) — 能力的工作原理
+- [配置](/zh/docs/guides/configuration) — 编辑能力文件

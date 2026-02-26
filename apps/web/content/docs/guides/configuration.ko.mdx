@@ -1,0 +1,142 @@
+---
+title: 설정
+description: Security Layer 보안 정책을 커스터마이즈합니다.
+icon: Gear
+---
+
+Security Layer의 설정은 `~/.securitylayer/`에 위치합니다. 모든 설정 파일은 스키마 호환성을 위해 `version` 필드가 포함된 YAML을 사용합니다.
+
+## 설정 파일
+
+| 파일 | 용도 |
+|---|---|
+| `config.yaml` | 메인 설정 (모드, 심판 설정, 로깅) |
+| `capabilities/sessions.yaml` | 세션 capability 부여 |
+| `capabilities/channels.yaml` | 채널 capability 제한 |
+| `capabilities/skills.yaml` | 스킬 capability 선언 |
+| `ai-tools.yaml` | AI 도구 호출자 프로필 및 감지 규칙 |
+| `projects.yaml` | 프로젝트 디렉토리 신뢰 규칙 |
+| `learned-rules.json` | "승인 후 기억하기"로 자동 승인된 패턴 |
+
+## 메인 설정
+
+```yaml
+# ~/.securitylayer/config.yaml
+version: 1
+mode: enforce  # 또는 "learning"
+
+judge:
+  enabled: true
+  provider: anthropic
+  model: claude-haiku-4-5-20251001
+  api_key_env: ANTHROPIC_API_KEY
+  timeout_ms: 500
+
+logging:
+  level: info  # debug, info, warn, error
+```
+
+## 세션 capability
+
+```yaml
+# ~/.securitylayer/capabilities/sessions.yaml
+version: 1
+sessions:
+  claude-code:
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    default_taint: owner
+
+  restricted:
+    capabilities:
+      - file.read
+      - exec:owner  # owner taint 프로젝트에서만 exec 허용
+    default_taint: untrusted
+```
+
+## AI 도구 프로필
+
+```yaml
+# ~/.securitylayer/ai-tools.yaml
+version: 1
+callers:
+  claude-code:
+    display_name: Claude Code
+    default_taint: OWNER
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    detect:
+      env:
+        - CLAUDE_CODE
+      process:
+        - claude
+
+  cursor:
+    display_name: Cursor
+    default_taint: TRUSTED_CONTACT
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+    detect:
+      env:
+        - CURSOR_SESSION
+      process:
+        - cursor
+```
+
+## 프로젝트 신뢰
+
+```yaml
+# ~/.securitylayer/projects.yaml
+version: 1
+trust_rules:
+  - path: "~/Dev/Personal/**"
+    taint: OWNER
+  - path: "~/Dev/Work/**"
+    taint: TRUSTED_CONTACT
+  - path: "/tmp/**"
+    taint: WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+## 스키마 버전 관리
+
+모든 설정 파일에는 `version` 필드가 포함됩니다. Security Layer가 설정 파일을 로드할 때:
+
+1. `version` 필드를 확인합니다
+2. 지원되는 버전이면 정상적으로 로드합니다
+3. 예상보다 새로운 버전이면 사용 가능한 마이그레이션을 실행합니다
+4. 지원하지 않는 버전이면 조용히 잘못 해석하지 않고 **로드를 거부합니다**
+
+이를 통해 업그레이드 시 설정이 조용히 깨지는 것을 방지합니다.
+
+## 설정 확인
+
+```bash
+# 전체 상태 개요
+securitylayer status
+
+# Capability
+securitylayer capabilities show
+
+# Taint 및 프로젝트 신뢰
+securitylayer taint show
+securitylayer projects list
+
+# 호출자 프로필
+securitylayer callers list
+```
+
+## 참고
+
+- [init](/ko/docs/commands/init) — 대화형 설정 마법사
+- [Capability](/ko/docs/concepts/capabilities) — capability의 동작 원리
+- [Taint 레벨](/ko/docs/concepts/taint-levels) — taint 추적의 동작 원리
+- [프로젝트 신뢰](/ko/docs/guides/project-trust) — 디렉토리 신뢰 설정

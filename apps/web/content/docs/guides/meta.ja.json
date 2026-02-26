@@ -1,0 +1,5 @@
+{
+  "title": "ガイド",
+  "icon": "BookOpen",
+  "pages": ["learning-mode", "project-trust", "configuration"]
+}

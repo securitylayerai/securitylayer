@@ -1,0 +1,66 @@
+---
+title: shield
+description: シェルシム保護の有効化、無効化、ステータス確認。
+icon: ShieldCheck
+---
+
+シールドは、AI ツールが実行するすべてのシェルコマンドをインターセプトする PATH 優先のラッパースクリプトをインストールします。シェルコマンドを実行するあらゆるツールに対応するユニバーサル保護です。
+
+## 使い方
+
+```bash
+securitylayer shield enable
+securitylayer shield disable
+securitylayer shield status
+```
+
+## サブコマンド
+
+### `shield enable`
+
+`~/.securitylayer/bin/` にシム化されたバイナリラッパーを作成し、シェルプロファイルの PATH にディレクトリを先頭追加（優先化）します。
+
+**シム化されるバイナリ:** `bash`, `sh`, `zsh`, `python`, `python3`, `node`, `ruby`, `perl`
+
+各シムはリアルバイナリに転送する前に `securitylayer check` を呼び出します。
+
+**終了コード:** 成功時 `0`、未設定またはバイナリが見つからない場合 `1`。
+
+### `shield disable`
+
+`~/.securitylayer/bin/` からすべてのシムスクリプトを削除し、シェルプロファイルから PATH エントリを削除します。
+
+**終了コード:** 常に `0`。
+
+### `shield status`
+
+シールドが有効かどうか、シムディレクトリのステータス、シム化されているバイナリを表示します。
+
+```
+Shield Status
+
+  Shim directory: ~/.securitylayer/bin/ (exists)
+  PATH includes shim dir: yes
+  Shimmed binaries: bash, sh, zsh, python, python3, node, ruby, perl
+
+  Status: ACTIVE
+```
+
+**終了コード:** 常に `0`。
+
+## 動作の仕組み
+
+AI ツール（Claude Code、Cursor、Aider など）がシェルコマンドを実行すると:
+
+1. シム化されたバイナリが呼び出しをインターセプト
+2. `securitylayer check` がポリシーに対してコマンドを評価
+3. 許可された場合、リアルバイナリがコマンドを実行
+4. 拒否された場合、エラーメッセージと共にコマンドをブロック
+
+呼び出し元検出により、どの AI ツールがコマンドをトリガーしたかを識別し、適切なケイパビリティプロファイルを適用します。
+
+## 関連項目
+
+- [シェルシムインテグレーション](/ja/docs/integrations/shell-shim)
+- [check](/ja/docs/commands/check) — シムが使用する check コマンド
+- [callers](/ja/docs/commands/callers) — AI ツールの呼び出し元検出

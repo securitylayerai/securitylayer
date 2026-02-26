@@ -1,0 +1,49 @@
+---
+title: capabilities
+description: セッション、チャネル、スキルのケイパビリティ付与を表示します。
+icon: Key
+---
+
+セッション、チャネル、スキルごとに整理されたすべてのケイパビリティ付与を表示します。
+
+## 使い方
+
+```bash
+securitylayer capabilities show
+```
+
+## 出力
+
+以下のグループ別にケイパビリティが表示されます:
+
+- **セッション** — 各セッションのケイパビリティリストとデフォルトテイントレベル
+- **チャネル** — チャネルのケイパビリティ制限
+- **スキル** — スキルのケイパビリティ宣言
+
+## 例
+
+```bash
+$ securitylayer capabilities show
+
+  Sessions:
+    claude-code
+      capabilities: exec, file.read, file.write, web_fetch
+      default_taint: owner
+
+  Channels:
+    (none configured)
+
+  Skills:
+    (none configured)
+```
+
+## 終了コード
+
+| コード | 意味 |
+|---|---|
+| `0` | 常に正常終了 |
+
+## 関連項目
+
+- [ケイパビリティのコンセプト](/ja/docs/concepts/capabilities) — ケイパビリティの仕組み
+- [設定](/ja/docs/guides/configuration) — ケイパビリティファイルの編集

@@ -1,0 +1,52 @@
+---
+title: インストール
+description: CLI のインストールとシステム要件。
+icon: Rocket
+---
+
+## システム要件
+
+- **ランタイム:** [Bun](https://bun.sh) v1.0 以降
+- **OS:** macOS または Linux
+- **オプション:** Docker（Web ダッシュボードのデータベース用）
+
+## npm でインストール
+
+```bash
+bun add -g securitylayer
+```
+
+npm の場合:
+
+```bash
+npm install -g securitylayer
+```
+
+## インストールの確認
+
+```bash
+securitylayer --version
+```
+
+短縮エイリアスも使用できます:
+
+```bash
+sl --version
+```
+
+## 含まれるもの
+
+`securitylayer` パッケージには以下が含まれます:
+
+- **`securitylayer` / `sl`** — CLI バイナリ
+- **`@securitylayer/core`** — セキュリティエンジン（ケイパビリティゲート、テイントトラッカー、正規化、ルール、LLM ジャッジ）
+
+## 次のステップ
+
+対話型セットアップウィザードを実行します:
+
+```bash
+securitylayer init
+```
+
+詳しいウォークスルーは [Init](/ja/docs/getting-started/init) を、5 分で完了するエンドツーエンドガイドは [クイックスタート](/ja/docs/getting-started/quick-start) をご覧ください。

@@ -1,0 +1,73 @@
+---
+title: Claude Code
+description: Claude Code 向けのネイティブフックインテグレーション。
+icon: Code
+---
+
+Security Layer はフックシステムを通じて Claude Code とネイティブに統合します。PreToolUse フックが実行前にアクションを評価し、PostToolUse フックが実行後にテイントを追跡します。
+
+## セットアップ
+
+```bash
+securitylayer setup claude-code
+```
+
+`~/.claude/hooks.json` にフックが書き込まれます。手動設定は不要です。
+
+## 動作の仕組み
+
+### PreToolUse フック
+
+Claude Code がツールを実行する前に、Security Layer がアクションを評価します:
+
+| ツール | ケイパビリティ | チェック内容 |
+|---|---|---|
+| `Bash` | `exec` | セキュリティパイプライン全体を通じたコマンドの評価 |
+| `Write` | `file.write` | ファイルパスとコンテンツ |
+| `Edit` | `file.write` | ファイルパスと変更内容 |
+| `WebFetch` | `web_fetch` | URL とリクエスト |
+| `NotebookEdit` | `file.write` | ノートブックパスとセル変更 |
+
+アクションが拒否された場合、Claude Code は拒否理由を説明するエラーメッセージを受け取ります。
+
+### PostToolUse フック
+
+ツール完了後、Security Layer がテイントトラッキングを更新します:
+
+| ツール | 効果 |
+|---|---|
+| `Bash` | コマンド実行コンテキストのトラッキング |
+| `Read` | 信頼されていないディレクトリのファイルの場合テイントを引き上げ |
+| `WebFetch` | テイントを `WEB_CONTENT` に引き上げ |
+
+### フックの形式
+
+各フックは Security Layer CLI を呼び出します:
+
+```bash
+# PreToolUse
+securitylayer hook claude-code --tool Bash --input "$TOOL_INPUT"
+
+# PostToolUse
+securitylayer hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
+```
+
+## 確認
+
+フックがインストールされているか確認します:
+
+```bash
+securitylayer status
+```
+
+出力に「Claude Code hooks: installed」が表示されていることを確認してください。
+
+## 削除
+
+Claude Code から Security Layer フックを削除するには、`~/.claude/hooks.json` を編集して Security Layer のエントリを削除するか、ファイルを削除してすべてのフックを削除します。
+
+## 関連項目
+
+- [hook](/ja/docs/commands/hook) — フックハンドラーリファレンス
+- [setup](/ja/docs/commands/setup) — 自動セットアップコマンド
+- [シェルシム](/ja/docs/integrations/shell-shim) — 代替インテグレーション方法

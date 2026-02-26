@@ -1,0 +1,49 @@
+---
+title: init
+description: Interaktiver geführter Setup-Wizard.
+icon: Gear
+---
+
+Erstellt Konfigurationsdateien unter `~/.securitylayer/` durch einen interaktiven, promptbasierten Wizard.
+
+## Verwendung
+
+```bash
+securitylayer init
+```
+
+## Eingabeaufforderungen
+
+| Eingabe | Standard | Beschreibung |
+|---|---|---|
+| Session-Name | `claude-code` | Name für die Standard-Session (muss `^[a-z0-9-]+$` entsprechen) |
+| Fähigkeiten | `exec`, `file.read`, `file.write`, `web_fetch` | Mehrfachauswahl der Fähigkeitsvergabe |
+| Standard-Taint | `owner` | Basis-Vertrauensstufe (`owner`, `trusted`, `untrusted`) |
+| LLM-Judge | Nein | Semantische Analyse-Schicht aktivieren |
+| Provider | — | Anthropic, OpenAI, Google, xAI oder OpenAI-kompatibel |
+| Modell | — | Modellname (z.B. `claude-haiku-4-5-20251001`) |
+| API-Key-Env-Var | — | Umgebungsvariable für den API-Key |
+| Base-URL | — | Nur für OpenAI-kompatible Provider |
+
+## Erstellte Dateien
+
+| Datei | Zweck |
+|---|---|
+| `config.yaml` | Hauptkonfiguration |
+| `capabilities/sessions.yaml` | Session-Fähigkeitsvergabe |
+| `capabilities/channels.yaml` | Channel-Fähigkeitseinschränkungen |
+| `capabilities/skills.yaml` | Skill-Fähigkeitsdeklarationen |
+| `ai-tools.yaml` | KI-Tool-Caller-Profile |
+| `projects.yaml` | Vertrauensregeln für Projektverzeichnisse |
+| `learned-rules.json` | Automatisch genehmigte Muster (anfangs leer) |
+
+## Exit-Codes
+
+| Code | Bedeutung |
+|---|---|
+| `0` | Einrichtung erfolgreich abgeschlossen |
+
+## Siehe auch
+
+- [Schnellstart](/de/docs/getting-started/quick-start)
+- [Konfiguration](/de/docs/guides/configuration)

@@ -1,0 +1,65 @@
+---
+title: policy check
+description: 模拟策略评估
+icon: ListChecks
+---
+
+模拟命令的策略评估，但不实际执行。显示所有层的完整评估结果。
+
+## 用法
+
+```bash
+securitylayer policy check "<cmd>" [--session <name>]
+```
+
+## 参数
+
+| 参数 | 默认值 | 描述 |
+|---|---|---|
+| `--command <cmd>` | （位置参数） | 要模拟的命令 |
+| `--session <name>` | `claude-code` | 评估所用的会话 |
+
+## 输出
+
+命令显示以下内容：
+
+- **输入** — 命令、会话、污点级别、当前工作目录
+- **各层结果** — 能力门控、规则引擎、LLM 判断器、风险评分
+- **耗时** — 各层的时间分解
+- **最终决策** — `ALLOW`、`DENY` 或 `REQUIRE_APPROVAL`
+
+## 示例
+
+```bash
+$ securitylayer policy check "rm -rf /"
+
+  Command:  rm -rf /
+  Session:  claude-code
+  Taint:    OWNER
+  CWD:      /home/user/project
+
+  Layer Results:
+    Capability gate: ALLOW (exec granted)
+    Rules:           DENY (recursive delete of root)
+    LLM judge:       DANGEROUS (confidence: 0.95)
+    Risk score:      1.0
+
+  Timing:
+    Total:      45ms
+    Capability: 0ms
+    Rules:      2ms
+    LLM:        43ms
+
+  Decision: DENY
+```
+
+## 退出码
+
+| 代码 | 含义 |
+|---|---|
+| `0` | 始终成功退出 |
+
+## 参阅
+
+- [安全管道](/zh/docs/concepts/security-pipeline) — 管道的工作原理
+- [check](/zh/docs/commands/check) — 实时策略检查（由 shim 使用）

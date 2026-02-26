@@ -1,0 +1,65 @@
+---
+title: policy check
+description: Simulación de política en modo dry-run.
+icon: ListChecks
+---
+
+Simula la evaluación de política para un comando sin ejecutarlo. Muestra los resultados completos de evaluación de todas las capas.
+
+## Uso
+
+```bash
+securitylayer policy check "<cmd>" [--session <name>]
+```
+
+## Flags
+
+| Flag | Valor por defecto | Descripción |
+|---|---|---|
+| `--command <cmd>` | (posicional) | El comando a simular |
+| `--session <name>` | `claude-code` | Sesión contra la cual evaluar |
+
+## Salida
+
+El comando muestra:
+
+- **Entrada** -- Comando, sesión, nivel de taint, directorio de trabajo actual
+- **Resultados por capa** -- Capability gate, motor de reglas, LLM judge, puntuación de riesgo
+- **Timing** -- Desglose del tiempo en cada capa
+- **Decisión final** -- `ALLOW`, `DENY` o `REQUIRE_APPROVAL`
+
+## Ejemplo
+
+```bash
+$ securitylayer policy check "rm -rf /"
+
+  Command:  rm -rf /
+  Session:  claude-code
+  Taint:    OWNER
+  CWD:      /home/user/project
+
+  Layer Results:
+    Capability gate: ALLOW (exec granted)
+    Rules:           DENY (recursive delete of root)
+    LLM judge:       DANGEROUS (confidence: 0.95)
+    Risk score:      1.0
+
+  Timing:
+    Total:      45ms
+    Capability: 0ms
+    Rules:      2ms
+    LLM:        43ms
+
+  Decision: DENY
+```
+
+## Códigos de salida
+
+| Código | Significado |
+|---|---|
+| `0` | Siempre termina exitosamente |
+
+## Ver también
+
+- [Pipeline de seguridad](/es/docs/concepts/security-pipeline) -- Cómo funciona el pipeline
+- [check](/es/docs/commands/check) -- Verificación de política en vivo (usada por shims)

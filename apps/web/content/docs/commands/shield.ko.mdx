@@ -1,0 +1,66 @@
+---
+title: shield
+description: 셸 shim 보호를 활성화, 비활성화 또는 확인합니다.
+icon: ShieldCheck
+---
+
+shield는 모든 AI 도구가 실행하는 셸 명령을 가로채는 PATH 우선순위 래퍼 스크립트를 설치합니다. 셸 명령을 실행하는 모든 도구에서 동작하는 범용 보호 기능입니다.
+
+## 사용법
+
+```bash
+securitylayer shield enable
+securitylayer shield disable
+securitylayer shield status
+```
+
+## 하위 명령
+
+### `shield enable`
+
+`~/.securitylayer/bin/`에 shim 바이너리 래퍼를 생성하고, 셸 프로필의 PATH에 해당 디렉토리를 추가합니다(우선순위를 위해 앞에 추가).
+
+**shim 바이너리:** `bash`, `sh`, `zsh`, `python`, `python3`, `node`, `ruby`, `perl`
+
+각 shim은 실제 바이너리로 전달하기 전에 `securitylayer check`를 호출합니다.
+
+**종료 코드:** 성공 시 `0`, 설정되지 않았거나 바이너리를 찾지 못한 경우 `1`.
+
+### `shield disable`
+
+`~/.securitylayer/bin/`의 모든 shim 스크립트를 제거하고, 셸 프로필에서 PATH 항목을 삭제합니다.
+
+**종료 코드:** 항상 `0`.
+
+### `shield status`
+
+shield의 활성 여부, shim 디렉토리 상태, shim이 적용된 바이너리를 표시합니다.
+
+```
+Shield Status
+
+  Shim directory: ~/.securitylayer/bin/ (exists)
+  PATH includes shim dir: yes
+  Shimmed binaries: bash, sh, zsh, python, python3, node, ruby, perl
+
+  Status: ACTIVE
+```
+
+**종료 코드:** 항상 `0`.
+
+## 동작 원리
+
+AI 도구(Claude Code, Cursor, Aider 등)가 셸 명령을 실행할 때:
+
+1. shim 바이너리가 호출을 가로챕니다
+2. `securitylayer check`가 정책에 따라 명령을 평가합니다
+3. 허용되면 실제 바이너리가 명령을 실행합니다
+4. 거부되면 오류 메시지와 함께 명령이 차단됩니다
+
+호출자 감지는 어떤 AI 도구가 명령을 트리거했는지 식별하고 적절한 capability 프로필을 적용합니다.
+
+## 참고
+
+- [셸 shim 통합](/ko/docs/integrations/shell-shim)
+- [check](/ko/docs/commands/check) — shim에서 사용하는 check 명령
+- [callers](/ko/docs/commands/callers) — AI 도구 호출자 감지

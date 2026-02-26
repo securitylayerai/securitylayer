@@ -1,0 +1,65 @@
+---
+title: hook
+description: Handler de hooks invocado por integraciones de herramientas de IA.
+icon: ArrowsClockwise
+---
+
+El handler de hooks es invocado por integraciones de herramientas de IA (como los hooks de Claude Code) para evaluar acciones antes y después de la ejecución.
+
+## Uso
+
+```bash
+# Verificación pre-tool
+securitylayer hook <agent> --tool <tool> --input <json>
+
+# Seguimiento post-tool
+securitylayer hook <agent> --tool <tool> --post --output <json>
+```
+
+## Flags
+
+| Flag | Descripción |
+|---|---|
+| `--tool <tool>` | Nombre de la herramienta (requerido): `Bash`, `Write`, `Edit`, `Read`, `WebFetch`, `Glob`, `Grep`, `NotebookEdit` |
+| `--input <json>` | JSON de entrada pre-tool de la herramienta de IA |
+| `--post` | Modo post-tool (por defecto es pre-tool) |
+| `--output <json>` | JSON de salida post-tool |
+
+## Mapeo de herramienta a capacidad
+
+| Herramienta | Capacidad requerida |
+|---|---|
+| `Bash` | `exec` |
+| `Write`, `Edit`, `NotebookEdit` | `file.write` |
+| `Read`, `Glob`, `Grep` | `file.read` |
+| `WebFetch` | `web_fetch` |
+
+## Comportamiento
+
+### Modo pre-tool
+
+Evalúa la acción contra el pipeline de seguridad completo (capability gate, verificación de taint, normalización, reglas, LLM judge). No produce salida en ALLOW -- la herramienta de IA procede. En DENY, muestra la razón en stderr y sale con código 2.
+
+### Modo post-tool
+
+Actualiza el seguimiento de taint basado en lo que hizo la herramienta. Por ejemplo, si `Read` accedió a un archivo en un directorio no confiable, el taint de la sesión puede elevarse. Siempre sale con código 0.
+
+### Modo aprendizaje
+
+En modo aprendizaje, las acciones bloqueadas se registran pero se permiten. El hook sale con código 0 con una advertencia en stderr.
+
+### Fail-safe
+
+En caso de errores inesperados, el hook bloquea la acción (sale con código 2). Security Layer nunca falla en modo abierto.
+
+## Códigos de salida
+
+| Código | Significado |
+|---|---|
+| `0` | Pre-tool: ALLOW (o modo aprendizaje). Post-tool: siempre 0 |
+| `2` | Pre-tool: DENY, REQUIRE_APPROVAL o error |
+
+## Ver también
+
+- [setup](/es/docs/commands/setup) -- Instalar hooks automáticamente
+- [Integración con Claude Code](/es/docs/integrations/claude-code)

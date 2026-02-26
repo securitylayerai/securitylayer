@@ -1,0 +1,64 @@
+---
+title: learn
+description: 启用学习/监控模式。
+icon: Brain
+---
+
+学习模式监控 Security Layer **会阻止什么**，但不实际阻止任何操作。使用它在执行策略之前了解你的使用模式。
+
+## 用法
+
+```bash
+securitylayer learn [--duration <duration>]
+```
+
+## 参数
+
+| 参数 | 默认值 | 描述 |
+|---|---|---|
+| `--duration <duration>` | `7d` | 学习模式的持续时间 |
+
+### 时间格式
+
+| 后缀 | 单位 | 示例 |
+|---|---|---|
+| `m` | 分钟 | `30m` |
+| `h` | 小时 | `1h`、`12h` |
+| `d` | 天 | `1d`、`7d`、`30d` |
+
+## 行为
+
+学习模式激活时：
+
+- 所有操作都被**允许**（你现有的能力不变）
+- Security Layer 记录在推荐设置下**本应被阻止**的操作
+- 模式在指定时间后自动过期
+- 配置会更新 `mode: learning` 和 `learning_expires` 时间戳
+
+学习期结束后，使用 `securitylayer learn report` 查看基于实际使用情况的推荐能力变更。
+
+## 示例
+
+```bash
+# 监控 7 天
+securitylayer learn --duration 7d
+
+# 查看记录
+securitylayer learn report
+```
+
+## 退出码
+
+| 代码 | 含义 |
+|---|---|
+| `0` | 学习模式已启用 |
+| `1` | 无效的时间格式 |
+
+## 为什么需要学习模式？
+
+用户禁用安全工具的第一大原因："安装之后什么都不能用了。"学习模式通过让你先观察再执行来避免这个问题。
+
+## 参阅
+
+- [学习模式指南](/zh/docs/guides/learning-mode)
+- [status](/zh/docs/commands/status) — 显示学习模式状态

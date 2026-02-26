@@ -1,0 +1,68 @@
+---
+title: Lernmodus
+description: Beobachte, was Security Layer blockieren würde, bevor du durchsetzt.
+icon: Brain
+---
+
+Der Lernmodus lässt dich Security Layers Entscheidungen beobachten, ohne deinen Workflow zu beeinträchtigen. Alles wird erlaubt — aber blockierte Aktionen werden protokolliert, damit du deine Richtlinie vor der Durchsetzung anpassen kannst.
+
+## Aktivierung
+
+```bash
+securitylayer learn --duration 7d
+```
+
+Dies setzt `mode: learning` in deiner Konfiguration und speichert einen `learning_expires`-Zeitstempel. Nach Ablauf der Dauer kehrt Security Layer in den Durchsetzungsmodus zurück.
+
+## Was protokolliert wird
+
+Im Lernmodus wertet Security Layer jede Aktion durch die vollständige Security-Pipeline aus und protokolliert:
+
+- Aktionen, die **blockiert worden wären**, und warum
+- Die Schicht, die die Blockierung ausgelöst hat (Capability-Gate, Regeln, LLM-Judge)
+- Timing-Informationen für jede Schicht
+- Caller-Identität und Taint-Level
+
+## Status prüfen
+
+```bash
+securitylayer status
+```
+
+Zeigt, ob der Lernmodus aktiv ist, wann er abläuft und wie viele Aktionen protokolliert wurden.
+
+## Ergebnisse überprüfen
+
+Nach der Lernphase:
+
+```bash
+securitylayer learn report
+```
+
+Dies zeigt:
+
+- **Aktionen, die blockiert worden wären** — gruppiert nach Grund
+- **Empfohlene Fähigkeitsänderungen** — basierend auf tatsächlichen Nutzungsmustern
+- **Vorgeschlagene Regeln** — Muster, die häufig aufgetreten sind
+
+## Workflow
+
+1. **Installieren und initialisieren** — `securitylayer init`
+2. **Lernmodus aktivieren** — `securitylayer learn --duration 7d`
+3. **Normal arbeiten** — Verwende deine KI-Tools wie gewohnt
+4. **Überprüfen** — `securitylayer learn report`
+5. **Richtlinie anpassen** — Fähigkeiten und Regeln basierend auf Erkenntnissen anpassen
+6. **Durchsetzen** — Lernmodus läuft ab, Durchsetzung beginnt
+
+## Tipps
+
+- Starte mit 7 Tagen, um ein repräsentatives Abbild deines Workflows zu erfassen
+- Verwende kürzere Dauern (1-2 Tage), wenn du schnell iterieren willst
+- Überprüfe den Bericht, bevor die Lernphase endet, um Anpassungen vorzunehmen
+- Du kannst den Lernmodus vorzeitig deaktivieren, indem du `config.yaml` bearbeitest und die Zeile `mode: learning` entfernst
+
+## Siehe auch
+
+- [learn](/de/docs/commands/learn) — Befehlsreferenz
+- [Konfiguration](/de/docs/guides/configuration) — Deine Richtlinie bearbeiten
+- [Fähigkeiten](/de/docs/concepts/capabilities) — Fähigkeitsvergabe verstehen

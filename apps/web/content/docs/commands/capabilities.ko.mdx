@@ -1,0 +1,49 @@
+---
+title: capabilities
+description: 세션, 채널, 스킬에 부여된 capability를 표시합니다.
+icon: Key
+---
+
+세션, 채널, 스킬별로 정리된 모든 부여된 capability를 표시합니다.
+
+## 사용법
+
+```bash
+securitylayer capabilities show
+```
+
+## 출력
+
+다음 기준으로 그룹화된 capability를 표시합니다:
+
+- **세션** — 각 세션의 capability 목록과 기본 taint 레벨
+- **채널** — 채널 capability 제한
+- **스킬** — 스킬 capability 선언
+
+## 예시
+
+```bash
+$ securitylayer capabilities show
+
+  Sessions:
+    claude-code
+      capabilities: exec, file.read, file.write, web_fetch
+      default_taint: owner
+
+  Channels:
+    (none configured)
+
+  Skills:
+    (none configured)
+```
+
+## 종료 코드
+
+| 코드 | 의미 |
+|---|---|
+| `0` | 항상 성공적으로 종료됨 |
+
+## 참고
+
+- [Capability 개념](/ko/docs/concepts/capabilities) — capability의 동작 원리
+- [설정](/ko/docs/guides/configuration) — capability 파일 편집

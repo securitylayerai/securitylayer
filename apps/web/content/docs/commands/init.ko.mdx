@@ -1,0 +1,49 @@
+---
+title: init
+description: 대화형 설정 마법사입니다.
+icon: Gear
+---
+
+대화형 프롬프트 기반 마법사를 통해 `~/.securitylayer/`에 설정 파일을 생성합니다.
+
+## 사용법
+
+```bash
+securitylayer init
+```
+
+## 프롬프트
+
+| 프롬프트 | 기본값 | 설명 |
+|---|---|---|
+| 세션 이름 | `claude-code` | 기본 세션의 이름 (`^[a-z0-9-]+$` 형식) |
+| Capability | `exec`, `file.read`, `file.write`, `web_fetch` | capability 부여 다중 선택 |
+| 기본 taint | `owner` | 기본 신뢰 수준 (`owner`, `trusted`, `untrusted`) |
+| LLM 심판 | No | 의미 분석 레이어 활성화 |
+| 제공자 | — | Anthropic, OpenAI, Google, xAI 또는 OpenAI 호환 |
+| 모델 | — | 모델 이름 (예: `claude-haiku-4-5-20251001`) |
+| API 키 환경변수 | — | API 키의 환경변수 |
+| Base URL | — | OpenAI 호환 제공자 전용 |
+
+## 생성되는 파일
+
+| 파일 | 용도 |
+|---|---|
+| `config.yaml` | 메인 설정 |
+| `capabilities/sessions.yaml` | 세션 capability 부여 |
+| `capabilities/channels.yaml` | 채널 capability 제한 |
+| `capabilities/skills.yaml` | 스킬 capability 선언 |
+| `ai-tools.yaml` | AI 도구 호출자 프로필 |
+| `projects.yaml` | 프로젝트 디렉토리 신뢰 규칙 |
+| `learned-rules.json` | 자동 승인된 패턴 (초기에는 비어 있음) |
+
+## 종료 코드
+
+| 코드 | 의미 |
+|---|---|
+| `0` | 설정이 완료됨 |
+
+## 참고
+
+- [빠른 시작](/ko/docs/getting-started/quick-start)
+- [설정](/ko/docs/guides/configuration)

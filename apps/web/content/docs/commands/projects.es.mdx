@@ -1,0 +1,63 @@
+---
+title: projects
+description: Gestionar reglas de confianza de directorios de proyecto.
+icon: Folder
+---
+
+Las reglas de confianza de proyectos asignan niveles de taint a rutas de directorios. Cuando un agente de IA opera en un directorio, la regla de confianza determina el nivel de taint inicial de la sesión.
+
+## Uso
+
+```bash
+securitylayer projects list
+securitylayer projects trust <path> [--taint <level>]
+securitylayer projects untrust <path>
+```
+
+## Subcomandos
+
+### `projects list`
+
+Muestra todas las reglas de confianza de proyectos configuradas.
+
+```bash
+$ securitylayer projects list
+
+  Trust rules:
+    1. ~/Dev/Personal/** → OWNER
+    2. ~/Dev/Work/**     → TRUSTED_CONTACT
+    3. /tmp/**           → WEB_CONTENT
+
+  Default taint: UNTRUSTED_HUMAN
+```
+
+### `projects trust <path>`
+
+Agrega o actualiza una regla de confianza para una ruta de directorio.
+
+```bash
+securitylayer projects trust ~/Dev/Personal/** --taint owner
+```
+
+| Flag | Valor por defecto | Descripción |
+|---|---|---|
+| `--taint <level>` | `owner` | Nivel de confianza: `owner`, `trusted`, `untrusted`, `web`, `skill`, `memory` |
+
+**Códigos de salida:** `0` en caso de éxito, `1` si falta el argumento de ruta.
+
+### `projects untrust <path>`
+
+Elimina una regla de confianza para una ruta de directorio.
+
+```bash
+$ securitylayer projects untrust /tmp/**
+Removed trust rule for: /tmp/**
+```
+
+**Códigos de salida:** Siempre `0`, `1` si falta el argumento de ruta.
+
+## Ver también
+
+- [Guía de confianza de proyectos](/es/docs/guides/project-trust)
+- [Niveles de taint](/es/docs/concepts/taint-levels)
+- [taint](/es/docs/commands/taint)

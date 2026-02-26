@@ -1,0 +1,52 @@
+---
+title: setup
+description: 自动设置 Claude Code、Cursor 等工具的集成。
+icon: Plug
+---
+
+自动配置 Security Layer 与 AI 工具的集成。
+
+## 用法
+
+```bash
+securitylayer setup claude-code
+securitylayer setup cursor
+```
+
+## 子命令
+
+### `setup claude-code`
+
+将 Security Layer hooks 安装到 `~/.claude/hooks.json`。
+
+**PreToolUse hooks**（工具执行前评估）：
+- `Bash` — Shell 命令执行
+- `Write` — 文件创建
+- `Edit` — 文件修改
+- `WebFetch` — URL 获取
+- `NotebookEdit` — Jupyter notebook 编辑
+
+**PostToolUse hooks**（工具执行后运行）：
+- `Bash` — 追踪命令执行上下文
+- `Read` — 追踪文件读取以进行污点提升
+- `WebFetch` — 追踪 Web 内容获取以进行污点提升
+
+每个 hook 调用 `securitylayer hook claude-code` 并附带相应参数。
+
+**退出码：** 成功或未找到 Claude Code 时返回 `0`。
+
+### `setup cursor`
+
+提供保护 Cursor 的说明。原生 hook 集成计划在 v1 推出 — 目前请使用 shell shim：
+
+```bash
+securitylayer shield enable
+```
+
+**退出码：** 始终返回 `0`。
+
+## 参阅
+
+- [Claude Code 集成](/zh/docs/integrations/claude-code)
+- [Cursor 集成](/zh/docs/integrations/cursor)
+- [hook](/zh/docs/commands/hook) — hook 处理器

@@ -1,0 +1,73 @@
+---
+title: Claude Code
+description: Integración nativa con hooks para Claude Code.
+icon: Code
+---
+
+Security Layer se integra nativamente con Claude Code mediante su sistema de hooks. Los hooks PreToolUse evalúan acciones antes de la ejecución; los hooks PostToolUse rastrean el taint después de la ejecución.
+
+## Configuración
+
+```bash
+securitylayer setup claude-code
+```
+
+Esto escribe hooks en `~/.claude/hooks.json`. No se necesita configuración manual.
+
+## Cómo funciona
+
+### Hooks PreToolUse
+
+Antes de que Claude Code ejecute una herramienta, Security Layer evalúa la acción:
+
+| Herramienta | Capacidad | Qué se verifica |
+|---|---|---|
+| `Bash` | `exec` | Comando completo a través del pipeline de seguridad |
+| `Write` | `file.write` | Ruta del archivo y contenido |
+| `Edit` | `file.write` | Ruta del archivo y modificaciones |
+| `WebFetch` | `web_fetch` | URL y petición |
+| `NotebookEdit` | `file.write` | Ruta del notebook y cambios en celdas |
+
+Si la acción se deniega, Claude Code recibe un mensaje de error explicando por qué.
+
+### Hooks PostToolUse
+
+Después de que una herramienta termina, Security Layer actualiza el seguimiento de taint:
+
+| Herramienta | Efecto |
+|---|---|
+| `Bash` | Rastrear contexto de ejecución de comandos |
+| `Read` | Elevar taint si el archivo es de un directorio no confiable |
+| `WebFetch` | Elevar taint a `WEB_CONTENT` |
+
+### Formato de hooks
+
+Cada hook llama al CLI de Security Layer:
+
+```bash
+# PreToolUse
+securitylayer hook claude-code --tool Bash --input "$TOOL_INPUT"
+
+# PostToolUse
+securitylayer hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
+```
+
+## Verificación
+
+Comprueba que los hooks estén instalados:
+
+```bash
+securitylayer status
+```
+
+Busca "Claude Code hooks: installed" en la salida.
+
+## Eliminación
+
+Para eliminar los hooks de Security Layer de Claude Code, edita `~/.claude/hooks.json` y remueve las entradas de Security Layer, o elimina el archivo para quitar todos los hooks.
+
+## Ver también
+
+- [hook](/es/docs/commands/hook) -- Referencia del handler de hooks
+- [setup](/es/docs/commands/setup) -- Comando de configuración automática
+- [Shell shim](/es/docs/integrations/shell-shim) -- Método de integración alternativo

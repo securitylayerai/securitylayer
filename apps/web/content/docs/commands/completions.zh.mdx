@@ -1,0 +1,46 @@
+---
+title: completions
+description: 输出 shell 补全脚本。
+icon: Terminal
+---
+
+生成 shell 补全脚本，用于 Security Layer 命令和参数的 Tab 补全。
+
+## 用法
+
+```bash
+securitylayer completions <shell>
+```
+
+## 参数
+
+| 参数 | 默认值 | 描述 |
+|---|---|---|
+| `<shell>` | `bash` | Shell 类型：`bash`、`zsh` 或 `fish` |
+
+## 安装
+
+### Bash
+
+```bash
+securitylayer completions bash > /etc/bash_completion.d/securitylayer
+```
+
+### Zsh
+
+```bash
+securitylayer completions zsh > "${fpath[1]}/_securitylayer"
+```
+
+### Fish
+
+```bash
+securitylayer completions fish > ~/.config/fish/completions/securitylayer.fish
+```
+
+## 退出码
+
+| 代码 | 含义 |
+|---|---|
+| `0` | 补全脚本输出成功 |
+| `1` | 不支持的 shell |

@@ -1,0 +1,65 @@
+---
+title: check
+description: 用于 shell shim 的独立策略检查。
+icon: Shield
+---
+
+在不执行命令的情况下，根据安全策略评估命令。主要由 shell shim 内部使用，但也可用于测试。
+
+## 用法
+
+```bash
+securitylayer check --command "<cmd>" [--tool <type>] [--caller <name>] [--format json|text]
+```
+
+## 参数
+
+| 参数 | 默认值 | 描述 |
+|---|---|---|
+| `--command <cmd>` | （必填） | 要评估的命令 |
+| `--tool <type>` | `exec` | 被检查的工具类型 |
+| `--caller <name>` | （自动检测） | 调用者身份 — 未提供时从环境自动检测 |
+| `--format json\|text` | `text` | 输出格式 |
+
+## 文本输出
+
+```
+ALLOW — capability granted, no rules matched
+```
+
+## JSON 输出
+
+```json
+{
+  "decision": "ALLOW",
+  "reason": "capability granted, no rules matched",
+  "caller": "claude-code",
+  "taint": "OWNER",
+  "timing": { "total": 12 }
+}
+```
+
+在学习模式下，被阻止的操作会被放行，并附带额外上下文：
+
+```json
+{
+  "decision": "ALLOW",
+  "original_decision": "DENY",
+  "learning_mode": true,
+  "reason": "known dangerous pattern: rm -rf /",
+  "timing": { "total": 8 }
+}
+```
+
+## 退出码
+
+| 代码 | 含义 |
+|---|---|
+| `0` | ALLOW（或学习模式覆盖） |
+| `1` | DENY 或错误 |
+| `2` | REQUIRE_APPROVAL |
+
+## 参阅
+
+- [hook](/zh/docs/commands/hook) — 用于 Claude Code 集成的 hook 处理器
+- [Shell shim](/zh/docs/integrations/shell-shim) — shell shim 如何使用 `check`

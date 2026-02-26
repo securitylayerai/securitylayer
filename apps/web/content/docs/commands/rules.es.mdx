@@ -1,0 +1,58 @@
+---
+title: rules
+description: Listar, revocar y limpiar reglas aprendidas.
+icon: ListChecks
+---
+
+Gestiona reglas aprendidas -- patrones que han sido auto-aprobados mediante "Approve & Remember".
+
+## Uso
+
+```bash
+securitylayer rules list
+securitylayer rules revoke <number>
+securitylayer rules clear
+```
+
+## Subcomandos
+
+### `rules list`
+
+Muestra todas las reglas aprendidas de `~/.securitylayer/learned-rules.json`.
+
+```bash
+$ securitylayer rules list
+
+  Learned rules:
+    1. npm install * (exec) — 2025-01-15 — claude-code
+    2. git push * (exec) — 2025-01-16 — claude-code
+```
+
+Cada entrada muestra el patrón, la capacidad, la fecha de creación y el ID de sesión.
+
+### `rules revoke <number>`
+
+Elimina una regla aprendida específica por su número (indexado desde 1 según `rules list`).
+
+```bash
+$ securitylayer rules revoke 2
+Revoked rule: git push * (exec)
+```
+
+**Códigos de salida:** `0` en caso de éxito, `1` si el número de regla es inválido o falta el argumento.
+
+### `rules clear`
+
+Elimina todas las reglas aprendidas.
+
+```bash
+$ securitylayer rules clear
+Cleared 2 learned rule(s).
+```
+
+**Códigos de salida:** Siempre `0`.
+
+## Ver también
+
+- [Modo aprendizaje](/es/docs/guides/learning-mode)
+- [Configuración](/es/docs/guides/configuration)

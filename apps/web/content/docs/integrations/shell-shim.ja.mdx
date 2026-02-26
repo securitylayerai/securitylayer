@@ -1,0 +1,79 @@
+---
+title: シェルシム
+description: あらゆる AI エージェント向けのユニバーサルシェルシム保護。
+icon: Terminal
+---
+
+シェルシムは、シェルコマンドを実行する**あらゆる** AI ツールを保護するユニバーサルインテグレーションです。ツール側でのインテグレーション作業はゼロです。
+
+## 動作の仕組み
+
+`securitylayer shield enable` は `~/.securitylayer/bin/` に PATH 優先のラッパースクリプトをインストールします。このディレクトリが PATH の先頭に追加されるため、すべてのシェルコマンドはリアルバイナリに到達する前に Security Layer を経由します。
+
+### シム化されるバイナリ
+
+| バイナリ | 説明 |
+|---|---|
+| `bash` | Bash シェル |
+| `sh` | POSIX シェル |
+| `zsh` | Zsh シェル |
+| `python` | Python インタープリター |
+| `python3` | Python 3 インタープリター |
+| `node` | Node.js ランタイム |
+| `ruby` | Ruby インタープリター |
+| `perl` | Perl インタープリター |
+
+### 実行フロー
+
+```
+AI Tool → shimmed bash → securitylayer check → real bash
+                              ↓ (if denied)
+                         error message
+```
+
+1. AI ツールが `bash -c "some command"` を呼び出す
+2. `~/.securitylayer/bin/bash` のシムがインターセプト
+3. `securitylayer check` がコマンドを評価
+4. 許可された場合 → リアルの `/usr/bin/bash` に転送
+5. 拒否された場合 → エラーが返され、コマンドは実行されない
+
+### 呼び出し元検出
+
+シムは以下をチェックして、どの AI ツールがコマンドをトリガーしたかを識別します:
+
+- 各ツール固有の環境変数
+- 親プロセス名
+
+これにより、ツールごとに異なるケイパビリティプロファイルを適用できます（例: Claude Code は `exec` + `file.write`、信頼されていないツールは `file.read` のみ）。
+
+## セットアップ
+
+```bash
+# 有効化
+securitylayer shield enable
+
+# 確認
+securitylayer shield status
+
+# 無効化
+securitylayer shield disable
+```
+
+有効化後、PATH の変更を反映するためにシェルを再起動するか、新しいターミナルを開いてください。
+
+## 対応する AI ツール
+
+シェルコマンドを実行するあらゆるツールが自動的に保護されます:
+
+- Claude Code
+- Cursor
+- Aider
+- GitHub Copilot
+- カスタムエージェント
+- シェルコマンドを実行するすべてのツール
+
+## 関連項目
+
+- [shield](/ja/docs/commands/shield) — shield コマンドリファレンス
+- [callers](/ja/docs/commands/callers) — 呼び出し元検出プロファイル
+- [check](/ja/docs/commands/check) — シムが使用する check コマンド

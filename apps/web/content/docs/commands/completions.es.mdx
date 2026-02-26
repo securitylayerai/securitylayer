@@ -1,0 +1,46 @@
+---
+title: completions
+description: Genera scripts de autocompletado para el shell.
+icon: Terminal
+---
+
+Genera scripts de autocompletado para la función tab-completion de comandos y argumentos de Security Layer.
+
+## Uso
+
+```bash
+securitylayer completions <shell>
+```
+
+## Argumentos
+
+| Argumento | Valor por defecto | Descripción |
+|---|---|---|
+| `<shell>` | `bash` | Tipo de shell: `bash`, `zsh` o `fish` |
+
+## Instalación
+
+### Bash
+
+```bash
+securitylayer completions bash > /etc/bash_completion.d/securitylayer
+```
+
+### Zsh
+
+```bash
+securitylayer completions zsh > "${fpath[1]}/_securitylayer"
+```
+
+### Fish
+
+```bash
+securitylayer completions fish > ~/.config/fish/completions/securitylayer.fish
+```
+
+## Códigos de salida
+
+| Código | Significado |
+|---|---|
+| `0` | Script de autocompletado generado exitosamente |
+| `1` | Shell no soportado |

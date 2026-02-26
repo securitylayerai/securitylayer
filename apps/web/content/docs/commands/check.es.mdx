@@ -1,0 +1,65 @@
+---
+title: check
+description: Verificación de política independiente para shell shims.
+icon: Shield
+---
+
+Evalúa un comando contra la política de seguridad sin ejecutarlo. Lo usan internamente los shell shims, pero también es útil para pruebas.
+
+## Uso
+
+```bash
+securitylayer check --command "<cmd>" [--tool <type>] [--caller <name>] [--format json|text]
+```
+
+## Flags
+
+| Flag | Valor por defecto | Descripción |
+|---|---|---|
+| `--command <cmd>` | (requerido) | El comando a evaluar |
+| `--tool <type>` | `exec` | Tipo de herramienta a verificar |
+| `--caller <name>` | (auto-detectado) | Identidad del caller -- auto-detectada del entorno si no se proporciona |
+| `--format json\|text` | `text` | Formato de salida |
+
+## Salida de texto
+
+```
+ALLOW — capability granted, no rules matched
+```
+
+## Salida JSON
+
+```json
+{
+  "decision": "ALLOW",
+  "reason": "capability granted, no rules matched",
+  "caller": "claude-code",
+  "taint": "OWNER",
+  "timing": { "total": 12 }
+}
+```
+
+En modo aprendizaje, las acciones bloqueadas se permiten con contexto adicional:
+
+```json
+{
+  "decision": "ALLOW",
+  "original_decision": "DENY",
+  "learning_mode": true,
+  "reason": "known dangerous pattern: rm -rf /",
+  "timing": { "total": 8 }
+}
+```
+
+## Códigos de salida
+
+| Código | Significado |
+|---|---|
+| `0` | ALLOW (o override en modo aprendizaje) |
+| `1` | DENY o error |
+| `2` | REQUIRE_APPROVAL |
+
+## Ver también
+
+- [hook](/es/docs/commands/hook) -- Handler de hooks para la integración con Claude Code
+- [Shell shim](/es/docs/integrations/shell-shim) -- Cómo los shell shims usan `check`

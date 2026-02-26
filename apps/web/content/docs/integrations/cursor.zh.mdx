@@ -1,0 +1,62 @@
+---
+title: Cursor
+description: 使用 Security Layer 保护 Cursor。
+icon: Code
+---
+
+Cursor 可以通过通用 shell shim 进行保护。原生 VS Code 扩展计划在 v1 推出。
+
+## 当前集成方式（shell shim）
+
+shell shim 拦截 Cursor 通过终端执行的所有命令：
+
+```bash
+securitylayer shield enable
+```
+
+这会安装 PATH 优先级包装器，在命令到达真实二进制文件之前对其进行评估。
+
+## 工作原理
+
+1. Cursor 运行 shell 命令（例如通过终端或代码操作）
+2. 被 shim 的二进制文件拦截调用
+3. Security Layer 检测 Cursor 为调用者（通过环境变量和进程检测）
+4. 命令根据 Cursor 的能力配置进行评估
+5. 允许的命令继续执行；被拒绝的命令返回错误
+
+## 调用者检测
+
+Security Layer 通过以下方式识别 Cursor：
+
+- **环境变量：** `CURSOR_SESSION`
+- **进程名称：** `cursor`
+
+## 能力配置
+
+Cursor 在 `~/.securitylayer/ai-tools.yaml` 中拥有自己的能力配置。默认配置授予常见的开发能力，同时限制危险操作。
+
+## 未来：原生扩展（v1）
+
+VS Code 扩展（`@securitylayer/vscode`）将会 hook 到：
+
+- 终端创建和命令执行
+- 文件系统 API 调用
+- 网络请求
+
+该扩展将使用 `@securitylayer/sdk` 进行进程内零延迟检查。
+
+## 设置
+
+```bash
+# 启用 shell shim 保护
+securitylayer shield enable
+
+# 验证
+securitylayer status
+```
+
+## 参阅
+
+- [shield](/zh/docs/commands/shield) — Shell shim 管理
+- [Shell shim 集成](/zh/docs/integrations/shell-shim)
+- [callers](/zh/docs/commands/callers) — 调用者检测配置

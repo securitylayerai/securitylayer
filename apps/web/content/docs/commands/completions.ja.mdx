@@ -1,0 +1,46 @@
+---
+title: completions
+description: シェル補完スクリプトを出力します。
+icon: Terminal
+---
+
+Security Layer コマンドと引数のタブ補完用シェル補完スクリプトを生成します。
+
+## 使い方
+
+```bash
+securitylayer completions <shell>
+```
+
+## 引数
+
+| 引数 | デフォルト | 説明 |
+|---|---|---|
+| `<shell>` | `bash` | シェルタイプ: `bash`、`zsh`、または `fish` |
+
+## インストール
+
+### Bash
+
+```bash
+securitylayer completions bash > /etc/bash_completion.d/securitylayer
+```
+
+### Zsh
+
+```bash
+securitylayer completions zsh > "${fpath[1]}/_securitylayer"
+```
+
+### Fish
+
+```bash
+securitylayer completions fish > ~/.config/fish/completions/securitylayer.fish
+```
+
+## 終了コード
+
+| コード | 意味 |
+|---|---|
+| `0` | 補完スクリプトの出力に成功 |
+| `1` | サポートされていないシェル |

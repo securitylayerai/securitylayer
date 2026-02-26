@@ -1,0 +1,68 @@
+---
+title: 学习模式
+description: 在执行前先监控 Security Layer 会阻止什么。
+icon: Brain
+---
+
+学习模式让你在不影响工作流的情况下观察 Security Layer 的决策。所有操作都被允许 — 但被阻止的操作会被记录，以便你在执行策略前调优。
+
+## 启用
+
+```bash
+securitylayer learn --duration 7d
+```
+
+这会在配置中设置 `mode: learning` 并记录 `learning_expires` 时间戳。持续时间结束后，Security Layer 恢复到执行模式。
+
+## 记录内容
+
+在学习模式下，Security Layer 通过完整的安全管道评估每个操作并记录：
+
+- **本应被拒绝**的操作及原因
+- 触发阻止的层（能力门控、规则、LLM 判断器）
+- 各层的耗时信息
+- 调用者身份和污点级别
+
+## 检查状态
+
+```bash
+securitylayer status
+```
+
+显示学习模式是否激活、何时过期以及已记录了多少操作。
+
+## 查看结果
+
+学习期结束后：
+
+```bash
+securitylayer learn report
+```
+
+显示内容：
+
+- **本应被阻止的操作** — 按原因分组
+- **推荐的能力变更** — 基于实际使用模式
+- **建议的规则** — 频繁出现的模式
+
+## 工作流
+
+1. **安装和初始化** — `securitylayer init`
+2. **启用学习** — `securitylayer learn --duration 7d`
+3. **正常工作** — 照常使用你的 AI 工具
+4. **查看报告** — `securitylayer learn report`
+5. **调优策略** — 根据结果调整能力和规则
+6. **执行** — 学习模式过期，开始执行
+
+## 建议
+
+- 从 7 天开始，以捕获你工作流的代表性样本
+- 如果想快速迭代，使用较短的持续时间（1-2 天）
+- 在学习期结束前查看报告以进行调整
+- 你可以通过编辑 `config.yaml` 删除 `mode: learning` 行来提前禁用学习模式
+
+## 参阅
+
+- [learn](/zh/docs/commands/learn) — 命令参考
+- [配置](/zh/docs/guides/configuration) — 编辑策略
+- [能力](/zh/docs/concepts/capabilities) — 了解能力授权

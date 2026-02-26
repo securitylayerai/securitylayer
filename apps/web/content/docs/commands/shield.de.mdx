@@ -1,0 +1,66 @@
+---
+title: shield
+description: Shell-Shim-Schutz aktivieren, deaktivieren oder prüfen.
+icon: ShieldCheck
+---
+
+Das Shield installiert PATH-priorisierte Wrapper-Skripte, die alle Shell-Befehle abfangen, die ein KI-Tool ausführt. Universeller Schutz — funktioniert mit jedem Tool, das Shell-Befehle ausführt.
+
+## Verwendung
+
+```bash
+securitylayer shield enable
+securitylayer shield disable
+securitylayer shield status
+```
+
+## Unterbefehle
+
+### `shield enable`
+
+Erstellt Shim-Binary-Wrapper in `~/.securitylayer/bin/` und fügt das Verzeichnis am Anfang des PATHs in deinem Shell-Profil hinzu (vorangestellt für Priorität).
+
+**Geshimmte Binaries:** `bash`, `sh`, `zsh`, `python`, `python3`, `node`, `ruby`, `perl`
+
+Jeder Shim ruft `securitylayer check` auf, bevor er an das echte Binary weiterleitet.
+
+**Exit-Codes:** `0` bei Erfolg, `1` wenn nicht konfiguriert oder keine Binaries gefunden.
+
+### `shield disable`
+
+Entfernt alle Shim-Skripte aus `~/.securitylayer/bin/` und entfernt den PATH-Eintrag aus deinem Shell-Profil.
+
+**Exit-Codes:** Immer `0`.
+
+### `shield status`
+
+Zeigt, ob das Shield aktiv ist, den Status des Shim-Verzeichnisses und welche Binaries geshimmt sind.
+
+```
+Shield Status
+
+  Shim directory: ~/.securitylayer/bin/ (exists)
+  PATH includes shim dir: yes
+  Shimmed binaries: bash, sh, zsh, python, python3, node, ruby, perl
+
+  Status: ACTIVE
+```
+
+**Exit-Codes:** Immer `0`.
+
+## Wie es funktioniert
+
+Wenn ein KI-Tool (Claude Code, Cursor, Aider, etc.) einen Shell-Befehl ausführt:
+
+1. Das geshimmte Binary fängt den Aufruf ab
+2. `securitylayer check` wertet den Befehl gegen deine Richtlinie aus
+3. Bei Erlaubnis führt das echte Binary den Befehl aus
+4. Bei Verweigerung wird der Befehl mit einer Fehlermeldung blockiert
+
+Die Caller-Erkennung identifiziert, welches KI-Tool den Befehl ausgelöst hat, und wendet das entsprechende Fähigkeitsprofil an.
+
+## Siehe auch
+
+- [Shell-Shim-Integration](/de/docs/integrations/shell-shim)
+- [check](/de/docs/commands/check) — Der von Shims verwendete check-Befehl
+- [callers](/de/docs/commands/callers) — KI-Tool-Caller-Erkennung

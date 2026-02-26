@@ -1,0 +1,65 @@
+---
+title: check
+description: Eigenständige Richtlinienprüfung für Shell-Shims.
+icon: Shield
+---
+
+Wertet einen Befehl gegen die Sicherheitsrichtlinie aus, ohne ihn auszuführen. Wird intern von Shell-Shims verwendet, ist aber auch zum Testen nützlich.
+
+## Verwendung
+
+```bash
+securitylayer check --command "<cmd>" [--tool <type>] [--caller <name>] [--format json|text]
+```
+
+## Flags
+
+| Flag | Standard | Beschreibung |
+|---|---|---|
+| `--command <cmd>` | (erforderlich) | Der auszuwertende Befehl |
+| `--tool <type>` | `exec` | Tool-Typ, der geprüft wird |
+| `--caller <name>` | (automatisch erkannt) | Caller-Identität — wird automatisch aus der Umgebung erkannt, wenn nicht angegeben |
+| `--format json\|text` | `text` | Ausgabeformat |
+
+## Textausgabe
+
+```
+ALLOW — capability granted, no rules matched
+```
+
+## JSON-Ausgabe
+
+```json
+{
+  "decision": "ALLOW",
+  "reason": "capability granted, no rules matched",
+  "caller": "claude-code",
+  "taint": "OWNER",
+  "timing": { "total": 12 }
+}
+```
+
+Im Lernmodus werden blockierte Aktionen mit zusätzlichem Kontext erlaubt:
+
+```json
+{
+  "decision": "ALLOW",
+  "original_decision": "DENY",
+  "learning_mode": true,
+  "reason": "known dangerous pattern: rm -rf /",
+  "timing": { "total": 8 }
+}
+```
+
+## Exit-Codes
+
+| Code | Bedeutung |
+|---|---|
+| `0` | ALLOW (oder Lernmodus-Override) |
+| `1` | DENY oder Fehler |
+| `2` | REQUIRE_APPROVAL |
+
+## Siehe auch
+
+- [hook](/de/docs/commands/hook) — Hook-Handler für Claude Code-Integration
+- [Shell-Shim](/de/docs/integrations/shell-shim) — Wie Shell-Shims `check` verwenden

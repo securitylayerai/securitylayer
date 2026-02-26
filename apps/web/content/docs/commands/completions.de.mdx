@@ -1,0 +1,46 @@
+---
+title: completions
+description: Shell-Completion-Skripte ausgeben.
+icon: Terminal
+---
+
+Generiert Shell-Completion-Skripte für Tab-Vervollständigung von Security Layer-Befehlen und -Argumenten.
+
+## Verwendung
+
+```bash
+securitylayer completions <shell>
+```
+
+## Argumente
+
+| Argument | Standard | Beschreibung |
+|---|---|---|
+| `<shell>` | `bash` | Shell-Typ: `bash`, `zsh` oder `fish` |
+
+## Installation
+
+### Bash
+
+```bash
+securitylayer completions bash > /etc/bash_completion.d/securitylayer
+```
+
+### Zsh
+
+```bash
+securitylayer completions zsh > "${fpath[1]}/_securitylayer"
+```
+
+### Fish
+
+```bash
+securitylayer completions fish > ~/.config/fish/completions/securitylayer.fish
+```
+
+## Exit-Codes
+
+| Code | Bedeutung |
+|---|---|
+| `0` | Completion-Skript erfolgreich ausgegeben |
+| `1` | Nicht unterstützte Shell |

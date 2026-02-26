@@ -1,0 +1,63 @@
+---
+title: projects
+description: Vertrauensregeln für Projektverzeichnisse verwalten.
+icon: Folder
+---
+
+Projekt-Vertrauensregeln weisen Verzeichnispfaden Taint-Levels zu. Wenn ein KI-Agent in einem Verzeichnis arbeitet, bestimmt die Vertrauensregel das initiale Taint-Level der Session.
+
+## Verwendung
+
+```bash
+securitylayer projects list
+securitylayer projects trust <path> [--taint <level>]
+securitylayer projects untrust <path>
+```
+
+## Unterbefehle
+
+### `projects list`
+
+Zeigt alle konfigurierten Projekt-Vertrauensregeln.
+
+```bash
+$ securitylayer projects list
+
+  Trust rules:
+    1. ~/Dev/Personal/** → OWNER
+    2. ~/Dev/Work/**     → TRUSTED_CONTACT
+    3. /tmp/**           → WEB_CONTENT
+
+  Default taint: UNTRUSTED_HUMAN
+```
+
+### `projects trust <path>`
+
+Fügt eine Vertrauensregel für einen Verzeichnispfad hinzu oder aktualisiert sie.
+
+```bash
+securitylayer projects trust ~/Dev/Personal/** --taint owner
+```
+
+| Flag | Standard | Beschreibung |
+|---|---|---|
+| `--taint <level>` | `owner` | Vertrauensstufe: `owner`, `trusted`, `untrusted`, `web`, `skill`, `memory` |
+
+**Exit-Codes:** `0` bei Erfolg, `1` wenn das Pfad-Argument fehlt.
+
+### `projects untrust <path>`
+
+Entfernt eine Vertrauensregel für einen Verzeichnispfad.
+
+```bash
+$ securitylayer projects untrust /tmp/**
+Removed trust rule for: /tmp/**
+```
+
+**Exit-Codes:** Immer `0`, `1` wenn das Pfad-Argument fehlt.
+
+## Siehe auch
+
+- [Projekt-Vertrauensanleitung](/de/docs/guides/project-trust)
+- [Taint-Levels](/de/docs/concepts/taint-levels)
+- [taint](/de/docs/commands/taint)

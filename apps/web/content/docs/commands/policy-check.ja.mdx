@@ -1,0 +1,65 @@
+---
+title: policy check
+description: ドライランのポリシーシミュレーション。
+icon: ListChecks
+---
+
+コマンドを実行せずにポリシー評価をシミュレーションします。すべてのレイヤーの評価結果を表示します。
+
+## 使い方
+
+```bash
+securitylayer policy check "<cmd>" [--session <name>]
+```
+
+## フラグ
+
+| フラグ | デフォルト | 説明 |
+|---|---|---|
+| `--command <cmd>` | (位置引数) | シミュレーションするコマンド |
+| `--session <name>` | `claude-code` | 評価対象のセッション |
+
+## 出力
+
+以下が表示されます:
+
+- **入力** — コマンド、セッション、テイントレベル、カレントワーキングディレクトリ
+- **レイヤー結果** — ケイパビリティゲート、ルールエンジン、LLM ジャッジ、リスクスコア
+- **タイミング** — 各レイヤーの所要時間の内訳
+- **最終判定** — `ALLOW`、`DENY`、または `REQUIRE_APPROVAL`
+
+## 例
+
+```bash
+$ securitylayer policy check "rm -rf /"
+
+  Command:  rm -rf /
+  Session:  claude-code
+  Taint:    OWNER
+  CWD:      /home/user/project
+
+  Layer Results:
+    Capability gate: ALLOW (exec granted)
+    Rules:           DENY (recursive delete of root)
+    LLM judge:       DANGEROUS (confidence: 0.95)
+    Risk score:      1.0
+
+  Timing:
+    Total:      45ms
+    Capability: 0ms
+    Rules:      2ms
+    LLM:        43ms
+
+  Decision: DENY
+```
+
+## 終了コード
+
+| コード | 意味 |
+|---|---|
+| `0` | 常に正常終了 |
+
+## 関連項目
+
+- [セキュリティパイプライン](/ja/docs/concepts/security-pipeline) — パイプラインの動作の仕組み
+- [check](/ja/docs/commands/check) — ライブポリシーチェック（シムが使用）

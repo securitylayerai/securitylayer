@@ -1,0 +1,20 @@
+{
+  "title": "CLI 명령어",
+  "icon": "Terminal",
+  "pages": [
+    "init",
+    "status",
+    "check",
+    "hook",
+    "shield",
+    "learn",
+    "policy-check",
+    "capabilities",
+    "taint",
+    "rules",
+    "projects",
+    "callers",
+    "setup",
+    "completions"
+  ]
+}

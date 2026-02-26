@@ -1,0 +1,73 @@
+---
+title: Claude Code
+description: Claude Code 的原生 hooks 集成。
+icon: Code
+---
+
+Security Layer 通过 hooks 系统与 Claude Code 原生集成。PreToolUse hooks 在执行前评估操作；PostToolUse hooks 在执行后追踪污点。
+
+## 设置
+
+```bash
+securitylayer setup claude-code
+```
+
+这会将 hooks 写入 `~/.claude/hooks.json`。无需手动配置。
+
+## 工作原理
+
+### PreToolUse hooks
+
+在 Claude Code 执行工具之前，Security Layer 评估该操作：
+
+| 工具 | 能力 | 检查内容 |
+|---|---|---|
+| `Bash` | `exec` | 完整命令通过安全管道 |
+| `Write` | `file.write` | 文件路径和内容 |
+| `Edit` | `file.write` | 文件路径和修改内容 |
+| `WebFetch` | `web_fetch` | URL 和请求 |
+| `NotebookEdit` | `file.write` | Notebook 路径和单元格变更 |
+
+如果操作被拒绝，Claude Code 会收到说明原因的错误消息。
+
+### PostToolUse hooks
+
+工具执行完成后，Security Layer 更新污点追踪：
+
+| 工具 | 效果 |
+|---|---|
+| `Bash` | 追踪命令执行上下文 |
+| `Read` | 如果文件来自不受信任的目录，提升污点 |
+| `WebFetch` | 将污点提升至 `WEB_CONTENT` |
+
+### Hook 格式
+
+每个 hook 调用 Security Layer CLI：
+
+```bash
+# PreToolUse
+securitylayer hook claude-code --tool Bash --input "$TOOL_INPUT"
+
+# PostToolUse
+securitylayer hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
+```
+
+## 验证
+
+检查 hooks 是否已安装：
+
+```bash
+securitylayer status
+```
+
+在输出中查找 "Claude Code hooks: installed"。
+
+## 移除
+
+要从 Claude Code 移除 Security Layer hooks，编辑 `~/.claude/hooks.json` 并删除 Security Layer 相关条目，或删除该文件以移除所有 hooks。
+
+## 参阅
+
+- [hook](/zh/docs/commands/hook) — hook 处理器参考
+- [setup](/zh/docs/commands/setup) — 自动设置命令
+- [Shell shim](/zh/docs/integrations/shell-shim) — 替代集成方式

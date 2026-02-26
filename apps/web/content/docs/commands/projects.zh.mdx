@@ -1,0 +1,63 @@
+---
+title: projects
+description: 管理项目目录信任规则。
+icon: Folder
+---
+
+项目信任规则为目录路径分配污点级别。当 AI 代理在某个目录中操作时，信任规则决定会话的初始污点级别。
+
+## 用法
+
+```bash
+securitylayer projects list
+securitylayer projects trust <path> [--taint <level>]
+securitylayer projects untrust <path>
+```
+
+## 子命令
+
+### `projects list`
+
+显示所有已配置的项目信任规则。
+
+```bash
+$ securitylayer projects list
+
+  Trust rules:
+    1. ~/Dev/Personal/** → OWNER
+    2. ~/Dev/Work/**     → TRUSTED_CONTACT
+    3. /tmp/**           → WEB_CONTENT
+
+  Default taint: UNTRUSTED_HUMAN
+```
+
+### `projects trust <path>`
+
+为目录路径添加或更新信任规则。
+
+```bash
+securitylayer projects trust ~/Dev/Personal/** --taint owner
+```
+
+| 参数 | 默认值 | 描述 |
+|---|---|---|
+| `--taint <level>` | `owner` | 信任级别：`owner`、`trusted`、`untrusted`、`web`、`skill`、`memory` |
+
+**退出码：** 成功返回 `0`，缺少路径参数返回 `1`。
+
+### `projects untrust <path>`
+
+移除目录路径的信任规则。
+
+```bash
+$ securitylayer projects untrust /tmp/**
+Removed trust rule for: /tmp/**
+```
+
+**退出码：** 始终返回 `0`，缺少路径参数返回 `1`。
+
+## 参阅
+
+- [项目信任指南](/zh/docs/guides/project-trust)
+- [污点级别](/zh/docs/concepts/taint-levels)
+- [taint](/zh/docs/commands/taint)

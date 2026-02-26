@@ -1,0 +1,58 @@
+---
+title: rules
+description: 列出、撤销和清除已学习的规则。
+icon: ListChecks
+---
+
+管理已学习的规则 — 通过"审批并记住"自动批准的模式。
+
+## 用法
+
+```bash
+securitylayer rules list
+securitylayer rules revoke <number>
+securitylayer rules clear
+```
+
+## 子命令
+
+### `rules list`
+
+显示 `~/.securitylayer/learned-rules.json` 中所有已学习的规则。
+
+```bash
+$ securitylayer rules list
+
+  Learned rules:
+    1. npm install * (exec) — 2025-01-15 — claude-code
+    2. git push * (exec) — 2025-01-16 — claude-code
+```
+
+每个条目显示模式、能力、创建日期和会话 ID。
+
+### `rules revoke <number>`
+
+按编号移除特定的已学习规则（从 `rules list` 的 1 开始编号）。
+
+```bash
+$ securitylayer rules revoke 2
+Revoked rule: git push * (exec)
+```
+
+**退出码：** 成功返回 `0`，无效编号或缺少参数返回 `1`。
+
+### `rules clear`
+
+移除所有已学习的规则。
+
+```bash
+$ securitylayer rules clear
+Cleared 2 learned rule(s).
+```
+
+**退出码：** 始终返回 `0`。
+
+## 参阅
+
+- [学习模式](/zh/docs/guides/learning-mode)
+- [配置](/zh/docs/guides/configuration)

@@ -1,0 +1,75 @@
+---
+title: Inicio rapido
+description: Tenha o Security Layer protegendo seus agentes de IA em 5 minutos.
+icon: Lightning
+---
+
+Este guia leva voce do zero a protegido em 5 minutos.
+
+## 1. Instalar
+
+```bash
+bun add -g securitylayer
+```
+
+## 2. Inicializar
+
+```bash
+securitylayer init
+```
+
+Aceite os padroes ou personalize suas capabilities de sessao. O assistente cria arquivos de configuracao em `~/.securitylayer/`.
+
+## 3. Configurar a integracao
+
+**Claude Code** — integracao nativa via hooks:
+
+```bash
+securitylayer setup claude-code
+```
+
+Isso instala hooks PreToolUse e PostToolUse em `~/.claude/hooks.json`. Cada chamada de ferramenta que o Claude Code faz e avaliada pela sua politica de seguranca antes da execucao.
+
+**Shell shim** — protecao universal para qualquer ferramenta de IA:
+
+```bash
+securitylayer shield enable
+```
+
+Isso instala scripts wrapper com prioridade no PATH que interceptam todos os comandos do shell. Funciona com qualquer ferramenta de IA — Cursor, Aider, Copilot ou qualquer coisa que execute comandos no shell.
+
+## 4. Verificar
+
+```bash
+securitylayer status
+```
+
+Voce devera ver sua configuracao carregada, suas capabilities de sessao e o status da integracao (hooks instalados ou shield ativo).
+
+## 5. Testar
+
+Execute uma verificacao de politica em modo dry-run para ver o Security Layer em acao:
+
+```bash
+securitylayer policy check "rm -rf /"
+```
+
+Voce vera a avaliacao completa — capability gate, rules engine e risk score — com a decisao final.
+
+## O que esta acontecendo
+
+Quando um agente de IA tenta executar um comando:
+
+1. **Capability gate** — Este tipo de acao e permitido? (`exec`, `file.write`, etc.)
+2. **Verificacao de taint** — O nivel de confianca da sessao e suficiente?
+3. **Normalizacao** — Resolver caminhos, decodificar encodings, separar cadeias de comandos
+4. **Rules engine** — Comparar com padroes deterministicos
+5. **LLM judge** — Analise semantica para anomalias contextuais (se habilitado)
+6. **Decisao** — O resultado mais restritivo vence: ALLOW, DENY ou REQUIRE_APPROVAL
+
+## Proximos passos
+
+- [Taint levels](/pt/docs/concepts/taint-levels) — Entenda o modelo de confianca
+- [Capabilities](/pt/docs/concepts/capabilities) — Aprenda sobre concessao de capabilities
+- [Modo de aprendizado](/pt/docs/guides/learning-mode) — Monitore antes de aplicar
+- [Configuracao](/pt/docs/guides/configuration) — Personalize sua politica de seguranca

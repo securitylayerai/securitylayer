@@ -57,7 +57,7 @@ function UserAction() {
         size="lg"
         nativeButton={false}
       >
-        Go to Dashboard
+        Go to dashboard
       </Button>
       <div className="text-center text-xs sm:text-sm">
         Session user:

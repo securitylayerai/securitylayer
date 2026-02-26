@@ -1,0 +1,79 @@
+---
+title: Shell shim
+description: 适用于任何 AI 代理的通用 shell shim 保护。
+icon: Terminal
+---
+
+shell shim 是一种通用集成方式，保护**任何**运行 shell 命令的 AI 工具 — 无需工具方做任何集成工作。
+
+## 工作原理
+
+`securitylayer shield enable` 在 `~/.securitylayer/bin/` 安装 PATH 优先级包装脚本。因为该目录被前置到 PATH 中，所有 shell 命令在到达真实二进制文件之前都会经过 Security Layer。
+
+### 被 shim 的二进制文件
+
+| 二进制文件 | 描述 |
+|---|---|
+| `bash` | Bash shell |
+| `sh` | POSIX shell |
+| `zsh` | Zsh shell |
+| `python` | Python 解释器 |
+| `python3` | Python 3 解释器 |
+| `node` | Node.js 运行时 |
+| `ruby` | Ruby 解释器 |
+| `perl` | Perl 解释器 |
+
+### 执行流程
+
+```
+AI Tool → shimmed bash → securitylayer check → real bash
+                              ↓ (if denied)
+                         error message
+```
+
+1. AI 工具调用 `bash -c "some command"`
+2. `~/.securitylayer/bin/bash` 中的 shim 拦截
+3. `securitylayer check` 评估命令
+4. 如果允许 → 转发到真实的 `/usr/bin/bash`
+5. 如果拒绝 → 返回错误，命令不会执行
+
+### 调用者检测
+
+shim 通过以下方式识别哪个 AI 工具触发了命令：
+
+- 各工具特定的环境变量
+- 父进程名称
+
+这允许不同工具使用不同的能力配置（例如，Claude Code 获得 `exec` + `file.write`，而不受信任的工具只获得 `file.read`）。
+
+## 设置
+
+```bash
+# 启用
+securitylayer shield enable
+
+# 验证
+securitylayer shield status
+
+# 禁用
+securitylayer shield disable
+```
+
+启用后，重启 shell 或打开新终端以使 PATH 变更生效。
+
+## 支持的 AI 工具
+
+任何执行 shell 命令的工具都会自动受到保护：
+
+- Claude Code
+- Cursor
+- Aider
+- GitHub Copilot
+- 自定义代理
+- 任何运行 shell 命令的工具
+
+## 参阅
+
+- [shield](/zh/docs/commands/shield) — shield 命令参考
+- [callers](/zh/docs/commands/callers) — 调用者检测配置
+- [check](/zh/docs/commands/check) — shim 使用的 check 命令

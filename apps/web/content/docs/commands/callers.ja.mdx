@@ -1,0 +1,71 @@
+---
+title: callers
+description: AI ツールの呼び出し元プロファイルを一覧表示・確認します。
+icon: Sparkle
+---
+
+Security Layer はどの AI ツールがコマンドをトリガーしたかを自動検出し、適切なケイパビリティプロファイルを適用します。callers コマンドでこれらのプロファイルを確認できます。
+
+## 使い方
+
+```bash
+securitylayer callers list
+securitylayer callers profile <name>
+```
+
+## サブコマンド
+
+### `callers list`
+
+設定済みのすべての AI ツール呼び出し元と、その検出ルールおよびケイパビリティを表示します。
+
+```bash
+$ securitylayer callers list
+
+  claude-code (Claude Code)
+    taint: OWNER
+    capabilities: exec, file.read, file.write, web_fetch
+    detect env: CLAUDE_CODE
+    detect process: claude
+
+  cursor (Cursor)
+    taint: TRUSTED_CONTACT
+    capabilities: exec, file.read, file.write
+    detect env: CURSOR_SESSION
+    detect process: cursor
+```
+
+### `callers profile <name>`
+
+特定の呼び出し元の詳細情報を表示します。
+
+```bash
+$ securitylayer callers profile claude-code
+
+  ID:           claude-code
+  Display name: Claude Code
+  Default taint: OWNER
+
+  Capabilities:
+    exec, file.read, file.write, web_fetch
+
+  Detection:
+    Environment: CLAUDE_CODE
+    Process:     claude
+```
+
+**終了コード:** 成功時 `0`、不明な呼び出し元または name 引数が不足している場合 `1`。
+
+## 検出の仕組み
+
+コマンドがインターセプトされると（シェルシムまたはフック経由）、Security Layer は以下をチェックします:
+
+1. **環境変数** — 呼び出しプロセスに特定の環境変数が設定されているか?
+2. **プロセス名** — 親プロセスが既知の AI ツールに一致するか?
+
+検出された呼び出し元に基づいて、適用されるケイパビリティプロファイルが決まります。
+
+## 関連項目
+
+- [シェルシム](/ja/docs/integrations/shell-shim) — シムが呼び出し元を検出する仕組み
+- [設定](/ja/docs/guides/configuration) — 呼び出し元プロファイルの編集

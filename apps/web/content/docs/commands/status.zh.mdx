@@ -1,0 +1,47 @@
+---
+title: status
+description: 显示安全状态仪表盘。
+icon: ShieldCheck
+---
+
+显示 Security Layer 配置、集成状态和活跃会话的概览。
+
+## 用法
+
+```bash
+securitylayer status
+```
+
+## 输出
+
+状态仪表盘显示：
+
+- **配置** — 配置文件是否已加载及其位置
+- **Shield 状态** — 激活或未激活
+- **Claude Code hooks** — 已安装或未安装
+- **会话** — 已配置会话的数量和详情
+- **学习模式** — 激活时长和过期时间（如已启用）
+
+## 输出示例
+
+```
+Security Layer Status
+
+  ✓ Configuration loaded
+    config.yaml
+    capabilities/sessions.yaml
+    capabilities/channels.yaml
+    ai-tools.yaml
+    projects.yaml
+
+  Shield: active
+  Claude Code hooks: installed
+  Sessions: 1
+    claude-code (exec, file.read, file.write, web_fetch)
+```
+
+## 退出码
+
+| 代码 | 含义 |
+|---|---|
+| `0` | 始终成功退出 |

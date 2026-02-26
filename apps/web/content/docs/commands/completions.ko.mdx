@@ -1,0 +1,46 @@
+---
+title: completions
+description: 셸 자동 완성 스크립트를 출력합니다.
+icon: Terminal
+---
+
+Security Layer 명령어와 인자의 탭 자동 완성을 위한 셸 완성 스크립트를 생성합니다.
+
+## 사용법
+
+```bash
+securitylayer completions <shell>
+```
+
+## 인자
+
+| 인자 | 기본값 | 설명 |
+|---|---|---|
+| `<shell>` | `bash` | 셸 유형: `bash`, `zsh` 또는 `fish` |
+
+## 설치
+
+### Bash
+
+```bash
+securitylayer completions bash > /etc/bash_completion.d/securitylayer
+```
+
+### Zsh
+
+```bash
+securitylayer completions zsh > "${fpath[1]}/_securitylayer"
+```
+
+### Fish
+
+```bash
+securitylayer completions fish > ~/.config/fish/completions/securitylayer.fish
+```
+
+## 종료 코드
+
+| 코드 | 의미 |
+|---|---|
+| `0` | 완성 스크립트가 출력됨 |
+| `1` | 지원하지 않는 셸 |

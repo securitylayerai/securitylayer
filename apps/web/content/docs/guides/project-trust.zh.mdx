@@ -1,0 +1,97 @@
+---
+title: 项目信任
+description: 为项目目录配置信任级别。
+icon: Folder
+---
+
+项目信任规则为目录分配污点级别。这决定了 AI 代理在给定项目中操作时的初始信任级别。
+
+## 为什么需要项目信任？
+
+对于 AI 编码工具，**文件就是不受信任的通道**。克隆的仓库可能在以下位置包含对抗性指令：
+
+- `README.md`、`CLAUDE.md`、`.cursorrules`
+- 代码注释和文档字符串
+- `package.json` 的 postinstall 脚本
+- Git hooks（`.git/hooks/`）
+- CI/CD 配置文件
+
+通过根据项目所在位置分配信任，Security Layer 在代理处理不受信任的代码时自动限制其权限。
+
+## 配置信任规则
+
+### 通过 CLI
+
+```bash
+# 信任你的个人项目
+securitylayer projects trust "~/Dev/Personal/**" --taint owner
+
+# 以较低级别信任工作项目
+securitylayer projects trust "~/Dev/Work/**" --taint trusted
+
+# 将临时目录标记为不受信任
+securitylayer projects trust "/tmp/**" --taint web
+
+# 移除信任规则
+securitylayer projects untrust "/tmp/**"
+```
+
+### 通过配置文件
+
+编辑 `~/.securitylayer/projects.yaml`：
+
+```yaml
+version: 1
+trust_rules:
+  - path: "~/Dev/Personal/**"
+    taint: OWNER
+  - path: "~/Dev/Work/**"
+    taint: TRUSTED_CONTACT
+  - path: "/tmp/**"
+    taint: WEB_CONTENT
+  - path: "~/Downloads/**"
+    taint: WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+## 污点级别映射
+
+| CLI 值 | 污点级别 | 使用场景 |
+|---|---|---|
+| `owner` | `OWNER` | 你自己的项目 |
+| `trusted` | `TRUSTED_CONTACT` | 已知协作者的项目 |
+| `untrusted` | `UNTRUSTED_HUMAN` | 未知来源 |
+| `web` | `WEB_CONTENT` | 从互联网下载/克隆 |
+| `skill` | `SKILL_GENERATED` | 由技能生成 |
+| `memory` | `MEMORY_REPLAY` | 来自持久化内存 |
+
+## 工作原理
+
+1. 当 AI 代理开始工作时，Security Layer 检查当前目录
+2. 最具体匹配的信任规则决定初始污点级别
+3. 需要更高信任的能力会被自动限制
+4. 污点在会话中只会上升，不会下降
+
+## 查看当前信任
+
+```bash
+# 列出所有信任规则
+securitylayer projects list
+
+# 检查当前目录的污点
+securitylayer taint show
+```
+
+## 最佳实践
+
+- **个人项目** → `OWNER` — 完整能力
+- **工作项目** → `TRUSTED_CONTACT` — 大部分能力，部分限制
+- **开源贡献** → `UNTRUSTED_HUMAN` — 有限能力
+- **下载的仓库** → `WEB_CONTENT` — 最小能力
+- **临时目录** → `WEB_CONTENT` — 最小能力
+
+## 参阅
+
+- [污点级别](/zh/docs/concepts/taint-levels) — 完整的污点级别参考
+- [projects](/zh/docs/commands/projects) — CLI 命令参考
+- [taint](/zh/docs/commands/taint) — 查看污点状态

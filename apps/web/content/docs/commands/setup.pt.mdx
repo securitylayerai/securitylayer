@@ -1,0 +1,52 @@
+---
+title: setup
+description: Configuracao automatica para Claude Code, Cursor e outras integracoes.
+icon: Plug
+---
+
+Configura automaticamente a integracao do Security Layer com ferramentas de IA.
+
+## Uso
+
+```bash
+securitylayer setup claude-code
+securitylayer setup cursor
+```
+
+## Subcomandos
+
+### `setup claude-code`
+
+Instala hooks do Security Layer em `~/.claude/hooks.json`.
+
+**Hooks PreToolUse** (avaliados antes da ferramenta executar):
+- `Bash` — Execucao de comandos no shell
+- `Write` — Criacao de arquivos
+- `Edit` — Modificacao de arquivos
+- `WebFetch` — Busca de URLs
+- `NotebookEdit` — Edicoes em notebooks Jupyter
+
+**Hooks PostToolUse** (executados apos a ferramenta concluir):
+- `Bash` — Rastrear contexto de execucao de comandos
+- `Read` — Rastrear leituras de arquivo para elevacao de taint
+- `WebFetch` — Rastrear buscas de conteudo web para elevacao de taint
+
+Cada hook chama `securitylayer hook claude-code` com as flags apropriadas.
+
+**Codigos de saida:** `0` em caso de sucesso ou se o Claude Code nao for encontrado.
+
+### `setup cursor`
+
+Fornece instrucoes para proteger o Cursor. A integracao nativa via hooks esta planejada para v1 — atualmente, use o shell shim:
+
+```bash
+securitylayer shield enable
+```
+
+**Codigos de saida:** Sempre `0`.
+
+## Veja tambem
+
+- [Integracao com Claude Code](/pt/docs/integrations/claude-code)
+- [Integracao com Cursor](/pt/docs/integrations/cursor)
+- [hook](/pt/docs/commands/hook) — O handler de hook

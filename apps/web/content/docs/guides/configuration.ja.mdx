@@ -1,0 +1,142 @@
+---
+title: 設定
+description: Security Layer のセキュリティポリシーをカスタマイズします。
+icon: Gear
+---
+
+Security Layer の設定は `~/.securitylayer/` にあります。すべての設定ファイルはスキーマ互換性のための `version` フィールド付きの YAML を使用します。
+
+## 設定ファイル
+
+| ファイル | 用途 |
+|---|---|
+| `config.yaml` | メイン設定（モード、ジャッジ設定、ログ） |
+| `capabilities/sessions.yaml` | セッションケイパビリティの付与 |
+| `capabilities/channels.yaml` | チャネルケイパビリティの制限 |
+| `capabilities/skills.yaml` | スキルケイパビリティの宣言 |
+| `ai-tools.yaml` | AI ツールの呼び出し元プロファイルと検出ルール |
+| `projects.yaml` | プロジェクトディレクトリの信頼ルール |
+| `learned-rules.json` | 「承認して記憶」による自動承認パターン |
+
+## メイン設定
+
+```yaml
+# ~/.securitylayer/config.yaml
+version: 1
+mode: enforce  # or "learning"
+
+judge:
+  enabled: true
+  provider: anthropic
+  model: claude-haiku-4-5-20251001
+  api_key_env: ANTHROPIC_API_KEY
+  timeout_ms: 500
+
+logging:
+  level: info  # debug, info, warn, error
+```
+
+## セッションケイパビリティ
+
+```yaml
+# ~/.securitylayer/capabilities/sessions.yaml
+version: 1
+sessions:
+  claude-code:
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    default_taint: owner
+
+  restricted:
+    capabilities:
+      - file.read
+      - exec:owner  # owner テイントのプロジェクトでのみ exec を許可
+    default_taint: untrusted
+```
+
+## AI ツールプロファイル
+
+```yaml
+# ~/.securitylayer/ai-tools.yaml
+version: 1
+callers:
+  claude-code:
+    display_name: Claude Code
+    default_taint: OWNER
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - web_fetch
+    detect:
+      env:
+        - CLAUDE_CODE
+      process:
+        - claude
+
+  cursor:
+    display_name: Cursor
+    default_taint: TRUSTED_CONTACT
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+    detect:
+      env:
+        - CURSOR_SESSION
+      process:
+        - cursor
+```
+
+## プロジェクト信頼
+
+```yaml
+# ~/.securitylayer/projects.yaml
+version: 1
+trust_rules:
+  - path: "~/Dev/Personal/**"
+    taint: OWNER
+  - path: "~/Dev/Work/**"
+    taint: TRUSTED_CONTACT
+  - path: "/tmp/**"
+    taint: WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+## スキーマバージョニング
+
+すべての設定ファイルには `version` フィールドが含まれます。Security Layer が設定ファイルを読み込む際:
+
+1. `version` フィールドをチェック
+2. サポートされているバージョンの場合、通常通り読み込み
+3. 予想より新しいバージョンの場合、利用可能なマイグレーションを実行
+4. サポートされていないバージョンの場合、サイレントに誤解釈するのではなく**読み込みを拒否**
+
+これにより、アップグレード時のサイレントな設定破損を防ぎます。
+
+## 設定の確認
+
+```bash
+# 全体のステータス概要
+securitylayer status
+
+# ケイパビリティ
+securitylayer capabilities show
+
+# テイントとプロジェクト信頼
+securitylayer taint show
+securitylayer projects list
+
+# 呼び出し元プロファイル
+securitylayer callers list
+```
+
+## 関連項目
+
+- [init](/ja/docs/commands/init) — 対話型セットアップウィザード
+- [ケイパビリティ](/ja/docs/concepts/capabilities) — ケイパビリティの仕組み
+- [テイントレベル](/ja/docs/concepts/taint-levels) — テイントトラッキングの仕組み
+- [プロジェクト信頼](/ja/docs/guides/project-trust) — ディレクトリ信頼の設定

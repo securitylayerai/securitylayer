@@ -1,0 +1,91 @@
+---
+title: Pipeline de seguranca
+description: O pipeline de seguranca de 3 camadas — estrutural, semantico e regras.
+icon: Stack
+---
+
+Cada acao que um agente de IA tenta realizar passa por um pipeline de seguranca de 3 camadas. As camadas sao independentes e complementares — cada uma captura categorias diferentes de ameacas.
+
+## Camada 1: Aplicacao estrutural (as paredes)
+
+A defesa primaria. A aplicacao estrutural torna acoes perigosas **impossiveis** em vez de tentar detecta-las.
+
+Componentes:
+
+- **Capability gate** — Verificacao de pertinencia ao conjunto, funcao pura. Sem capability = sem acao.
+- **Rastreamento de taint** — O nivel de confianca da sessao restringe as capabilities disponiveis.
+- **Normalizacao de acoes** — Caminhos resolvidos, encodings decodificados, cadeias de comandos separadas antes da avaliacao.
+- **Bloqueio do gateway** — Impede a passagem direta pelo proxy de seguranca.
+- **Sandboxing de exec** — Comandos aprovados executam em ambientes restritos (sem rede, FS somente leitura, ulimits).
+- **Escaneamento de saida** — Mensagens de saida escaneadas para vazamento de segredos, PII e dados de alta entropia.
+
+A aplicacao estrutural nao pode ser contornada por prompts inteligentes, engenharia social ou injecao de prompt.
+
+## Camada 2: Analise semantica (os guardas)
+
+O LLM judge analisa se uma acao estruturalmente permitida e **contextualmente anomala**.
+
+O judge tem uma funcao estreita — ele NAO:
+- Detecta padroes de injecao (o rastreamento de taint cuida disso)
+- Compara comandos conhecidamente perigosos (as regras cuidam disso)
+
+Ele apenas pergunta: **"Esta acao estruturalmente permitida e anomala neste momento?"**
+
+O judge executa em **paralelo** com o rules engine. Se o judge estiver lento (>500ms), a Camada 1 + Camada 3 decidem imediatamente; o resultado do judge e usado para revisao assincrona posterior.
+
+Decisoes do judge:
+- `NORMAL` — A acao parece esperada
+- `ANOMALOUS` — A acao e incomum → `REQUIRE_APPROVAL`
+- `DANGEROUS` (confianca >= 0.8) → `DENY`
+
+Se o judge estiver indisponivel e o risk score exceder 0.3, a acao requer aprovacao.
+
+## Camada 3: Regras deterministicas (os alarmes)
+
+Padroes de comandos conhecidamente perigosos e bloqueios de caminhos. Rapido, sem latencia, sem ambiguidade.
+
+As regras sao definidas em YAML e carregadas em tempo de execucao:
+
+```yaml
+# Example baseline rules
+version: 1
+rules:
+  - pattern: "rm -rf /"
+    action: DENY
+    reason: "Recursive delete of root"
+  - pattern: "chmod 777"
+    action: DENY
+    reason: "World-writable permissions"
+```
+
+As regras sempre vencem: se uma regra diz DENY, a acao e negada independentemente do que as outras camadas decidam.
+
+## Mesclagem de decisoes
+
+As decisoes das camadas sao mescladas usando o resultado **mais restritivo**:
+
+| Condicao | Resultado |
+|---|---|
+| Rules DENY | **DENY** (sempre) |
+| LLM DANGEROUS (confianca >= 0.8) | **DENY** |
+| LLM ANOMALOUS | **REQUIRE_APPROVAL** |
+| LLM indisponivel + risco > 0.3 | **REQUIRE_APPROVAL** |
+| Todas as camadas passam | **ALLOW** |
+
+## Principio fail-safe
+
+Cada falha torna o sistema **mais restritivo**, nunca menos:
+
+- LLM fora do ar → exigir aprovacao humana
+- Configuracao corrompida → recusar iniciar
+- Erro de taint → assumir taint maximo
+- Falha de normalizacao → tratar como maximamente perigoso
+
+## Fluxo do pipeline
+
+```
+Action → Capability Gate → Taint Check → Normalize → ┬─ Rules Engine ──┬→ Merge → Decision
+                                                      └─ LLM Judge ─────┘
+```
+
+O capability gate e a verificacao de taint sao sincronos e instantaneos. A normalizacao prepara a acao para avaliacao paralela pelo rules engine e LLM judge. O merger pega o resultado mais restritivo.

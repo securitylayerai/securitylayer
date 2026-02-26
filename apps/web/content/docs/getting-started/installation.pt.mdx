@@ -1,0 +1,52 @@
+---
+title: Instalacao
+description: Instale a CLI e os requisitos do sistema.
+icon: Rocket
+---
+
+## Requisitos do sistema
+
+- **Runtime:** [Bun](https://bun.sh) v1.0 ou superior
+- **SO:** macOS ou Linux
+- **Opcional:** Docker (para o banco de dados do dashboard web)
+
+## Instalar via npm
+
+```bash
+bun add -g securitylayer
+```
+
+Ou com npm:
+
+```bash
+npm install -g securitylayer
+```
+
+## Verificar a instalacao
+
+```bash
+securitylayer --version
+```
+
+Voce tambem pode usar o alias curto:
+
+```bash
+sl --version
+```
+
+## O que esta incluido
+
+O pacote `securitylayer` instala:
+
+- **`securitylayer` / `sl`** — O binario da CLI
+- **`@securitylayer/core`** — O motor de seguranca (capability gate, taint tracker, normalizer, rules, LLM judge)
+
+## Proximos passos
+
+Execute o assistente de configuracao interativo:
+
+```bash
+securitylayer init
+```
+
+Veja [Init](/pt/docs/getting-started/init) para um passo a passo completo, ou va direto para [Inicio rapido](/pt/docs/getting-started/quick-start) para um guia completo em 5 minutos.

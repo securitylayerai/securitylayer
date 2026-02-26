@@ -1,0 +1,97 @@
+---
+title: プロジェクト信頼
+description: プロジェクトディレクトリの信頼レベルを設定します。
+icon: Folder
+---
+
+プロジェクト信頼ルールは、ディレクトリにテイントレベルを割り当てます。これにより、AI エージェントが特定のプロジェクトで操作する際の初期信頼レベルが決まります。
+
+## なぜプロジェクト信頼が必要か
+
+AI コーディングツールにとって、**ファイルは信頼されていないチャネル**です。クローンしたリポジトリには、以下に敵対的な指示が含まれている可能性があります:
+
+- `README.md`、`CLAUDE.md`、`.cursorrules`
+- コードコメントとドキュメント文字列
+- `package.json` の postinstall スクリプト
+- Git フック（`.git/hooks/`）
+- CI/CD 設定ファイル
+
+プロジェクトの場所に基づいて信頼を割り当てることで、Security Layer はエージェントが信頼されていないコード内で操作する際に、自動的にできることを制限します。
+
+## 信頼ルールの設定
+
+### CLI 経由
+
+```bash
+# 個人プロジェクトを信頼
+securitylayer projects trust "~/Dev/Personal/**" --taint owner
+
+# ワークプロジェクトを低い信頼レベルで信頼
+securitylayer projects trust "~/Dev/Work/**" --taint trusted
+
+# 一時ディレクトリを信頼されていないとマーク
+securitylayer projects trust "/tmp/**" --taint web
+
+# 信頼ルールを削除
+securitylayer projects untrust "/tmp/**"
+```
+
+### 設定ファイル経由
+
+`~/.securitylayer/projects.yaml` を編集します:
+
+```yaml
+version: 1
+trust_rules:
+  - path: "~/Dev/Personal/**"
+    taint: OWNER
+  - path: "~/Dev/Work/**"
+    taint: TRUSTED_CONTACT
+  - path: "/tmp/**"
+    taint: WEB_CONTENT
+  - path: "~/Downloads/**"
+    taint: WEB_CONTENT
+default: UNTRUSTED_HUMAN
+```
+
+## テイントレベルの対応表
+
+| CLI の値 | テイントレベル | ユースケース |
+|---|---|---|
+| `owner` | `OWNER` | 自分のプロジェクト |
+| `trusted` | `TRUSTED_CONTACT` | 既知の共同作業者のプロジェクト |
+| `untrusted` | `UNTRUSTED_HUMAN` | 出所不明のソース |
+| `web` | `WEB_CONTENT` | インターネットからダウンロード/クローン |
+| `skill` | `SKILL_GENERATED` | スキルによって生成 |
+| `memory` | `MEMORY_REPLAY` | 永続メモリから |
+
+## 動作の仕組み
+
+1. AI エージェントが作業を開始すると、Security Layer がカレントディレクトリをチェック
+2. 最も具体的に一致する信頼ルールが初期テイントレベルを決定
+3. より高い信頼を必要とするケイパビリティが自動的に制限される
+4. セッション中にテイントは上昇のみで、下降しない
+
+## 現在の信頼状態の確認
+
+```bash
+# すべての信頼ルールを一覧表示
+securitylayer projects list
+
+# カレントディレクトリのテイントを確認
+securitylayer taint show
+```
+
+## ベストプラクティス
+
+- **個人プロジェクト** → `OWNER` — 全ケイパビリティ
+- **ワークプロジェクト** → `TRUSTED_CONTACT` — ほとんどのケイパビリティ、一部制限あり
+- **オープンソースへの貢献** → `UNTRUSTED_HUMAN` — 限定的なケイパビリティ
+- **ダウンロードしたリポジトリ** → `WEB_CONTENT` — 最小限のケイパビリティ
+- **一時ディレクトリ** → `WEB_CONTENT` — 最小限のケイパビリティ
+
+## 関連項目
+
+- [テイントレベル](/ja/docs/concepts/taint-levels) — テイントレベルの完全なリファレンス
+- [projects](/ja/docs/commands/projects) — CLI コマンドリファレンス
+- [taint](/ja/docs/commands/taint) — テイントステータスの確認
