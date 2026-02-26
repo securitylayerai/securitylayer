@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
+import { LanguagePicker } from "@/components/language-picker";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ function HomePage() {
             securitylayer/securitylayer
           </a>
 
+          <LanguagePicker />
           <ThemeToggle />
         </div>
       </div>
