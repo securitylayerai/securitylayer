@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "portless $(git branch --show-current | sed 's|.*/||') vite dev",
+    "dev": "portless --force $(git branch --show-current | sed 's|.*/||') vite dev",
     "build": "vite build",
     "preview": "vite preview",
     "start": "node .output/server/index.mjs",
