@@ -20,8 +20,10 @@ import {
   Terminal,
   TreeStructure,
 } from "@phosphor-icons/react";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound, useParams } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import Link from "fumadocs-core/link";
+import { Card } from "fumadocs-ui/components/card";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import {
@@ -35,6 +37,20 @@ import { Suspense } from "react";
 import { CopyButton, ViewOptions } from "@/components/page-actions";
 import { baseOptions } from "@/lib/layout.shared";
 import { source } from "@/lib/source";
+
+function useLocalizedHref(href?: string) {
+  const { lang } = useParams({ strict: false }) as { lang?: string };
+  if (!href || !lang || !href.startsWith("/docs")) return href;
+  return `/${lang}${href}`;
+}
+
+function LocaleLink(props: React.ComponentProps<typeof Link>) {
+  return <Link {...props} href={useLocalizedHref(props.href)} />;
+}
+
+function LocaleCard(props: React.ComponentProps<typeof Card>) {
+  return <Card {...props} href={useLocalizedHref(props.href)} />;
+}
 
 export const Route = createFileRoute("/$lang/docs/$")({
   component: Page,
@@ -82,6 +98,8 @@ const clientLoader = browserCollections.docs.createClientLoader({
           <MDX
             components={{
               ...defaultMdxComponents,
+              a: LocaleLink,
+              Card: LocaleCard,
               ArrowsClockwise,
               BookOpen,
               Brain,
