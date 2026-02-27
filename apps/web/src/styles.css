@@ -161,6 +161,7 @@ pre code {
 /* Card icon + border overrides — outside @layer so they beat Tailwind utilities */
 [data-card] > div:first-child {
   color: var(--accent-color);
+  margin-bottom: 1.25rem;
 }
 
 [data-card] {
