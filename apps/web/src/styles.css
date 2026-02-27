@@ -53,6 +53,7 @@
   --color-fd-primary: oklch(0.62 0.17 162);
   --color-fd-accent: oklch(0.62 0.17 162 / 10%);
   --color-fd-ring: oklch(0.62 0.17 162);
+  --color-fd-muted-foreground: oklch(0.4 0 0);
 }
 
 .dark {
@@ -154,7 +155,7 @@
 
 /* Shiki code blocks — bump font size */
 pre code {
-  font-size: 14px !important;
+  font-size: 15px !important;
 }
 
 /* Card icon + border overrides — outside @layer so they beat Tailwind utilities */
