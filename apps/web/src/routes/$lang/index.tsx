@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { LanguagePicker } from "@/components/language-picker";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { useAuthSuspense } from "@/lib/auth/hooks";
 
 export const Route = createFileRoute("/$lang/")({
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: "/$lang/docs", params: { lang: params.lang } });
+  },
   component: HomePage,
 });
 
