@@ -32,7 +32,7 @@
   --destructive: oklch(0.58 0.22 27);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.62 0.17 162);
+  --ring: oklch(0.505 0.174 24.5);
   --chart-1: oklch(0.809 0.105 251.813);
   --chart-2: oklch(0.623 0.214 259.815);
   --chart-3: oklch(0.546 0.245 262.881);
@@ -46,13 +46,13 @@
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.62 0.17 162);
+  --sidebar-ring: oklch(0.505 0.174 24.5);
 
-  /* Neon green accent — links, CTAs, icons */
-  --accent-color: oklch(0.62 0.17 162);
-  --color-fd-primary: oklch(0.62 0.17 162);
-  --color-fd-accent: oklch(0.62 0.17 162 / 10%);
-  --color-fd-ring: oklch(0.62 0.17 162);
+  /* Blood red accent — links, CTAs, icons */
+  --accent-color: oklch(0.505 0.174 24.5);
+  --color-fd-primary: oklch(0.505 0.174 24.5);
+  --color-fd-accent: oklch(0.505 0.174 24.5 / 10%);
+  --color-fd-ring: oklch(0.505 0.174 24.5);
   --color-fd-muted-foreground: oklch(0.4 0 0);
 }
 
@@ -74,7 +74,7 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.845 0.175 164);
+  --ring: oklch(0.637 0.237 25.3);
   --chart-1: oklch(0.809 0.105 251.813);
   --chart-2: oklch(0.623 0.214 259.815);
   --chart-3: oklch(0.546 0.245 262.881);
@@ -87,13 +87,13 @@
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.845 0.175 164);
+  --sidebar-ring: oklch(0.637 0.237 25.3);
 
-  /* Neon green accent — brighter for dark mode */
-  --accent-color: oklch(0.845 0.175 164);
-  --color-fd-primary: oklch(0.845 0.175 164);
-  --color-fd-accent: oklch(0.845 0.175 164 / 10%);
-  --color-fd-ring: oklch(0.845 0.175 164);
+  /* Blood red accent — brighter for dark mode */
+  --accent-color: oklch(0.637 0.237 25.3);
+  --color-fd-primary: oklch(0.637 0.237 25.3);
+  --color-fd-accent: oklch(0.637 0.237 25.3 / 10%);
+  --color-fd-ring: oklch(0.637 0.237 25.3);
   --color-fd-muted-foreground: oklch(0.7 0 0);
 }
 
