@@ -94,6 +94,7 @@
   --color-fd-primary: oklch(0.845 0.175 164);
   --color-fd-accent: oklch(0.845 0.175 164 / 10%);
   --color-fd-ring: oklch(0.845 0.175 164);
+  --color-fd-muted-foreground: oklch(0.7 0 0);
 }
 
 @theme inline {

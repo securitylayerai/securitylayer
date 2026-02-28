@@ -4,6 +4,9 @@ import { authQueryOptions } from "@/lib/auth/queries";
 export const Route = createFileRoute("/_guest")({
   component: RouteComponent,
   beforeLoad: async ({ context }) => {
+    // TODO: remove this redirect when login/signup pages are implemented
+    throw redirect({ href: "/docs" });
+
     const REDIRECT_URL = "/dashboard";
 
     const user = await context.queryClient.ensureQueryData({
