@@ -167,3 +167,8 @@ pre code {
 [data-card] {
   border-color: color-mix(in oklch, var(--accent-color) 25%, transparent);
 }
+
+/* Space before prev/next page navigation cards */
+#nd-page > .prose + .grid {
+  margin-top: 59px;
+}
