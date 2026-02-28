@@ -15,7 +15,7 @@ bun add -g securitylayer
 ## 2. Initialisieren
 
 ```bash
-securitylayer init
+sl init
 ```
 
 Akzeptiere die Standardwerte oder passe deine Session-Fähigkeiten an. Der Wizard erstellt Konfigurationsdateien unter `~/.securitylayer/`.
@@ -25,7 +25,7 @@ Akzeptiere die Standardwerte oder passe deine Session-Fähigkeiten an. Der Wizar
 **Claude Code** — native Hooks-Integration:
 
 ```bash
-securitylayer setup claude-code
+sl setup claude-code
 ```
 
 Dies installiert PreToolUse- und PostToolUse-Hooks in `~/.claude/hooks.json`. Jeder Tool-Aufruf von Claude Code wird vor der Ausführung gegen deine Sicherheitsrichtlinie geprüft.
@@ -33,7 +33,7 @@ Dies installiert PreToolUse- und PostToolUse-Hooks in `~/.claude/hooks.json`. Je
 **Shell-Shim** — universeller Schutz für jedes KI-Tool:
 
 ```bash
-securitylayer shield enable
+sl shield enable
 ```
 
 Dies installiert PATH-priorisierte Wrapper-Skripte, die alle Shell-Befehle abfangen. Funktioniert mit jedem KI-Tool — Cursor, Aider, Copilot oder allem, was Shell-Befehle ausführt.
@@ -41,7 +41,7 @@ Dies installiert PATH-priorisierte Wrapper-Skripte, die alle Shell-Befehle abfan
 ## 4. Überprüfen
 
 ```bash
-securitylayer status
+sl status
 ```
 
 Du solltest deine geladene Konfiguration, deine Session-Fähigkeiten und deinen Integrationsstatus sehen (Hooks installiert oder Shield aktiv).
@@ -51,7 +51,7 @@ Du solltest deine geladene Konfiguration, deine Session-Fähigkeiten und deinen 
 Führe einen Trockenlauf der Richtlinienprüfung durch, um Security Layer in Aktion zu sehen:
 
 ```bash
-securitylayer policy check "rm -rf /"
+sl policy check "rm -rf /"
 ```
 
 Du siehst die vollständige Auswertung — Capability-Gate, Regel-Engine und Risikobewertung — mit der finalen Entscheidung.

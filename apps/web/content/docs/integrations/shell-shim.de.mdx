@@ -8,7 +8,7 @@ Der Shell-Shim ist eine universelle Integration, die **jedes** KI-Tool schützt,
 
 ## Wie es funktioniert
 
-`securitylayer shield enable` installiert PATH-priorisierte Wrapper-Skripte in `~/.securitylayer/bin/`. Da dieses Verzeichnis dem PATH vorangestellt wird, werden alle Shell-Befehle über Security Layer geleitet, bevor sie das echte Binary erreichen.
+`sl shield enable` installiert PATH-priorisierte Wrapper-Skripte in `~/.securitylayer/bin/`. Da dieses Verzeichnis dem PATH vorangestellt wird, werden alle Shell-Befehle über Security Layer geleitet, bevor sie das echte Binary erreichen.
 
 ### Geshimmte Binaries
 
@@ -26,14 +26,14 @@ Der Shell-Shim ist eine universelle Integration, die **jedes** KI-Tool schützt,
 ### Ausführungsablauf
 
 ```
-AI Tool → shimmed bash → securitylayer check → real bash
+AI Tool → shimmed bash → sl check → real bash
                               ↓ (if denied)
                          error message
 ```
 
 1. KI-Tool ruft `bash -c "some command"` auf
 2. Der Shim in `~/.securitylayer/bin/bash` fängt ab
-3. `securitylayer check` wertet den Befehl aus
+3. `sl check` wertet den Befehl aus
 4. Bei Erlaubnis → Weiterleitung an das echte `/usr/bin/bash`
 5. Bei Verweigerung → Fehler zurückgegeben, Befehl wird nie ausgeführt
 
@@ -50,13 +50,13 @@ Dies ermöglicht unterschiedliche Fähigkeitsprofile für verschiedene Tools (z.
 
 ```bash
 # Aktivieren
-securitylayer shield enable
+sl shield enable
 
 # Überprüfen
-securitylayer shield status
+sl shield status
 
 # Deaktivieren
-securitylayer shield disable
+sl shield disable
 ```
 
 Nach dem Aktivieren starte deine Shell neu oder öffne ein neues Terminal, damit die PATH-Änderung wirksam wird.

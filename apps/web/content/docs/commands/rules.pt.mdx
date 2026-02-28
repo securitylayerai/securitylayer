@@ -9,9 +9,9 @@ Gerencie regras aprendidas — padroes que foram auto-aprovados via "Approve & R
 ## Uso
 
 ```bash
-securitylayer rules list
-securitylayer rules revoke <number>
-securitylayer rules clear
+sl rules list
+sl rules revoke <number>
+sl rules clear
 ```
 
 ## Subcomandos
@@ -21,7 +21,7 @@ securitylayer rules clear
 Mostra todas as regras aprendidas de `~/.securitylayer/learned-rules.json`.
 
 ```bash
-$ securitylayer rules list
+$ sl rules list
 
   Learned rules:
     1. npm install * (exec) — 2025-01-15 — claude-code
@@ -35,7 +35,7 @@ Cada entrada mostra o padrao, a capability, a data de criacao e o ID da sessao.
 Remove uma regra aprendida especifica pelo seu numero (indexado a partir de 1 do `rules list`).
 
 ```bash
-$ securitylayer rules revoke 2
+$ sl rules revoke 2
 Revoked rule: git push * (exec)
 ```
 
@@ -46,7 +46,7 @@ Revoked rule: git push * (exec)
 Remove todas as regras aprendidas.
 
 ```bash
-$ securitylayer rules clear
+$ sl rules clear
 Cleared 2 learned rule(s).
 ```
 

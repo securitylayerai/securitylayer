@@ -9,7 +9,7 @@ Learning mode monitors what Security Layer **would** block without actually bloc
 ## Usage
 
 ```bash
-securitylayer learn [--duration <duration>]
+sl learn [--duration <duration>]
 ```
 
 ## Flags
@@ -35,16 +35,16 @@ When learning mode is active:
 - The mode expires automatically after the specified duration
 - Config is updated with `mode: learning` and `learning_expires` timestamp
 
-After the learning period, use `securitylayer learn report` to see recommended capability changes based on actual usage.
+After the learning period, use `sl learn report` to see recommended capability changes based on actual usage.
 
 ## Example
 
 ```bash
 # Monitor for 7 days
-securitylayer learn --duration 7d
+sl learn --duration 7d
 
 # Check what was logged
-securitylayer learn report
+sl learn report
 ```
 
 ## Exit codes

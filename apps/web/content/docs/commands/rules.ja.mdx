@@ -9,9 +9,9 @@ icon: ListChecks
 ## 使い方
 
 ```bash
-securitylayer rules list
-securitylayer rules revoke <number>
-securitylayer rules clear
+sl rules list
+sl rules revoke <number>
+sl rules clear
 ```
 
 ## サブコマンド
@@ -21,7 +21,7 @@ securitylayer rules clear
 `~/.securitylayer/learned-rules.json` のすべての学習済みルールを表示します。
 
 ```bash
-$ securitylayer rules list
+$ sl rules list
 
   Learned rules:
     1. npm install * (exec) — 2025-01-15 — claude-code
@@ -35,7 +35,7 @@ $ securitylayer rules list
 番号（`rules list` の 1 始まりのインデックス）を指定して、特定の学習済みルールを削除します。
 
 ```bash
-$ securitylayer rules revoke 2
+$ sl rules revoke 2
 Revoked rule: git push * (exec)
 ```
 
@@ -46,7 +46,7 @@ Revoked rule: git push * (exec)
 すべての学習済みルールを削除します。
 
 ```bash
-$ securitylayer rules clear
+$ sl rules clear
 Cleared 2 learned rule(s).
 ```
 

@@ -15,7 +15,7 @@ bun add -g securitylayer
 ## 2. 초기화
 
 ```bash
-securitylayer init
+sl init
 ```
 
 기본값을 수락하거나 세션 capability를 커스터마이즈합니다. 마법사가 `~/.securitylayer/`에 설정 파일을 생성합니다.
@@ -25,7 +25,7 @@ securitylayer init
 **Claude Code** — 네이티브 훅 통합:
 
 ```bash
-securitylayer setup claude-code
+sl setup claude-code
 ```
 
 이 명령은 `~/.claude/hooks.json`에 PreToolUse 및 PostToolUse 훅을 설치합니다. Claude Code가 수행하는 모든 도구 호출이 실행 전에 보안 정책에 따라 평가됩니다.
@@ -33,7 +33,7 @@ securitylayer setup claude-code
 **셸 shim** — 모든 AI 도구를 위한 범용 보호:
 
 ```bash
-securitylayer shield enable
+sl shield enable
 ```
 
 이 명령은 모든 셸 명령을 가로채는 PATH 우선순위 래퍼 스크립트를 설치합니다. Cursor, Aider, Copilot 또는 셸 명령을 실행하는 모든 AI 도구에서 동작합니다.
@@ -41,7 +41,7 @@ securitylayer shield enable
 ## 4. 확인
 
 ```bash
-securitylayer status
+sl status
 ```
 
 설정이 로드되고, 세션 capability와 통합 상태(훅 설치 또는 shield 활성화)가 표시됩니다.
@@ -51,7 +51,7 @@ securitylayer status
 dry-run 정책 검사를 실행하여 Security Layer의 동작을 확인합니다:
 
 ```bash
-securitylayer policy check "rm -rf /"
+sl policy check "rm -rf /"
 ```
 
 전체 평가 결과 — capability 게이트, 규칙 엔진, 위험 점수 — 와 최종 결정이 표시됩니다.

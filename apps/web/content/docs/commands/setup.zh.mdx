@@ -9,8 +9,8 @@ icon: Plug
 ## 用法
 
 ```bash
-securitylayer setup claude-code
-securitylayer setup cursor
+sl setup claude-code
+sl setup cursor
 ```
 
 ## 子命令
@@ -31,7 +31,7 @@ securitylayer setup cursor
 - `Read` — 追踪文件读取以进行污点提升
 - `WebFetch` — 追踪 Web 内容获取以进行污点提升
 
-每个 hook 调用 `securitylayer hook claude-code` 并附带相应参数。
+每个 hook 调用 `sl hook claude-code` 并附带相应参数。
 
 **退出码：** 成功或未找到 Claude Code 时返回 `0`。
 
@@ -40,7 +40,7 @@ securitylayer setup cursor
 提供保护 Cursor 的说明。原生 hook 集成计划在 v1 推出 — 目前请使用 shell shim：
 
 ```bash
-securitylayer shield enable
+sl shield enable
 ```
 
 **退出码：** 始终返回 `0`。

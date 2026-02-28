@@ -9,9 +9,9 @@ The shield installs PATH-priority wrapper scripts that intercept all shell comma
 ## Usage
 
 ```bash
-securitylayer shield enable
-securitylayer shield disable
-securitylayer shield status
+sl shield enable
+sl shield disable
+sl shield status
 ```
 
 ## Subcommands
@@ -22,7 +22,7 @@ Creates shimmed binary wrappers in `~/.securitylayer/bin/` and adds the director
 
 **Shimmed binaries:** `bash`, `sh`, `zsh`, `python`, `python3`, `node`, `ruby`, `perl`
 
-Each shim calls `securitylayer check` before forwarding to the real binary.
+Each shim calls `sl check` before forwarding to the real binary.
 
 **Exit codes:** `0` on success, `1` if not configured or no binaries found.
 
@@ -53,7 +53,7 @@ Shield Status
 When an AI tool (Claude Code, Cursor, Aider, etc.) runs a shell command:
 
 1. The shimmed binary intercepts the call
-2. `securitylayer check` evaluates the command against your policy
+2. `sl check` evaluates the command against your policy
 3. If allowed, the real binary executes the command
 4. If denied, the command is blocked with an error message
 

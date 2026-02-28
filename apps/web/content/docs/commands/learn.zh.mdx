@@ -9,7 +9,7 @@ icon: Brain
 ## 用法
 
 ```bash
-securitylayer learn [--duration <duration>]
+sl learn [--duration <duration>]
 ```
 
 ## 参数
@@ -35,16 +35,16 @@ securitylayer learn [--duration <duration>]
 - 模式在指定时间后自动过期
 - 配置会更新 `mode: learning` 和 `learning_expires` 时间戳
 
-学习期结束后，使用 `securitylayer learn report` 查看基于实际使用情况的推荐能力变更。
+学习期结束后，使用 `sl learn report` 查看基于实际使用情况的推荐能力变更。
 
 ## 示例
 
 ```bash
 # 监控 7 天
-securitylayer learn --duration 7d
+sl learn --duration 7d
 
 # 查看记录
-securitylayer learn report
+sl learn report
 ```
 
 ## 退出码

@@ -9,8 +9,8 @@ Visualize regras de confianca de projetos, taint levels atuais e limpe o estado 
 ## Uso
 
 ```bash
-securitylayer taint show
-securitylayer taint clear
+sl taint show
+sl taint clear
 ```
 
 ## Subcomandos
@@ -20,7 +20,7 @@ securitylayer taint clear
 Exibe as regras de confianca de projetos e o taint level do diretorio de trabalho atual.
 
 ```bash
-$ securitylayer taint show
+$ sl taint show
 
   Project trust rules:
     ~/Dev/Personal/** → OWNER
@@ -38,7 +38,7 @@ $ securitylayer taint show
 
 No modo CLI, o taint e determinado pelas regras de confianca de projetos e nao acumula entre comandos. Este comando orienta sobre como gerenciar o taint:
 
-- Para mudancas de confianca no nivel de projeto, use `securitylayer projects trust <path>`
+- Para mudancas de confianca no nivel de projeto, use `sl projects trust <path>`
 - No modo daemon (proxy), a limpeza de taint reseta o taint acumulado da sessao
 
 ## Codigos de saida

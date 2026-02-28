@@ -15,7 +15,7 @@ bun add -g securitylayer
 ## 2. Inicializar
 
 ```bash
-securitylayer init
+sl init
 ```
 
 Aceite os padroes ou personalize suas capabilities de sessao. O assistente cria arquivos de configuracao em `~/.securitylayer/`.
@@ -25,7 +25,7 @@ Aceite os padroes ou personalize suas capabilities de sessao. O assistente cria 
 **Claude Code** — integracao nativa via hooks:
 
 ```bash
-securitylayer setup claude-code
+sl setup claude-code
 ```
 
 Isso instala hooks PreToolUse e PostToolUse em `~/.claude/hooks.json`. Cada chamada de ferramenta que o Claude Code faz e avaliada pela sua politica de seguranca antes da execucao.
@@ -33,7 +33,7 @@ Isso instala hooks PreToolUse e PostToolUse em `~/.claude/hooks.json`. Cada cham
 **Shell shim** — protecao universal para qualquer ferramenta de IA:
 
 ```bash
-securitylayer shield enable
+sl shield enable
 ```
 
 Isso instala scripts wrapper com prioridade no PATH que interceptam todos os comandos do shell. Funciona com qualquer ferramenta de IA — Cursor, Aider, Copilot ou qualquer coisa que execute comandos no shell.
@@ -41,7 +41,7 @@ Isso instala scripts wrapper com prioridade no PATH que interceptam todos os com
 ## 4. Verificar
 
 ```bash
-securitylayer status
+sl status
 ```
 
 Voce devera ver sua configuracao carregada, suas capabilities de sessao e o status da integracao (hooks instalados ou shield ativo).
@@ -51,7 +51,7 @@ Voce devera ver sua configuracao carregada, suas capabilities de sessao e o stat
 Execute uma verificacao de politica em modo dry-run para ver o Security Layer em acao:
 
 ```bash
-securitylayer policy check "rm -rf /"
+sl policy check "rm -rf /"
 ```
 
 Voce vera a avaliacao completa — capability gate, rules engine e risk score — com a decisao final.

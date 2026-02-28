@@ -9,7 +9,7 @@ icon: Brain
 ## 使い方
 
 ```bash
-securitylayer learn [--duration <duration>]
+sl learn [--duration <duration>]
 ```
 
 ## フラグ
@@ -35,16 +35,16 @@ securitylayer learn [--duration <duration>]
 - 指定した期間が経過すると、モードは自動的に終了します
 - 設定に `mode: learning` と `learning_expires` タイムスタンプが記録されます
 
-ラーニング期間終了後、`securitylayer learn report` を使用して、実際の使用状況に基づいた推奨ケイパビリティ変更を確認できます。
+ラーニング期間終了後、`sl learn report` を使用して、実際の使用状況に基づいた推奨ケイパビリティ変更を確認できます。
 
 ## 例
 
 ```bash
 # 7 日間モニタリング
-securitylayer learn --duration 7d
+sl learn --duration 7d
 
 # ログされた内容を確認
-securitylayer learn report
+sl learn report
 ```
 
 ## 終了コード

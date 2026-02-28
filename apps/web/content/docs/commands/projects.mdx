@@ -9,9 +9,9 @@ Project trust rules assign taint levels to directory paths. When an AI agent ope
 ## Usage
 
 ```bash
-securitylayer projects list
-securitylayer projects trust <path> [--taint <level>]
-securitylayer projects untrust <path>
+sl projects list
+sl projects trust <path> [--taint <level>]
+sl projects untrust <path>
 ```
 
 ## Subcommands
@@ -21,7 +21,7 @@ securitylayer projects untrust <path>
 Shows all configured project trust rules.
 
 ```bash
-$ securitylayer projects list
+$ sl projects list
 
   Trust rules:
     1. ~/Dev/Personal/** → OWNER
@@ -36,7 +36,7 @@ $ securitylayer projects list
 Adds or updates a trust rule for a directory path.
 
 ```bash
-securitylayer projects trust ~/Dev/Personal/** --taint owner
+sl projects trust ~/Dev/Personal/** --taint owner
 ```
 
 | Flag | Default | Description |
@@ -50,7 +50,7 @@ securitylayer projects trust ~/Dev/Personal/** --taint owner
 Removes a trust rule for a directory path.
 
 ```bash
-$ securitylayer projects untrust /tmp/**
+$ sl projects untrust /tmp/**
 Removed trust rule for: /tmp/**
 ```
 

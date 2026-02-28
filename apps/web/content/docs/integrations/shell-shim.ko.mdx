@@ -8,7 +8,7 @@ icon: Terminal
 
 ## 동작 원리
 
-`securitylayer shield enable`은 `~/.securitylayer/bin/`에 PATH 우선순위 래퍼 스크립트를 설치합니다. 이 디렉토리가 PATH 앞에 추가되므로, 모든 셸 명령이 실제 바이너리에 도달하기 전에 Security Layer를 통과합니다.
+`sl shield enable`은 `~/.securitylayer/bin/`에 PATH 우선순위 래퍼 스크립트를 설치합니다. 이 디렉토리가 PATH 앞에 추가되므로, 모든 셸 명령이 실제 바이너리에 도달하기 전에 Security Layer를 통과합니다.
 
 ### shim 바이너리
 
@@ -26,14 +26,14 @@ icon: Terminal
 ### 실행 흐름
 
 ```
-AI 도구 → shim bash → securitylayer check → 실제 bash
+AI 도구 → shim bash → sl check → 실제 bash
                             ↓ (거부 시)
                        오류 메시지
 ```
 
 1. AI 도구가 `bash -c "some command"`를 호출합니다
 2. `~/.securitylayer/bin/bash`에 있는 shim이 가로챕니다
-3. `securitylayer check`가 명령을 평가합니다
+3. `sl check`가 명령을 평가합니다
 4. 허용 시 → 실제 `/usr/bin/bash`로 전달됩니다
 5. 거부 시 → 오류가 반환되고, 명령은 절대 실행되지 않습니다
 
@@ -50,13 +50,13 @@ shim은 다음을 확인하여 어떤 AI 도구가 명령을 트리거했는지 
 
 ```bash
 # 활성화
-securitylayer shield enable
+sl shield enable
 
 # 확인
-securitylayer shield status
+sl shield status
 
 # 비활성화
-securitylayer shield disable
+sl shield disable
 ```
 
 활성화 후, PATH 변경이 적용되도록 셸을 재시작하거나 새 터미널을 열어야 합니다.

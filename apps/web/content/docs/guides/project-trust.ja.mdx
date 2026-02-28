@@ -24,16 +24,16 @@ AI コーディングツールにとって、**ファイルは信頼されてい
 
 ```bash
 # 個人プロジェクトを信頼
-securitylayer projects trust "~/Dev/Personal/**" --taint owner
+sl projects trust "~/Dev/Personal/**" --taint owner
 
 # ワークプロジェクトを低い信頼レベルで信頼
-securitylayer projects trust "~/Dev/Work/**" --taint trusted
+sl projects trust "~/Dev/Work/**" --taint trusted
 
 # 一時ディレクトリを信頼されていないとマーク
-securitylayer projects trust "/tmp/**" --taint web
+sl projects trust "/tmp/**" --taint web
 
 # 信頼ルールを削除
-securitylayer projects untrust "/tmp/**"
+sl projects untrust "/tmp/**"
 ```
 
 ### 設定ファイル経由
@@ -76,10 +76,10 @@ default: UNTRUSTED_HUMAN
 
 ```bash
 # すべての信頼ルールを一覧表示
-securitylayer projects list
+sl projects list
 
 # カレントディレクトリのテイントを確認
-securitylayer taint show
+sl taint show
 ```
 
 ## ベストプラクティス

@@ -9,9 +9,9 @@ Gestiona reglas aprendidas -- patrones que han sido auto-aprobados mediante "App
 ## Uso
 
 ```bash
-securitylayer rules list
-securitylayer rules revoke <number>
-securitylayer rules clear
+sl rules list
+sl rules revoke <number>
+sl rules clear
 ```
 
 ## Subcomandos
@@ -21,7 +21,7 @@ securitylayer rules clear
 Muestra todas las reglas aprendidas de `~/.securitylayer/learned-rules.json`.
 
 ```bash
-$ securitylayer rules list
+$ sl rules list
 
   Learned rules:
     1. npm install * (exec) — 2025-01-15 — claude-code
@@ -35,7 +35,7 @@ Cada entrada muestra el patrón, la capacidad, la fecha de creación y el ID de 
 Elimina una regla aprendida específica por su número (indexado desde 1 según `rules list`).
 
 ```bash
-$ securitylayer rules revoke 2
+$ sl rules revoke 2
 Revoked rule: git push * (exec)
 ```
 
@@ -46,7 +46,7 @@ Revoked rule: git push * (exec)
 Elimina todas las reglas aprendidas.
 
 ```bash
-$ securitylayer rules clear
+$ sl rules clear
 Cleared 2 learned rule(s).
 ```
 

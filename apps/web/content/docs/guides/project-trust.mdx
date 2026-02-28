@@ -24,16 +24,16 @@ By assigning trust based on where a project lives, Security Layer automatically 
 
 ```bash
 # Trust your personal projects
-securitylayer projects trust "~/Dev/Personal/**" --taint owner
+sl projects trust "~/Dev/Personal/**" --taint owner
 
 # Trust work projects at a lower level
-securitylayer projects trust "~/Dev/Work/**" --taint trusted
+sl projects trust "~/Dev/Work/**" --taint trusted
 
 # Mark temporary directories as untrusted
-securitylayer projects trust "/tmp/**" --taint web
+sl projects trust "/tmp/**" --taint web
 
 # Remove a trust rule
-securitylayer projects untrust "/tmp/**"
+sl projects untrust "/tmp/**"
 ```
 
 ### Via config file
@@ -76,10 +76,10 @@ default: UNTRUSTED_HUMAN
 
 ```bash
 # List all trust rules
-securitylayer projects list
+sl projects list
 
 # Check current directory's taint
-securitylayer taint show
+sl taint show
 ```
 
 ## Best practices

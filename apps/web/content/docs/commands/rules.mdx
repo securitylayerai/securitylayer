@@ -9,9 +9,9 @@ Manage learned rules — patterns that have been auto-approved via "Approve & Re
 ## Usage
 
 ```bash
-securitylayer rules list
-securitylayer rules revoke <number>
-securitylayer rules clear
+sl rules list
+sl rules revoke <number>
+sl rules clear
 ```
 
 ## Subcommands
@@ -21,7 +21,7 @@ securitylayer rules clear
 Shows all learned rules from `~/.securitylayer/learned-rules.json`.
 
 ```bash
-$ securitylayer rules list
+$ sl rules list
 
   Learned rules:
     1. npm install * (exec) — 2025-01-15 — claude-code
@@ -35,7 +35,7 @@ Each entry shows the pattern, capability, creation date, and session ID.
 Removes a specific learned rule by its number (1-indexed from `rules list`).
 
 ```bash
-$ securitylayer rules revoke 2
+$ sl rules revoke 2
 Revoked rule: git push * (exec)
 ```
 
@@ -46,7 +46,7 @@ Revoked rule: git push * (exec)
 Removes all learned rules.
 
 ```bash
-$ securitylayer rules clear
+$ sl rules clear
 Cleared 2 learned rule(s).
 ```
 

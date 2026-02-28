@@ -9,9 +9,9 @@ icon: Folder
 ## 사용법
 
 ```bash
-securitylayer projects list
-securitylayer projects trust <path> [--taint <level>]
-securitylayer projects untrust <path>
+sl projects list
+sl projects trust <path> [--taint <level>]
+sl projects untrust <path>
 ```
 
 ## 하위 명령
@@ -21,7 +21,7 @@ securitylayer projects untrust <path>
 설정된 모든 프로젝트 신뢰 규칙을 표시합니다.
 
 ```bash
-$ securitylayer projects list
+$ sl projects list
 
   Trust rules:
     1. ~/Dev/Personal/** → OWNER
@@ -36,7 +36,7 @@ $ securitylayer projects list
 디렉토리 경로에 대한 신뢰 규칙을 추가하거나 업데이트합니다.
 
 ```bash
-securitylayer projects trust ~/Dev/Personal/** --taint owner
+sl projects trust ~/Dev/Personal/** --taint owner
 ```
 
 | 플래그 | 기본값 | 설명 |
@@ -50,7 +50,7 @@ securitylayer projects trust ~/Dev/Personal/** --taint owner
 디렉토리 경로에 대한 신뢰 규칙을 제거합니다.
 
 ```bash
-$ securitylayer projects untrust /tmp/**
+$ sl projects untrust /tmp/**
 Removed trust rule for: /tmp/**
 ```
 

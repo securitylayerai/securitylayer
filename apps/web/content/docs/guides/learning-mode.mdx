@@ -9,7 +9,7 @@ Learning mode lets you observe Security Layer's decisions without affecting your
 ## Enabling
 
 ```bash
-securitylayer learn --duration 7d
+sl learn --duration 7d
 ```
 
 This sets `mode: learning` in your config and records a `learning_expires` timestamp. After the duration, Security Layer returns to enforcement mode.
@@ -26,7 +26,7 @@ In learning mode, Security Layer evaluates every action through the full securit
 ## Checking status
 
 ```bash
-securitylayer status
+sl status
 ```
 
 Shows whether learning mode is active, when it expires, and how many actions have been logged.
@@ -36,7 +36,7 @@ Shows whether learning mode is active, when it expires, and how many actions hav
 After the learning period:
 
 ```bash
-securitylayer learn report
+sl learn report
 ```
 
 This shows:
@@ -47,10 +47,10 @@ This shows:
 
 ## Workflow
 
-1. **Install and init** — `securitylayer init`
-2. **Enable learning** — `securitylayer learn --duration 7d`
+1. **Install and init** — `sl init`
+2. **Enable learning** — `sl learn --duration 7d`
 3. **Work normally** — Use your AI tools as usual
-4. **Review** — `securitylayer learn report`
+4. **Review** — `sl learn report`
 5. **Tune policy** — Adjust capabilities and rules based on findings
 6. **Enforce** — Learning mode expires, enforcement begins
 

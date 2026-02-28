@@ -9,9 +9,9 @@ icon: ShieldCheck
 ## 使い方
 
 ```bash
-securitylayer shield enable
-securitylayer shield disable
-securitylayer shield status
+sl shield enable
+sl shield disable
+sl shield status
 ```
 
 ## サブコマンド
@@ -22,7 +22,7 @@ securitylayer shield status
 
 **シム化されるバイナリ:** `bash`, `sh`, `zsh`, `python`, `python3`, `node`, `ruby`, `perl`
 
-各シムはリアルバイナリに転送する前に `securitylayer check` を呼び出します。
+各シムはリアルバイナリに転送する前に `sl check` を呼び出します。
 
 **終了コード:** 成功時 `0`、未設定またはバイナリが見つからない場合 `1`。
 
@@ -53,7 +53,7 @@ Shield Status
 AI ツール（Claude Code、Cursor、Aider など）がシェルコマンドを実行すると:
 
 1. シム化されたバイナリが呼び出しをインターセプト
-2. `securitylayer check` がポリシーに対してコマンドを評価
+2. `sl check` がポリシーに対してコマンドを評価
 3. 許可された場合、リアルバイナリがコマンドを実行
 4. 拒否された場合、エラーメッセージと共にコマンドをブロック
 

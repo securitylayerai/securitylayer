@@ -9,7 +9,7 @@ icon: Brain
 ## 有効化
 
 ```bash
-securitylayer learn --duration 7d
+sl learn --duration 7d
 ```
 
 設定に `mode: learning` が設定され、`learning_expires` タイムスタンプが記録されます。期間が経過すると、Security Layer は適用モードに戻ります。
@@ -26,7 +26,7 @@ securitylayer learn --duration 7d
 ## ステータスの確認
 
 ```bash
-securitylayer status
+sl status
 ```
 
 ラーニングモードが有効かどうか、有効期限、ログされたアクションの数が表示されます。
@@ -36,7 +36,7 @@ securitylayer status
 ラーニング期間後:
 
 ```bash
-securitylayer learn report
+sl learn report
 ```
 
 以下が表示されます:
@@ -47,10 +47,10 @@ securitylayer learn report
 
 ## ワークフロー
 
-1. **インストールと初期化** — `securitylayer init`
-2. **ラーニング有効化** — `securitylayer learn --duration 7d`
+1. **インストールと初期化** — `sl init`
+2. **ラーニング有効化** — `sl learn --duration 7d`
 3. **通常通り作業** — AI ツールをいつも通り使用
-4. **レビュー** — `securitylayer learn report`
+4. **レビュー** — `sl learn report`
 5. **ポリシー調整** — 結果に基づいてケイパビリティとルールを調整
 6. **適用** — ラーニングモードが終了し、適用が開始
 

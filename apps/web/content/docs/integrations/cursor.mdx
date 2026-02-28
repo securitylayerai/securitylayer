@@ -11,7 +11,7 @@ Cursor can be protected using the universal shell shim. A native VS Code extensi
 The shell shim intercepts all commands Cursor executes through the terminal:
 
 ```bash
-securitylayer shield enable
+sl shield enable
 ```
 
 This installs PATH-priority wrappers that evaluate every command before it reaches the real binary.
@@ -49,10 +49,10 @@ The extension will use `@securitylayer/sdk` in-process for zero-latency checks.
 
 ```bash
 # Enable shell shim protection
-securitylayer shield enable
+sl shield enable
 
 # Verify
-securitylayer status
+sl status
 ```
 
 ## See also

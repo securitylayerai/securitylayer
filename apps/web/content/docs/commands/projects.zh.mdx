@@ -9,9 +9,9 @@ icon: Folder
 ## 用法
 
 ```bash
-securitylayer projects list
-securitylayer projects trust <path> [--taint <level>]
-securitylayer projects untrust <path>
+sl projects list
+sl projects trust <path> [--taint <level>]
+sl projects untrust <path>
 ```
 
 ## 子命令
@@ -21,7 +21,7 @@ securitylayer projects untrust <path>
 显示所有已配置的项目信任规则。
 
 ```bash
-$ securitylayer projects list
+$ sl projects list
 
   Trust rules:
     1. ~/Dev/Personal/** → OWNER
@@ -36,7 +36,7 @@ $ securitylayer projects list
 为目录路径添加或更新信任规则。
 
 ```bash
-securitylayer projects trust ~/Dev/Personal/** --taint owner
+sl projects trust ~/Dev/Personal/** --taint owner
 ```
 
 | 参数 | 默认值 | 描述 |
@@ -50,7 +50,7 @@ securitylayer projects trust ~/Dev/Personal/** --taint owner
 移除目录路径的信任规则。
 
 ```bash
-$ securitylayer projects untrust /tmp/**
+$ sl projects untrust /tmp/**
 Removed trust rule for: /tmp/**
 ```
 

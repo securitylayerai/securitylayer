@@ -9,9 +9,9 @@ Verwalte gelernte Regeln — Muster, die über „Genehmigen & Merken" automatis
 ## Verwendung
 
 ```bash
-securitylayer rules list
-securitylayer rules revoke <number>
-securitylayer rules clear
+sl rules list
+sl rules revoke <number>
+sl rules clear
 ```
 
 ## Unterbefehle
@@ -21,7 +21,7 @@ securitylayer rules clear
 Zeigt alle gelernten Regeln aus `~/.securitylayer/learned-rules.json`.
 
 ```bash
-$ securitylayer rules list
+$ sl rules list
 
   Learned rules:
     1. npm install * (exec) — 2025-01-15 — claude-code
@@ -35,7 +35,7 @@ Jeder Eintrag zeigt das Muster, die Fähigkeit, das Erstellungsdatum und die Ses
 Entfernt eine bestimmte gelernte Regel anhand ihrer Nummer (1-indiziert aus `rules list`).
 
 ```bash
-$ securitylayer rules revoke 2
+$ sl rules revoke 2
 Revoked rule: git push * (exec)
 ```
 
@@ -46,7 +46,7 @@ Revoked rule: git push * (exec)
 Entfernt alle gelernten Regeln.
 
 ```bash
-$ securitylayer rules clear
+$ sl rules clear
 Cleared 2 learned rule(s).
 ```
 
