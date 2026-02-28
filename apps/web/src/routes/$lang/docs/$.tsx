@@ -24,6 +24,7 @@ import { createFileRoute, notFound, useParams } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import Link from "fumadocs-core/link";
 import { Card } from "fumadocs-ui/components/card";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import {
@@ -100,6 +101,8 @@ const clientLoader = browserCollections.docs.createClientLoader({
               ...defaultMdxComponents,
               a: LocaleLink,
               Card: LocaleCard,
+              Tabs,
+              Tab,
               ArrowsClockwise,
               BookOpen,
               Brain,
