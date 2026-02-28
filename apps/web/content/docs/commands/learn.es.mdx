@@ -9,7 +9,7 @@ El modo aprendizaje monitorea lo que Security Layer **bloquearía** sin bloquear
 ## Uso
 
 ```bash
-securitylayer learn [--duration <duration>]
+sl learn [--duration <duration>]
 ```
 
 ## Flags
@@ -35,16 +35,16 @@ Cuando el modo aprendizaje está activo:
 - El modo expira automáticamente después de la duración especificada
 - La configuración se actualiza con `mode: learning` y el timestamp `learning_expires`
 
-Después del período de aprendizaje, usa `securitylayer learn report` para ver los cambios de capacidades recomendados basados en el uso real.
+Después del período de aprendizaje, usa `sl learn report` para ver los cambios de capacidades recomendados basados en el uso real.
 
 ## Ejemplo
 
 ```bash
 # Monitorear por 7 días
-securitylayer learn --duration 7d
+sl learn --duration 7d
 
 # Verificar qué se registró
-securitylayer learn report
+sl learn report
 ```
 
 ## Códigos de salida

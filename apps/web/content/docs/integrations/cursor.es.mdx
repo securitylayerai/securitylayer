@@ -11,7 +11,7 @@ Cursor se puede proteger usando el shell shim universal. Una extensión nativa d
 El shell shim intercepta todos los comandos que Cursor ejecuta a través de la terminal:
 
 ```bash
-securitylayer shield enable
+sl shield enable
 ```
 
 Esto instala wrappers con prioridad en el PATH que evalúan cada comando antes de que llegue al binario real.
@@ -49,10 +49,10 @@ La extensión usará `@securitylayer/sdk` en proceso para verificaciones con lat
 
 ```bash
 # Habilitar protección con shell shim
-securitylayer shield enable
+sl shield enable
 
 # Verificar
-securitylayer status
+sl status
 ```
 
 ## Ver también

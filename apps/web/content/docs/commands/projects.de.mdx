@@ -9,9 +9,9 @@ Projekt-Vertrauensregeln weisen Verzeichnispfaden Taint-Levels zu. Wenn ein KI-A
 ## Verwendung
 
 ```bash
-securitylayer projects list
-securitylayer projects trust <path> [--taint <level>]
-securitylayer projects untrust <path>
+sl projects list
+sl projects trust <path> [--taint <level>]
+sl projects untrust <path>
 ```
 
 ## Unterbefehle
@@ -21,7 +21,7 @@ securitylayer projects untrust <path>
 Zeigt alle konfigurierten Projekt-Vertrauensregeln.
 
 ```bash
-$ securitylayer projects list
+$ sl projects list
 
   Trust rules:
     1. ~/Dev/Personal/** → OWNER
@@ -36,7 +36,7 @@ $ securitylayer projects list
 Fügt eine Vertrauensregel für einen Verzeichnispfad hinzu oder aktualisiert sie.
 
 ```bash
-securitylayer projects trust ~/Dev/Personal/** --taint owner
+sl projects trust ~/Dev/Personal/** --taint owner
 ```
 
 | Flag | Standard | Beschreibung |
@@ -50,7 +50,7 @@ securitylayer projects trust ~/Dev/Personal/** --taint owner
 Entfernt eine Vertrauensregel für einen Verzeichnispfad.
 
 ```bash
-$ securitylayer projects untrust /tmp/**
+$ sl projects untrust /tmp/**
 Removed trust rule for: /tmp/**
 ```
 

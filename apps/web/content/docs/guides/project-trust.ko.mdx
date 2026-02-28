@@ -24,16 +24,16 @@ AI 코딩 도구에서 **파일은 신뢰하지 않는 채널**입니다. 클론
 
 ```bash
 # 개인 프로젝트 신뢰
-securitylayer projects trust "~/Dev/Personal/**" --taint owner
+sl projects trust "~/Dev/Personal/**" --taint owner
 
 # 업무 프로젝트를 낮은 수준으로 신뢰
-securitylayer projects trust "~/Dev/Work/**" --taint trusted
+sl projects trust "~/Dev/Work/**" --taint trusted
 
 # 임시 디렉토리를 신뢰하지 않음으로 설정
-securitylayer projects trust "/tmp/**" --taint web
+sl projects trust "/tmp/**" --taint web
 
 # 신뢰 규칙 제거
-securitylayer projects untrust "/tmp/**"
+sl projects untrust "/tmp/**"
 ```
 
 ### 설정 파일을 통해
@@ -76,10 +76,10 @@ default: UNTRUSTED_HUMAN
 
 ```bash
 # 모든 신뢰 규칙 조회
-securitylayer projects list
+sl projects list
 
 # 현재 디렉토리의 taint 확인
-securitylayer taint show
+sl taint show
 ```
 
 ## 모범 사례

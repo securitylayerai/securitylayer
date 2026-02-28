@@ -9,7 +9,7 @@ Der Lernmodus lässt dich Security Layers Entscheidungen beobachten, ohne deinen
 ## Aktivierung
 
 ```bash
-securitylayer learn --duration 7d
+sl learn --duration 7d
 ```
 
 Dies setzt `mode: learning` in deiner Konfiguration und speichert einen `learning_expires`-Zeitstempel. Nach Ablauf der Dauer kehrt Security Layer in den Durchsetzungsmodus zurück.
@@ -26,7 +26,7 @@ Im Lernmodus wertet Security Layer jede Aktion durch die vollständige Security-
 ## Status prüfen
 
 ```bash
-securitylayer status
+sl status
 ```
 
 Zeigt, ob der Lernmodus aktiv ist, wann er abläuft und wie viele Aktionen protokolliert wurden.
@@ -36,7 +36,7 @@ Zeigt, ob der Lernmodus aktiv ist, wann er abläuft und wie viele Aktionen proto
 Nach der Lernphase:
 
 ```bash
-securitylayer learn report
+sl learn report
 ```
 
 Dies zeigt:
@@ -47,10 +47,10 @@ Dies zeigt:
 
 ## Workflow
 
-1. **Installieren und initialisieren** — `securitylayer init`
-2. **Lernmodus aktivieren** — `securitylayer learn --duration 7d`
+1. **Installieren und initialisieren** — `sl init`
+2. **Lernmodus aktivieren** — `sl learn --duration 7d`
 3. **Normal arbeiten** — Verwende deine KI-Tools wie gewohnt
-4. **Überprüfen** — `securitylayer learn report`
+4. **Überprüfen** — `sl learn report`
 5. **Richtlinie anpassen** — Fähigkeiten und Regeln basierend auf Erkenntnissen anpassen
 6. **Durchsetzen** — Lernmodus läuft ab, Durchsetzung beginnt
 

@@ -9,7 +9,7 @@ icon: Brain
 ## 활성화
 
 ```bash
-securitylayer learn --duration 7d
+sl learn --duration 7d
 ```
 
 이 명령은 설정에 `mode: learning`을 설정하고 `learning_expires` 타임스탬프를 기록합니다. 기간이 지나면 Security Layer가 적용 모드로 복귀합니다.
@@ -26,7 +26,7 @@ securitylayer learn --duration 7d
 ## 상태 확인
 
 ```bash
-securitylayer status
+sl status
 ```
 
 학습 모드의 활성 여부, 만료 시점, 로깅된 동작 수를 표시합니다.
@@ -36,7 +36,7 @@ securitylayer status
 학습 기간이 끝난 후:
 
 ```bash
-securitylayer learn report
+sl learn report
 ```
 
 다음을 표시합니다:
@@ -47,10 +47,10 @@ securitylayer learn report
 
 ## 워크플로
 
-1. **설치 및 초기화** — `securitylayer init`
-2. **학습 활성화** — `securitylayer learn --duration 7d`
+1. **설치 및 초기화** — `sl init`
+2. **학습 활성화** — `sl learn --duration 7d`
 3. **평소대로 작업** — AI 도구를 평소처럼 사용
-4. **검토** — `securitylayer learn report`
+4. **검토** — `sl learn report`
 5. **정책 조정** — 결과에 따라 capability와 규칙 조정
 6. **적용** — 학습 모드가 만료되면 적용 시작
 

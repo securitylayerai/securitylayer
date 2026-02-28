@@ -9,9 +9,9 @@ Regras de confianca de projeto atribuem taint levels a caminhos de diretorio. Qu
 ## Uso
 
 ```bash
-securitylayer projects list
-securitylayer projects trust <path> [--taint <level>]
-securitylayer projects untrust <path>
+sl projects list
+sl projects trust <path> [--taint <level>]
+sl projects untrust <path>
 ```
 
 ## Subcomandos
@@ -21,7 +21,7 @@ securitylayer projects untrust <path>
 Mostra todas as regras de confianca de projeto configuradas.
 
 ```bash
-$ securitylayer projects list
+$ sl projects list
 
   Trust rules:
     1. ~/Dev/Personal/** → OWNER
@@ -36,7 +36,7 @@ $ securitylayer projects list
 Adiciona ou atualiza uma regra de confianca para um caminho de diretorio.
 
 ```bash
-securitylayer projects trust ~/Dev/Personal/** --taint owner
+sl projects trust ~/Dev/Personal/** --taint owner
 ```
 
 | Flag | Padrao | Descricao |
@@ -50,7 +50,7 @@ securitylayer projects trust ~/Dev/Personal/** --taint owner
 Remove uma regra de confianca para um caminho de diretorio.
 
 ```bash
-$ securitylayer projects untrust /tmp/**
+$ sl projects untrust /tmp/**
 Removed trust rule for: /tmp/**
 ```
 

@@ -15,7 +15,7 @@ bun add -g securitylayer
 ## 2. 初期化
 
 ```bash
-securitylayer init
+sl init
 ```
 
 デフォルト設定をそのまま使用するか、セッションケイパビリティをカスタマイズします。ウィザードが `~/.securitylayer/` に設定ファイルを作成します。
@@ -25,7 +25,7 @@ securitylayer init
 **Claude Code** — ネイティブフックインテグレーション:
 
 ```bash
-securitylayer setup claude-code
+sl setup claude-code
 ```
 
 これにより PreToolUse と PostToolUse フックが `~/.claude/hooks.json` にインストールされます。Claude Code のすべてのツール呼び出しが、実行前にセキュリティポリシーに対して評価されます。
@@ -33,7 +33,7 @@ securitylayer setup claude-code
 **シェルシム** — あらゆる AI ツールのユニバーサル保護:
 
 ```bash
-securitylayer shield enable
+sl shield enable
 ```
 
 これにより PATH 優先のラッパースクリプトがインストールされ、すべてのシェルコマンドがインターセプトされます。Cursor、Aider、Copilot など、シェルコマンドを実行するあらゆる AI ツールで動作します。
@@ -41,7 +41,7 @@ securitylayer shield enable
 ## 4. 確認
 
 ```bash
-securitylayer status
+sl status
 ```
 
 設定の読み込み状態、セッションケイパビリティ、インテグレーションステータス（フックのインストール状態またはシールドの有効状態）が表示されます。
@@ -51,7 +51,7 @@ securitylayer status
 ドライランのポリシーチェックで Security Layer の動作を確認します:
 
 ```bash
-securitylayer policy check "rm -rf /"
+sl policy check "rm -rf /"
 ```
 
 ケイパビリティゲート、ルールエンジン、リスクスコアを含む完全な評価結果と最終判定が表示されます。

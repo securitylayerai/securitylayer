@@ -8,7 +8,7 @@ El shell shim es una integración universal que protege **cualquier** herramient
 
 ## Cómo funciona
 
-`securitylayer shield enable` instala scripts wrapper con prioridad en el PATH en `~/.securitylayer/bin/`. Como este directorio se antepone al PATH, todos los comandos de shell pasan por Security Layer antes de llegar al binario real.
+`sl shield enable` instala scripts wrapper con prioridad en el PATH en `~/.securitylayer/bin/`. Como este directorio se antepone al PATH, todos los comandos de shell pasan por Security Layer antes de llegar al binario real.
 
 ### Binarios con shim
 
@@ -26,14 +26,14 @@ El shell shim es una integración universal que protege **cualquier** herramient
 ### Flujo de ejecución
 
 ```
-AI Tool → shimmed bash → securitylayer check → real bash
+AI Tool → shimmed bash → sl check → real bash
                               ↓ (if denied)
                          error message
 ```
 
 1. La herramienta de IA llama a `bash -c "some command"`
 2. El shim en `~/.securitylayer/bin/bash` intercepta
-3. `securitylayer check` evalúa el comando
+3. `sl check` evalúa el comando
 4. Si se permite → se reenvía al `/usr/bin/bash` real
 5. Si se deniega → se devuelve error, el comando nunca se ejecuta
 
@@ -50,13 +50,13 @@ Esto permite diferentes perfiles de capacidades para diferentes herramientas (ej
 
 ```bash
 # Habilitar
-securitylayer shield enable
+sl shield enable
 
 # Verificar
-securitylayer shield status
+sl shield status
 
 # Deshabilitar
-securitylayer shield disable
+sl shield disable
 ```
 
 Después de habilitar, reinicia tu shell o abre una nueva terminal para que el cambio de PATH surta efecto.

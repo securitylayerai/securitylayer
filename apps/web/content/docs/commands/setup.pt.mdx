@@ -9,8 +9,8 @@ Configura automaticamente a integracao do Security Layer com ferramentas de IA.
 ## Uso
 
 ```bash
-securitylayer setup claude-code
-securitylayer setup cursor
+sl setup claude-code
+sl setup cursor
 ```
 
 ## Subcomandos
@@ -31,7 +31,7 @@ Instala hooks do Security Layer em `~/.claude/hooks.json`.
 - `Read` — Rastrear leituras de arquivo para elevacao de taint
 - `WebFetch` — Rastrear buscas de conteudo web para elevacao de taint
 
-Cada hook chama `securitylayer hook claude-code` com as flags apropriadas.
+Cada hook chama `sl hook claude-code` com as flags apropriadas.
 
 **Codigos de saida:** `0` em caso de sucesso ou se o Claude Code nao for encontrado.
 
@@ -40,7 +40,7 @@ Cada hook chama `securitylayer hook claude-code` com as flags apropriadas.
 Fornece instrucoes para proteger o Cursor. A integracao nativa via hooks esta planejada para v1 — atualmente, use o shell shim:
 
 ```bash
-securitylayer shield enable
+sl shield enable
 ```
 
 **Codigos de saida:** Sempre `0`.

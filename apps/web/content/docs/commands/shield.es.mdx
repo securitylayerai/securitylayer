@@ -9,9 +9,9 @@ El shield instala scripts wrapper con prioridad en el PATH que interceptan todos
 ## Uso
 
 ```bash
-securitylayer shield enable
-securitylayer shield disable
-securitylayer shield status
+sl shield enable
+sl shield disable
+sl shield status
 ```
 
 ## Subcomandos
@@ -22,7 +22,7 @@ Crea wrappers de binarios con shim en `~/.securitylayer/bin/` y agrega el direct
 
 **Binarios con shim:** `bash`, `sh`, `zsh`, `python`, `python3`, `node`, `ruby`, `perl`
 
-Cada shim llama a `securitylayer check` antes de reenviar al binario real.
+Cada shim llama a `sl check` antes de reenviar al binario real.
 
 **Códigos de salida:** `0` en caso de éxito, `1` si no está configurado o no se encontraron binarios.
 
@@ -53,7 +53,7 @@ Shield Status
 Cuando una herramienta de IA (Claude Code, Cursor, Aider, etc.) ejecuta un comando de shell:
 
 1. El binario con shim intercepta la llamada
-2. `securitylayer check` evalúa el comando contra tu política
+2. `sl check` evalúa el comando contra tu política
 3. Si se permite, el binario real ejecuta el comando
 4. Si se deniega, el comando se bloquea con un mensaje de error
 

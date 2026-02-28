@@ -9,8 +9,8 @@ Security Layer auto-detecta qué herramienta de IA disparó un comando y aplica 
 ## Uso
 
 ```bash
-securitylayer callers list
-securitylayer callers profile <name>
+sl callers list
+sl callers profile <name>
 ```
 
 ## Subcomandos
@@ -20,7 +20,7 @@ securitylayer callers profile <name>
 Muestra todos los callers de herramientas de IA configurados con sus reglas de detección y capacidades.
 
 ```bash
-$ securitylayer callers list
+$ sl callers list
 
   claude-code (Claude Code)
     taint: OWNER
@@ -40,7 +40,7 @@ $ securitylayer callers list
 Muestra información detallada de un caller específico.
 
 ```bash
-$ securitylayer callers profile claude-code
+$ sl callers profile claude-code
 
   ID:           claude-code
   Display name: Claude Code

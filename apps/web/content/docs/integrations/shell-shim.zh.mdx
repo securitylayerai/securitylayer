@@ -8,7 +8,7 @@ shell shim 是一种通用集成方式，保护**任何**运行 shell 命令的 
 
 ## 工作原理
 
-`securitylayer shield enable` 在 `~/.securitylayer/bin/` 安装 PATH 优先级包装脚本。因为该目录被前置到 PATH 中，所有 shell 命令在到达真实二进制文件之前都会经过 Security Layer。
+`sl shield enable` 在 `~/.securitylayer/bin/` 安装 PATH 优先级包装脚本。因为该目录被前置到 PATH 中，所有 shell 命令在到达真实二进制文件之前都会经过 Security Layer。
 
 ### 被 shim 的二进制文件
 
@@ -26,14 +26,14 @@ shell shim 是一种通用集成方式，保护**任何**运行 shell 命令的 
 ### 执行流程
 
 ```
-AI Tool → shimmed bash → securitylayer check → real bash
+AI Tool → shimmed bash → sl check → real bash
                               ↓ (if denied)
                          error message
 ```
 
 1. AI 工具调用 `bash -c "some command"`
 2. `~/.securitylayer/bin/bash` 中的 shim 拦截
-3. `securitylayer check` 评估命令
+3. `sl check` 评估命令
 4. 如果允许 → 转发到真实的 `/usr/bin/bash`
 5. 如果拒绝 → 返回错误，命令不会执行
 
@@ -50,13 +50,13 @@ shim 通过以下方式识别哪个 AI 工具触发了命令：
 
 ```bash
 # 启用
-securitylayer shield enable
+sl shield enable
 
 # 验证
-securitylayer shield status
+sl shield status
 
 # 禁用
-securitylayer shield disable
+sl shield disable
 ```
 
 启用后，重启 shell 或打开新终端以使 PATH 变更生效。

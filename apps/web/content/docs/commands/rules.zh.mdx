@@ -9,9 +9,9 @@ icon: ListChecks
 ## 用法
 
 ```bash
-securitylayer rules list
-securitylayer rules revoke <number>
-securitylayer rules clear
+sl rules list
+sl rules revoke <number>
+sl rules clear
 ```
 
 ## 子命令
@@ -21,7 +21,7 @@ securitylayer rules clear
 显示 `~/.securitylayer/learned-rules.json` 中所有已学习的规则。
 
 ```bash
-$ securitylayer rules list
+$ sl rules list
 
   Learned rules:
     1. npm install * (exec) — 2025-01-15 — claude-code
@@ -35,7 +35,7 @@ $ securitylayer rules list
 按编号移除特定的已学习规则（从 `rules list` 的 1 开始编号）。
 
 ```bash
-$ securitylayer rules revoke 2
+$ sl rules revoke 2
 Revoked rule: git push * (exec)
 ```
 
@@ -46,7 +46,7 @@ Revoked rule: git push * (exec)
 移除所有已学习的规则。
 
 ```bash
-$ securitylayer rules clear
+$ sl rules clear
 Cleared 2 learned rule(s).
 ```
 

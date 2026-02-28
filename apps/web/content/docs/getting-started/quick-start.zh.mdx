@@ -15,7 +15,7 @@ bun add -g securitylayer
 ## 2. 初始化
 
 ```bash
-securitylayer init
+sl init
 ```
 
 接受默认配置或自定义会话能力。向导会在 `~/.securitylayer/` 创建配置文件。
@@ -25,7 +25,7 @@ securitylayer init
 **Claude Code** — 原生 hooks 集成：
 
 ```bash
-securitylayer setup claude-code
+sl setup claude-code
 ```
 
 这会将 PreToolUse 和 PostToolUse hooks 安装到 `~/.claude/hooks.json`。Claude Code 的每个工具调用在执行前都会根据你的安全策略进行评估。
@@ -33,7 +33,7 @@ securitylayer setup claude-code
 **Shell shim** — 适用于任何 AI 工具的通用保护：
 
 ```bash
-securitylayer shield enable
+sl shield enable
 ```
 
 这会安装 PATH 优先级包装脚本来拦截所有 shell 命令。适用于任何 AI 工具 — Cursor、Aider、Copilot 或任何运行 shell 命令的工具。
@@ -41,7 +41,7 @@ securitylayer shield enable
 ## 4. 验证
 
 ```bash
-securitylayer status
+sl status
 ```
 
 你应该能看到已加载的配置、会话能力和集成状态（hooks 已安装或 shield 已激活）。
@@ -51,7 +51,7 @@ securitylayer status
 运行模拟策略检查，查看 Security Layer 的实际效果：
 
 ```bash
-securitylayer policy check "rm -rf /"
+sl policy check "rm -rf /"
 ```
 
 你将看到完整的评估结果 — 能力门控、规则引擎和风险评分 — 以及最终决策。

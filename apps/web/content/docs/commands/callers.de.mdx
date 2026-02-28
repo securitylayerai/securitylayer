@@ -9,8 +9,8 @@ Security Layer erkennt automatisch, welches KI-Tool einen Befehl ausgelöst hat,
 ## Verwendung
 
 ```bash
-securitylayer callers list
-securitylayer callers profile <name>
+sl callers list
+sl callers profile <name>
 ```
 
 ## Unterbefehle
@@ -20,7 +20,7 @@ securitylayer callers profile <name>
 Zeigt alle konfigurierten KI-Tool-Caller mit ihren Erkennungsregeln und Fähigkeiten.
 
 ```bash
-$ securitylayer callers list
+$ sl callers list
 
   claude-code (Claude Code)
     taint: OWNER
@@ -40,7 +40,7 @@ $ securitylayer callers list
 Zeigt detaillierte Informationen zu einem bestimmten Caller.
 
 ```bash
-$ securitylayer callers profile claude-code
+$ sl callers profile claude-code
 
   ID:           claude-code
   Display name: Claude Code

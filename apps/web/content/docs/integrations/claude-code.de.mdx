@@ -9,7 +9,7 @@ Security Layer integriert sich nativ mit Claude Code über dessen Hooks-System. 
 ## Einrichtung
 
 ```bash
-securitylayer setup claude-code
+sl setup claude-code
 ```
 
 Dies schreibt Hooks in `~/.claude/hooks.json`. Keine manuelle Konfiguration nötig.
@@ -46,10 +46,10 @@ Jeder Hook ruft die Security Layer-CLI auf:
 
 ```bash
 # PreToolUse
-securitylayer hook claude-code --tool Bash --input "$TOOL_INPUT"
+sl hook claude-code --tool Bash --input "$TOOL_INPUT"
 
 # PostToolUse
-securitylayer hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
+sl hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
 ```
 
 ## Überprüfung
@@ -57,7 +57,7 @@ securitylayer hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
 Prüfe, ob Hooks installiert sind:
 
 ```bash
-securitylayer status
+sl status
 ```
 
 Achte auf „Claude Code hooks: installed" in der Ausgabe.

@@ -47,7 +47,7 @@ If a session's taint exceeds the capability's threshold, the action is denied â€
 Taint can only be cleared by explicit human action:
 
 ```bash
-securitylayer taint clear
+sl taint clear
 ```
 
 In daemon mode (proxy), taint resets when a new session starts. In CLI mode, taint is tracked per-evaluation based on project trust rules.

@@ -9,8 +9,8 @@ icon: Fingerprint
 ## 使い方
 
 ```bash
-securitylayer taint show
-securitylayer taint clear
+sl taint show
+sl taint clear
 ```
 
 ## サブコマンド
@@ -20,7 +20,7 @@ securitylayer taint clear
 プロジェクト信頼ルールと、カレントワーキングディレクトリのテイントレベルを表示します。
 
 ```bash
-$ securitylayer taint show
+$ sl taint show
 
   Project trust rules:
     ~/Dev/Personal/** → OWNER
@@ -38,7 +38,7 @@ $ securitylayer taint show
 
 CLI モードでは、テイントはプロジェクト信頼ルールに基づいて決定され、コマンド間で蓄積されません。このコマンドはテイント管理に関するガイダンスを提供します:
 
-- プロジェクトレベルの信頼変更には `securitylayer projects trust <path>` を使用します
+- プロジェクトレベルの信頼変更には `sl projects trust <path>` を使用します
 - デーモンモード（プロキシ）では、テイントクリアによりセッションの蓄積テイントがリセットされます
 
 ## 終了コード

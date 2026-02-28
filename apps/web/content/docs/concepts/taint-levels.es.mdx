@@ -47,7 +47,7 @@ Si el taint de una sesión excede el umbral de la capacidad, la acción se denie
 El taint solo se puede limpiar mediante una acción humana explícita:
 
 ```bash
-securitylayer taint clear
+sl taint clear
 ```
 
 En modo daemon (proxy), el taint se restablece cuando comienza una nueva sesión. En modo CLI, el taint se rastrea por evaluación basado en las reglas de confianza de proyectos.

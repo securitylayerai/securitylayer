@@ -9,7 +9,7 @@ O modo de aprendizado permite que voce observe as decisoes do Security Layer sem
 ## Habilitando
 
 ```bash
-securitylayer learn --duration 7d
+sl learn --duration 7d
 ```
 
 Isso define `mode: learning` na sua configuracao e registra um timestamp `learning_expires`. Apos a duracao, o Security Layer retorna ao modo de aplicacao.
@@ -26,7 +26,7 @@ No modo de aprendizado, o Security Layer avalia cada acao pelo pipeline de segur
 ## Verificando o status
 
 ```bash
-securitylayer status
+sl status
 ```
 
 Mostra se o modo de aprendizado esta ativo, quando expira e quantas acoes foram registradas.
@@ -36,7 +36,7 @@ Mostra se o modo de aprendizado esta ativo, quando expira e quantas acoes foram 
 Apos o periodo de aprendizado:
 
 ```bash
-securitylayer learn report
+sl learn report
 ```
 
 Isso mostra:
@@ -47,10 +47,10 @@ Isso mostra:
 
 ## Fluxo de trabalho
 
-1. **Instalar e inicializar** — `securitylayer init`
-2. **Habilitar aprendizado** — `securitylayer learn --duration 7d`
+1. **Instalar e inicializar** — `sl init`
+2. **Habilitar aprendizado** — `sl learn --duration 7d`
 3. **Trabalhar normalmente** — Use suas ferramentas de IA como de costume
-4. **Revisar** — `securitylayer learn report`
+4. **Revisar** — `sl learn report`
 5. **Ajustar politica** — Ajuste capabilities e regras com base nos resultados
 6. **Aplicar** — O modo de aprendizado expira, a aplicacao comeca
 

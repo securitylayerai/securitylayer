@@ -9,7 +9,7 @@ Security Layer 通过 hooks 系统与 Claude Code 原生集成。PreToolUse hook
 ## 设置
 
 ```bash
-securitylayer setup claude-code
+sl setup claude-code
 ```
 
 这会将 hooks 写入 `~/.claude/hooks.json`。无需手动配置。
@@ -46,10 +46,10 @@ securitylayer setup claude-code
 
 ```bash
 # PreToolUse
-securitylayer hook claude-code --tool Bash --input "$TOOL_INPUT"
+sl hook claude-code --tool Bash --input "$TOOL_INPUT"
 
 # PostToolUse
-securitylayer hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
+sl hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
 ```
 
 ## 验证
@@ -57,7 +57,7 @@ securitylayer hook claude-code --tool Read --post --output "$TOOL_OUTPUT"
 检查 hooks 是否已安装：
 
 ```bash
-securitylayer status
+sl status
 ```
 
 在输出中查找 "Claude Code hooks: installed"。

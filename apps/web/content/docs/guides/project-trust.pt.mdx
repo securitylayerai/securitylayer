@@ -24,16 +24,16 @@ Ao atribuir confianca com base em onde o projeto esta localizado, o Security Lay
 
 ```bash
 # Confiar nos seus projetos pessoais
-securitylayer projects trust "~/Dev/Personal/**" --taint owner
+sl projects trust "~/Dev/Personal/**" --taint owner
 
 # Confiar em projetos de trabalho com nivel menor
-securitylayer projects trust "~/Dev/Work/**" --taint trusted
+sl projects trust "~/Dev/Work/**" --taint trusted
 
 # Marcar diretorios temporarios como nao confiaveis
-securitylayer projects trust "/tmp/**" --taint web
+sl projects trust "/tmp/**" --taint web
 
 # Remover uma regra de confianca
-securitylayer projects untrust "/tmp/**"
+sl projects untrust "/tmp/**"
 ```
 
 ### Via arquivo de configuracao
@@ -76,10 +76,10 @@ default: UNTRUSTED_HUMAN
 
 ```bash
 # Listar todas as regras de confianca
-securitylayer projects list
+sl projects list
 
 # Verificar o taint do diretorio atual
-securitylayer taint show
+sl taint show
 ```
 
 ## Boas praticas

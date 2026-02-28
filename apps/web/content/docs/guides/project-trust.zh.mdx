@@ -24,16 +24,16 @@ icon: Folder
 
 ```bash
 # 信任你的个人项目
-securitylayer projects trust "~/Dev/Personal/**" --taint owner
+sl projects trust "~/Dev/Personal/**" --taint owner
 
 # 以较低级别信任工作项目
-securitylayer projects trust "~/Dev/Work/**" --taint trusted
+sl projects trust "~/Dev/Work/**" --taint trusted
 
 # 将临时目录标记为不受信任
-securitylayer projects trust "/tmp/**" --taint web
+sl projects trust "/tmp/**" --taint web
 
 # 移除信任规则
-securitylayer projects untrust "/tmp/**"
+sl projects untrust "/tmp/**"
 ```
 
 ### 通过配置文件
@@ -76,10 +76,10 @@ default: UNTRUSTED_HUMAN
 
 ```bash
 # 列出所有信任规则
-securitylayer projects list
+sl projects list
 
 # 检查当前目录的污点
-securitylayer taint show
+sl taint show
 ```
 
 ## 最佳实践

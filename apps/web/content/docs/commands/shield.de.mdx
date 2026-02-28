@@ -9,9 +9,9 @@ Das Shield installiert PATH-priorisierte Wrapper-Skripte, die alle Shell-Befehle
 ## Verwendung
 
 ```bash
-securitylayer shield enable
-securitylayer shield disable
-securitylayer shield status
+sl shield enable
+sl shield disable
+sl shield status
 ```
 
 ## Unterbefehle
@@ -22,7 +22,7 @@ Erstellt Shim-Binary-Wrapper in `~/.securitylayer/bin/` und fügt das Verzeichni
 
 **Geshimmte Binaries:** `bash`, `sh`, `zsh`, `python`, `python3`, `node`, `ruby`, `perl`
 
-Jeder Shim ruft `securitylayer check` auf, bevor er an das echte Binary weiterleitet.
+Jeder Shim ruft `sl check` auf, bevor er an das echte Binary weiterleitet.
 
 **Exit-Codes:** `0` bei Erfolg, `1` wenn nicht konfiguriert oder keine Binaries gefunden.
 
@@ -53,7 +53,7 @@ Shield Status
 Wenn ein KI-Tool (Claude Code, Cursor, Aider, etc.) einen Shell-Befehl ausführt:
 
 1. Das geshimmte Binary fängt den Aufruf ab
-2. `securitylayer check` wertet den Befehl gegen deine Richtlinie aus
+2. `sl check` wertet den Befehl gegen deine Richtlinie aus
 3. Bei Erlaubnis führt das echte Binary den Befehl aus
 4. Bei Verweigerung wird der Befehl mit einer Fehlermeldung blockiert
 

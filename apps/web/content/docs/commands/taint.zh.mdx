@@ -9,8 +9,8 @@ icon: Fingerprint
 ## 用法
 
 ```bash
-securitylayer taint show
-securitylayer taint clear
+sl taint show
+sl taint clear
 ```
 
 ## 子命令
@@ -20,7 +20,7 @@ securitylayer taint clear
 显示项目信任规则和当前工作目录的污点级别。
 
 ```bash
-$ securitylayer taint show
+$ sl taint show
 
   Project trust rules:
     ~/Dev/Personal/** → OWNER
@@ -38,7 +38,7 @@ $ securitylayer taint show
 
 在 CLI 模式下，污点由项目信任规则决定，不会跨命令累积。此命令提供管理污点的指引：
 
-- 如需更改项目级别的信任，使用 `securitylayer projects trust <path>`
+- 如需更改项目级别的信任，使用 `sl projects trust <path>`
 - 在守护进程模式（代理）下，清除污点会重置会话的累积污点
 
 ## 退出码

@@ -9,7 +9,7 @@ icon: Brain
 ## 启用
 
 ```bash
-securitylayer learn --duration 7d
+sl learn --duration 7d
 ```
 
 这会在配置中设置 `mode: learning` 并记录 `learning_expires` 时间戳。持续时间结束后，Security Layer 恢复到执行模式。
@@ -26,7 +26,7 @@ securitylayer learn --duration 7d
 ## 检查状态
 
 ```bash
-securitylayer status
+sl status
 ```
 
 显示学习模式是否激活、何时过期以及已记录了多少操作。
@@ -36,7 +36,7 @@ securitylayer status
 学习期结束后：
 
 ```bash
-securitylayer learn report
+sl learn report
 ```
 
 显示内容：
@@ -47,10 +47,10 @@ securitylayer learn report
 
 ## 工作流
 
-1. **安装和初始化** — `securitylayer init`
-2. **启用学习** — `securitylayer learn --duration 7d`
+1. **安装和初始化** — `sl init`
+2. **启用学习** — `sl learn --duration 7d`
 3. **正常工作** — 照常使用你的 AI 工具
-4. **查看报告** — `securitylayer learn report`
+4. **查看报告** — `sl learn report`
 5. **调优策略** — 根据结果调整能力和规则
 6. **执行** — 学习模式过期，开始执行
 

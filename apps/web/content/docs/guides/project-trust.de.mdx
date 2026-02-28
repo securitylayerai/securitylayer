@@ -24,16 +24,16 @@ Durch die Zuweisung von Vertrauen basierend auf dem Speicherort eines Projekts s
 
 ```bash
 # Eigenen Projekten vertrauen
-securitylayer projects trust "~/Dev/Personal/**" --taint owner
+sl projects trust "~/Dev/Personal/**" --taint owner
 
 # Arbeitsprojekten auf niedrigerem Level vertrauen
-securitylayer projects trust "~/Dev/Work/**" --taint trusted
+sl projects trust "~/Dev/Work/**" --taint trusted
 
 # Temporäre Verzeichnisse als nicht vertrauenswürdig markieren
-securitylayer projects trust "/tmp/**" --taint web
+sl projects trust "/tmp/**" --taint web
 
 # Vertrauensregel entfernen
-securitylayer projects untrust "/tmp/**"
+sl projects untrust "/tmp/**"
 ```
 
 ### Über Konfigurationsdatei
@@ -76,10 +76,10 @@ default: UNTRUSTED_HUMAN
 
 ```bash
 # Alle Vertrauensregeln auflisten
-securitylayer projects list
+sl projects list
 
 # Taint des aktuellen Verzeichnisses prüfen
-securitylayer taint show
+sl taint show
 ```
 
 ## Best Practices

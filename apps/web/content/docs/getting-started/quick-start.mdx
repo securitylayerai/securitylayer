@@ -15,7 +15,7 @@ bun add -g securitylayer
 ## 2. Initialize
 
 ```bash
-securitylayer init
+sl init
 ```
 
 Accept the defaults or customize your session capabilities. The wizard creates config files at `~/.securitylayer/`.
@@ -25,7 +25,7 @@ Accept the defaults or customize your session capabilities. The wizard creates c
 **Claude Code** — native hooks integration:
 
 ```bash
-securitylayer setup claude-code
+sl setup claude-code
 ```
 
 This installs PreToolUse and PostToolUse hooks into `~/.claude/hooks.json`. Every tool call Claude Code makes is evaluated against your security policy before execution.
@@ -33,7 +33,7 @@ This installs PreToolUse and PostToolUse hooks into `~/.claude/hooks.json`. Ever
 **Shell shim** — universal protection for any AI tool:
 
 ```bash
-securitylayer shield enable
+sl shield enable
 ```
 
 This installs PATH-priority wrapper scripts that intercept all shell commands. Works with any AI tool — Cursor, Aider, Copilot, or anything that runs shell commands.
@@ -41,7 +41,7 @@ This installs PATH-priority wrapper scripts that intercept all shell commands. W
 ## 4. Verify
 
 ```bash
-securitylayer status
+sl status
 ```
 
 You should see your configuration loaded, your session capabilities, and your integration status (hooks installed or shield active).
@@ -51,7 +51,7 @@ You should see your configuration loaded, your session capabilities, and your in
 Run a dry-run policy check to see Security Layer in action:
 
 ```bash
-securitylayer policy check "rm -rf /"
+sl policy check "rm -rf /"
 ```
 
 You'll see the full evaluation — capability gate, rules engine, and risk score — with the final decision.

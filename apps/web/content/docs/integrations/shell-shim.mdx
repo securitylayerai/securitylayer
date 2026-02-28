@@ -8,7 +8,7 @@ The shell shim is a universal integration that protects **any** AI tool that run
 
 ## How it works
 
-`securitylayer shield enable` installs PATH-priority wrapper scripts in `~/.securitylayer/bin/`. Because this directory is prepended to PATH, all shell commands route through Security Layer before reaching the real binary.
+`sl shield enable` installs PATH-priority wrapper scripts in `~/.securitylayer/bin/`. Because this directory is prepended to PATH, all shell commands route through Security Layer before reaching the real binary.
 
 ### Shimmed binaries
 
@@ -26,14 +26,14 @@ The shell shim is a universal integration that protects **any** AI tool that run
 ### Execution flow
 
 ```
-AI Tool → shimmed bash → securitylayer check → real bash
+AI Tool → shimmed bash → sl check → real bash
                               ↓ (if denied)
                          error message
 ```
 
 1. AI tool calls `bash -c "some command"`
 2. The shim in `~/.securitylayer/bin/bash` intercepts
-3. `securitylayer check` evaluates the command
+3. `sl check` evaluates the command
 4. If allowed → forwarded to the real `/usr/bin/bash`
 5. If denied → error returned, command never executes
 
@@ -50,13 +50,13 @@ This allows different capability profiles for different tools (e.g., Claude Code
 
 ```bash
 # Enable
-securitylayer shield enable
+sl shield enable
 
 # Verify
-securitylayer shield status
+sl shield status
 
 # Disable
-securitylayer shield disable
+sl shield disable
 ```
 
 After enabling, restart your shell or open a new terminal for the PATH change to take effect.

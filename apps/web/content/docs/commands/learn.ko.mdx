@@ -9,7 +9,7 @@ icon: Brain
 ## 사용법
 
 ```bash
-securitylayer learn [--duration <duration>]
+sl learn [--duration <duration>]
 ```
 
 ## 플래그
@@ -35,16 +35,16 @@ securitylayer learn [--duration <duration>]
 - 지정된 기간이 지나면 모드가 자동으로 만료됩니다
 - 설정에 `mode: learning`과 `learning_expires` 타임스탬프가 업데이트됩니다
 
-학습 기간이 끝난 후, `securitylayer learn report`를 사용하면 실제 사용 패턴에 기반한 권장 capability 변경사항을 확인할 수 있습니다.
+학습 기간이 끝난 후, `sl learn report`를 사용하면 실제 사용 패턴에 기반한 권장 capability 변경사항을 확인할 수 있습니다.
 
 ## 예시
 
 ```bash
 # 7일간 모니터링
-securitylayer learn --duration 7d
+sl learn --duration 7d
 
 # 로깅된 내용 확인
-securitylayer learn report
+sl learn report
 ```
 
 ## 종료 코드
