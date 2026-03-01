@@ -173,3 +173,8 @@ pre code {
 #nd-page > .prose + .grid {
   margin-top: 59px;
 }
+
+/* Notebook navbar — span full width */
+#nd-subnav {
+  grid-column: 1 / -1;
+}
