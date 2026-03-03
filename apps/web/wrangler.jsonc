@@ -4,6 +4,9 @@
   "compatibility_date": "2026-03-03",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
+  "vars": {
+    "VITE_BASE_URL": "https://securitylayer.ai"
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,

@@ -53,7 +53,7 @@ export const Route = createFileRoute("/api/llm")({
           return new Response("Page not found", { status: 404 });
         }
 
-        const raw = await page.getText("raw");
+        const raw = await page.getText("processed");
         const text = format === "txt" ? stripMarkdown(raw) : raw;
 
         return new Response(text, {
