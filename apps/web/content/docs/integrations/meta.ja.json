@@ -1,5 +1,6 @@
 {
   "title": "インテグレーション",
   "icon": "Plug",
+  "defaultOpen": true,
   "pages": ["claude-code", "cursor", "shell-shim"]
 }

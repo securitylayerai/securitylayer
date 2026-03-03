@@ -1,5 +1,6 @@
 {
   "title": "Konzepte",
   "icon": "Brain",
+  "defaultOpen": true,
   "pages": ["taint-levels", "capabilities", "security-pipeline"]
 }

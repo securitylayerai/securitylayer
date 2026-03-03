@@ -1,5 +1,6 @@
 {
   "title": "核心概念",
   "icon": "Brain",
+  "defaultOpen": true,
   "pages": ["taint-levels", "capabilities", "security-pipeline"]
 }

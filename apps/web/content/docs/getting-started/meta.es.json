@@ -1,5 +1,6 @@
 {
   "title": "Primeros pasos",
   "icon": "Rocket",
+  "defaultOpen": true,
   "pages": ["..."]
 }

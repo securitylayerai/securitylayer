@@ -1,6 +1,7 @@
 {
   "title": "CLI 命令",
   "icon": "Terminal",
+  "defaultOpen": false,
   "pages": [
     "init",
     "status",
