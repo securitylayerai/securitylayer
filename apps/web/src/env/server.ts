@@ -1,4 +1,5 @@
 import { createEnv } from "@t3-oss/env-core";
+import { env as cloudflareEnv } from "cloudflare:workers";
 import * as z from "zod";
 
 export const env = createEnv({
@@ -12,5 +13,5 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
   },
-  runtimeEnv: process.env,
+  runtimeEnv: cloudflareEnv,
 });
