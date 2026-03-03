@@ -168,7 +168,16 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <RootProvider i18n={ui.provider(lang)}>
+        <RootProvider
+          i18n={ui.provider(lang)}
+          search={{
+            enabled: true,
+            options: {
+              type: "fetch",
+              api: "/api/search",
+            },
+          }}
+        >
           {children}
           <Toaster richColors />
         </RootProvider>
