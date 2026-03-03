@@ -174,9 +174,24 @@ pre code {
   margin-top: 59px;
 }
 
-/* Notebook top nav: span full viewport width */
-#nd-subnav {
-  grid-column: 1 / -1;
+/* Notebook top nav: span full viewport width on desktop only. */
+@media (min-width: 768px) {
+  #nd-subnav {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Mobile docs should fill the viewport with consistent side padding. */
+@media (max-width: 767px) {
+  #nd-page {
+    width: 100%;
+    max-width: none;
+    padding-inline: 1rem;
+  }
+
+  #nd-page > .prose {
+    max-width: none;
+  }
 }
 
 /* Add a subtle divider between desktop sidebar and content. */
