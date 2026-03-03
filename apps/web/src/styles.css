@@ -174,7 +174,8 @@ pre code {
   margin-top: 59px;
 }
 
-/* Notebook navbar — span full width */
+/* Notebook top nav: span full viewport width */
 #nd-subnav {
   grid-column: 1 / -1;
 }
+
