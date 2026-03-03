@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "securitylayer-web",
+  "compatibility_date": "2026-03-03",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "SECURITYLAYER_DB",
+      "database_name": "securitylayer",
+      "database_id": "aec5f82b-118f-4f68-8112-cd3881a114dc",
+      "migrations_dir": "drizzle"
+    }
+  ]
+}

@@ -1,15 +1,11 @@
 import { createServerOnlyFn } from "@tanstack/react-start";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { env } from "@/env/server";
+import { env as cloudflareEnv } from "cloudflare:workers";
+import { drizzle } from "drizzle-orm/d1";
 
 import * as schema from "@/lib/db/schema";
 
-const client = postgres(env.DATABASE_URL);
-
 const getDatabase = createServerOnlyFn(() =>
-  drizzle({
-    client,
+  drizzle(cloudflareEnv.SECURITYLAYER_DB, {
     schema,
     casing: "snake_case",
   }),
