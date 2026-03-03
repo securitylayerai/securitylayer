@@ -179,3 +179,8 @@ pre code {
   grid-column: 1 / -1;
 }
 
+/* Add a subtle divider between desktop sidebar and content. */
+#nd-sidebar[data-collapsed="false"] {
+  border-inline-end: 1px solid var(--color-fd-border);
+}
+
