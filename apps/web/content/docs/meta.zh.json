@@ -1,9 +1,9 @@
 {
   "pages": [
     "getting-started",
-    "commands",
-    "concepts",
     "integrations",
-    "guides"
+    "concepts",
+    "guides",
+    "commands"
   ]
 }
