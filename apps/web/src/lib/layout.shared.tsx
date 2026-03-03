@@ -6,8 +6,9 @@ export function baseOptions(locale: string): BaseLayoutProps {
     i18n: true,
     nav: {
       title: "Security Layer",
+      mode: "top",
     },
-    githubUrl: "https://github.com/securitylayer/securitylayer",
+    githubUrl: "https://github.com/securitylayerai/securitylayer",
     links: [
       {
         type: "icon",

@@ -32,7 +32,7 @@ function HomePage() {
         <div className="flex items-center gap-3">
           <a
             className="text-foreground/80 underline hover:text-foreground max-sm:text-sm"
-            href="https://github.com/securitylayer/securitylayer"
+            href="https://github.com/securitylayerai/securitylayer"
             target="_blank"
             title="Security Layer on GitHub"
             rel="noreferrer noopener"
