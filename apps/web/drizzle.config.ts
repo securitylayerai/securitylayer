@@ -1,5 +1,4 @@
 import type { Config } from "drizzle-kit";
-import { env } from "@/env/server";
 
 export default {
   out: "./drizzle",
@@ -7,9 +6,6 @@ export default {
   breakpoints: true,
   verbose: true,
   strict: true,
-  dialect: "postgresql",
+  dialect: "sqlite",
   casing: "snake_case",
-  dbCredentials: {
-    url: env.DATABASE_URL,
-  },
 } satisfies Config;

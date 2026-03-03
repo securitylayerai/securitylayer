@@ -14,7 +14,7 @@ const getAuthConfig = createServerOnlyFn(() =>
       enabled: false,
     },
     database: drizzleAdapter(db, {
-      provider: "pg",
+      provider: "sqlite",
       schema,
     }),
 
