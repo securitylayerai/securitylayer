@@ -127,25 +127,31 @@ export const Route = createRootRouteWithContext<{
     // so we're only prefetching here and not awaiting.
     // for protected routes with loader data, see /_auth/route.tsx
   },
-  head: () => ({
-    meta: [
-      {
-        charSet: "utf-8",
-      },
-      {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
-      },
-      {
-        title: "Security Layer",
-      },
-      {
-        name: "description",
-        content: "Security Layer - Agent security platform",
-      },
-    ],
-    links: [{ rel: "stylesheet", href: appCss }],
-  }),
+  head: () => {
+    const baseUrl = import.meta.env.VITE_BASE_URL;
+    const description =
+      "Agent security platform that makes dangerous AI agent actions structurally impossible.";
+    const ogImage = `${baseUrl}/api/og`;
+
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title: "Security Layer" },
+        { name: "description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:site_name", content: "Security Layer" },
+        { property: "og:title", content: "Security Layer" },
+        { property: "og:description", content: description },
+        { property: "og:image", content: ogImage },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: "Security Layer" },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: ogImage },
+      ],
+      links: [{ rel: "stylesheet", href: appCss }],
+    };
+  },
   component: RootComponent,
 });
 
