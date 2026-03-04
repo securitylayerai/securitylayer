@@ -15,6 +15,7 @@ import { Route as LangRouteRouteImport } from './routes/$lang/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LangIndexRouteImport } from './routes/$lang/index'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
+import { Route as ApiOgRouteImport } from './routes/api/og'
 import { Route as ApiLlmRouteImport } from './routes/api/llm'
 import { Route as GuestSignupRouteImport } from './routes/_guest/signup'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
@@ -49,6 +50,11 @@ const LangIndexRoute = LangIndexRouteImport.update({
 const ApiSearchRoute = ApiSearchRouteImport.update({
   id: '/api/search',
   path: '/api/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOgRoute = ApiOgRouteImport.update({
+  id: '/api/og',
+  path: '/api/og',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiLlmRoute = ApiLlmRouteImport.update({
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof GuestLoginRoute
   '/signup': typeof GuestSignupRoute
   '/api/llm': typeof ApiLlmRoute
+  '/api/og': typeof ApiOgRoute
   '/api/search': typeof ApiSearchRoute
   '/$lang/': typeof LangIndexRoute
   '/$lang/docs/$': typeof LangDocsSplatRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/login': typeof GuestLoginRoute
   '/signup': typeof GuestSignupRoute
   '/api/llm': typeof ApiLlmRoute
+  '/api/og': typeof ApiOgRoute
   '/api/search': typeof ApiSearchRoute
   '/$lang': typeof LangIndexRoute
   '/$lang/docs/$': typeof LangDocsSplatRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/_guest/login': typeof GuestLoginRoute
   '/_guest/signup': typeof GuestSignupRoute
   '/api/llm': typeof ApiLlmRoute
+  '/api/og': typeof ApiOgRoute
   '/api/search': typeof ApiSearchRoute
   '/$lang/': typeof LangIndexRoute
   '/$lang/docs/$': typeof LangDocsSplatRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/api/llm'
+    | '/api/og'
     | '/api/search'
     | '/$lang/'
     | '/$lang/docs/$'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/api/llm'
+    | '/api/og'
     | '/api/search'
     | '/$lang'
     | '/$lang/docs/$'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/_guest/login'
     | '/_guest/signup'
     | '/api/llm'
+    | '/api/og'
     | '/api/search'
     | '/$lang/'
     | '/$lang/docs/$'
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
   GuestRouteRoute: typeof GuestRouteRouteWithChildren
   ApiLlmRoute: typeof ApiLlmRoute
+  ApiOgRoute: typeof ApiOgRoute
   ApiSearchRoute: typeof ApiSearchRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/api/search'
       fullPath: '/api/search'
       preLoaderRoute: typeof ApiSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/og': {
+      id: '/api/og'
+      path: '/api/og'
+      fullPath: '/api/og'
+      preLoaderRoute: typeof ApiOgRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/llm': {
@@ -332,6 +352,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRouteRoute: AuthRouteRouteWithChildren,
   GuestRouteRoute: GuestRouteRouteWithChildren,
   ApiLlmRoute: ApiLlmRoute,
+  ApiOgRoute: ApiOgRoute,
   ApiSearchRoute: ApiSearchRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
