@@ -149,7 +149,11 @@ export const Route = createRootRouteWithContext<{
         { name: "twitter:description", content: description },
         { name: "twitter:image", content: ogImage },
       ],
-      links: [{ rel: "stylesheet", href: appCss }],
+      links: [
+        { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+        { rel: "icon", href: "/favicon.ico", sizes: "32x32" },
+        { rel: "stylesheet", href: appCss },
+      ],
     };
   },
   component: RootComponent,
