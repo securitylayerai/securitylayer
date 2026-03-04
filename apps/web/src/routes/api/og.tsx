@@ -74,14 +74,25 @@ export const Route = createFileRoute("/api/og")({
                 position: "relative",
               }}
             >
-              {/* Top right: Security Layer */}
+              {/* Top left: Logo + Security Layer */}
               <div
                 style={{
                   display: "flex",
-                  justifyContent: "flex-end",
-                  width: "100%",
+                  alignItems: "center",
+                  gap: 14,
                 }}
               >
+                <svg
+                  width="36"
+                  height="36"
+                  viewBox="0 0 48 48"
+                  fill="none"
+                >
+                  <path
+                    d="M28 8H36V16H28V8ZM20 8H28V16H20V8ZM12 16H20V24H12V16ZM28 24H36V32H28V24ZM28 32H36V40H28V32ZM12 32H20V40H12V32ZM12 8H20V16H12V8ZM20 32H28V40H20V32Z"
+                    fill={WHITE}
+                  />
+                </svg>
                 <span style={{ color: WHITE, fontSize: 28, fontWeight: 400 }}>
                   Security Layer
                 </span>
