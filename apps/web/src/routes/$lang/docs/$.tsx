@@ -55,11 +55,44 @@ function LocaleCard(props: React.ComponentProps<typeof Card>) {
 
 export const Route = createFileRoute("/$lang/docs/$")({
   component: Page,
-  loader: async ({ params }) => {
+  beforeLoad: async ({ params }) => {
     const slugs = params._splat?.split("/") ?? [];
-    const data = await serverLoader({ data: { slugs, lang: params.lang } });
-    await clientLoader.preload(data.path);
-    return data;
+    const pageData = await serverLoader({
+      data: { slugs, lang: params.lang },
+    });
+    return { pageData };
+  },
+  head: ({ match }) => {
+    const { pageData } = match.context as {
+      pageData?: {
+        title: string;
+        description: string | undefined;
+      };
+    };
+    if (!pageData) return {};
+    const title = pageData.title;
+    const description =
+      pageData.description ?? "Security Layer documentation";
+    const baseUrl = import.meta.env.VITE_BASE_URL;
+    const ogUrl = `${baseUrl}/api/og?page=Docs&title=${encodeURIComponent(title)}&subtitle=${encodeURIComponent(description)}`;
+
+    return {
+      meta: [
+        { title: `${title} — Security Layer` },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:image", content: ogUrl },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: ogUrl },
+      ],
+    };
+  },
+  loader: async ({ context }) => {
+    const { pageData } = context as { pageData: ServerLoaderResult };
+    await clientLoader.preload(pageData.path);
+    return pageData;
   },
 });
 
@@ -74,9 +107,13 @@ const serverLoader = createServerFn({
     return {
       path: page.path,
       lang,
+      title: page.data.title,
+      description: page.data.description as string | undefined,
       pageTree: await source.serializePageTree(source.getPageTree(lang)),
     };
   });
+
+type ServerLoaderResult = Awaited<ReturnType<typeof serverLoader>>;
 
 const clientLoader = browserCollections.docs.createClientLoader({
   component(

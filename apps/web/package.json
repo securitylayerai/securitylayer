@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
+    "@cf-wasm/og": "^0.3.7",
     "@fontsource/ibm-plex-mono": "^5.2.6",
     "@phosphor-icons/react": "^2.1.10",
     "@t3-oss/env-core": "^0.13.10",
