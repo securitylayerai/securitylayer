@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { parse } from "@bomb.sh/args";
-import { type CliArgs, runMain } from "@/index";
+import { type CliArgs, runMain } from "../src/index";
 
 const raw = parse(process.argv.slice(2), {
   boolean: ["help", "version", "post"],

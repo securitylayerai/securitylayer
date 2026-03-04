@@ -1,0 +1,40 @@
+name: Release CLI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.22"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Build all targets
+        run: bun run build:cli
+
+      - name: Generate checksums
+        run: |
+          cd packages/cli/bin-dist
+          sha256sum * > checksums-sha256.txt
+          ls -lh
+          cat checksums-sha256.txt
+
+      - name: Create GitHub Release
+        run: bunx changelogithub --assets packages/cli/bin-dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
