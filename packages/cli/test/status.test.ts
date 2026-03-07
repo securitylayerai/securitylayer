@@ -14,7 +14,7 @@ const { TEST_DIR, mockConfigExists, mockLoadConfig } = vi.hoisted(() => {
   };
 });
 
-vi.mock("@securitylayer/core", () => ({
+vi.mock("@securitylayerai/core", () => ({
   CONFIG_DIR: TEST_DIR,
   CONFIG_PATHS: {
     main: join(TEST_DIR, "config.yaml"),

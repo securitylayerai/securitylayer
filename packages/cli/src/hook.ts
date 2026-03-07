@@ -4,7 +4,7 @@ import {
   evaluateAction,
   loadConfig,
   type TaintLevel,
-} from "@securitylayer/core";
+} from "@securitylayerai/core";
 import type { CliArgs } from "@/index";
 import { getProjectTaint, loadProjectsConfig } from "@/shared";
 

@@ -1,5 +1,5 @@
 {
-  "name": "@securitylayer/cli",
+  "name": "securitylayer",
   "version": "0.0.1",
   "type": "module",
   "main": "src/index.ts",
@@ -14,7 +14,7 @@
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@securitylayer/core": "workspace:*",
+    "@securitylayerai/core": "workspace:*",
     "@bomb.sh/args": "latest",
     "@bomb.sh/tab": "latest",
     "@clack/prompts": "latest",

@@ -15,7 +15,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   return { ...actual, writeFile: mockWriteFile };
 });
 
-vi.mock("@securitylayer/core", () => ({
+vi.mock("@securitylayerai/core", () => ({
   CONFIG_DIR: "/tmp/.securitylayer-test",
   CONFIG_PATHS: {
     main: "/tmp/.securitylayer-test/config.yaml",

@@ -9,7 +9,7 @@ const { TEST_DIR, CONFIG_MAIN } = vi.hoisted(() => {
   return { TEST_DIR: d, CONFIG_MAIN: path.join(d, "config.yaml") };
 });
 
-vi.mock("@securitylayer/core", () => ({
+vi.mock("@securitylayerai/core", () => ({
   CONFIG_PATHS: {
     main: CONFIG_MAIN,
     sessions: "/tmp/.securitylayer-test/capabilities/sessions.yaml",

@@ -6,7 +6,7 @@ import {
   CONFIG_DIR,
   PROVIDER_DEFAULTS,
   type SemanticProvider,
-} from "@securitylayer/core";
+} from "@securitylayerai/core";
 import { stringify as toYaml } from "yaml";
 import type { CliArgs } from "@/index";
 import {

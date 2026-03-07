@@ -21,7 +21,7 @@ const { TEST_DIR, mockConfigExists, mockResolveRealBinary, mockDetectShell, mock
 const SHIM_DIR = join(TEST_DIR, "bin");
 const PROFILE_PATH = join(TEST_DIR, ".bashrc");
 
-vi.mock("@securitylayer/core", () => ({
+vi.mock("@securitylayerai/core", () => ({
   CONFIG_DIR: TEST_DIR,
   CONFIG_PATHS: {
     main: join(TEST_DIR, "config.yaml"),

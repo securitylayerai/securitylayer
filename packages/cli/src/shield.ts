@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { chmod, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { CONFIG_DIR } from "@securitylayer/core";
+import { CONFIG_DIR } from "@securitylayerai/core";
 import type { CliArgs } from "@/index";
 import {
   configExists,

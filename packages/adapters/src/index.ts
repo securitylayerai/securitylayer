@@ -1,1 +1,1 @@
-// @securitylayer/adapters
+// @securitylayerai/adapters

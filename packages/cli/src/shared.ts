@@ -10,7 +10,7 @@ import {
   loadConfig,
   type PipelineDeps,
   TaintLevelSchema,
-} from "@securitylayer/core";
+} from "@securitylayerai/core";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------

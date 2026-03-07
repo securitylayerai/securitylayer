@@ -1,4 +1,4 @@
-// @securitylayer/core — public API barrel export
+// @securitylayerai/core — public API barrel export
 
 export * from "./approval/index";
 export * from "./capabilities/index";

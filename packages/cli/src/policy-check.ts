@@ -3,7 +3,7 @@ import {
   type ExecutionContext,
   evaluateAction,
   type TaintLevel,
-} from "@securitylayer/core";
+} from "@securitylayerai/core";
 import type { CliArgs } from "@/index";
 import {
   formatDecision,
