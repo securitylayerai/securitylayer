@@ -1,2 +1,36 @@
 version: 1
-sessions: {}
+sessions:
+  main:
+    description: "Owner's primary session — full capabilities"
+    default_taint: owner
+    capabilities:
+      - exec
+      - exec.elevated
+      - file.read
+      - file.write
+      - browser
+      - browser.login
+      - channel.send
+      - channel.send.external
+      - cron.create
+      - skill.install
+      - memory.read.all_zones
+      - memory.read.trusted
+      - memory.write
+      - web_fetch
+      - node.invoke
+
+  group:
+    description: "Group chat session — restricted to safe operations"
+    default_taint: untrusted
+    capabilities:
+      - channel.send
+      - file.read
+      - memory.read.trusted
+      - web_fetch
+
+  dm-unknown:
+    description: "Unknown DM session — minimal capabilities"
+    default_taint: untrusted
+    capabilities:
+      - channel.send

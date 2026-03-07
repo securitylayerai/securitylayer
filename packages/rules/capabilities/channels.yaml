@@ -1,2 +1,50 @@
 version: 1
-channels: {}
+channels:
+  owner-terminal:
+    description: "Owner's direct terminal — full access"
+    max_capabilities: ALL
+
+  whatsapp:
+    description: "WhatsApp channel — restricted"
+    max_capabilities:
+      - channel.send
+      - file.read
+      - memory.read.trusted
+      - web_fetch
+
+  telegram:
+    description: "Telegram channel — restricted"
+    max_capabilities:
+      - channel.send
+      - file.read
+      - memory.read.trusted
+      - web_fetch
+
+  slack:
+    description: "Slack channel — moderate access"
+    max_capabilities:
+      - channel.send
+      - file.read
+      - memory.read.trusted
+      - web_fetch
+      - exec
+
+  discord:
+    description: "Discord channel — restricted"
+    max_capabilities:
+      - channel.send
+      - file.read
+      - memory.read.trusted
+      - web_fetch
+
+  email:
+    description: "Email channel — minimal"
+    max_capabilities:
+      - channel.send
+      - web_fetch
+
+  webchat:
+    description: "Web chat channel — minimal"
+    max_capabilities:
+      - channel.send
+      - web_fetch

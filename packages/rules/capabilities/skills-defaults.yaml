@@ -1,2 +1,31 @@
 version: 1
-skills: {}
+skills:
+  read-only:
+    description: "Read-only access — safe for data retrieval skills"
+    capabilities:
+      - file.read
+      - web_fetch
+
+  file-editor:
+    description: "File read/write — for editing and creation skills"
+    capabilities:
+      - file.read
+      - file.write
+
+  web-only:
+    description: "Web access only — for API-calling skills"
+    capabilities:
+      - web_fetch
+
+  full-access:
+    description: "All non-elevated capabilities — for trusted power skills"
+    capabilities:
+      - exec
+      - file.read
+      - file.write
+      - browser
+      - channel.send
+      - memory.read.all_zones
+      - memory.read.trusted
+      - memory.write
+      - web_fetch
