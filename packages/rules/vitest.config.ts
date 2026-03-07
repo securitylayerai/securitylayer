@@ -6,7 +6,7 @@ import { defineConfig } from "vitest/config";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [tsconfigPaths({ root: __dirname })],
+  plugins: [tsconfigPaths({ root: path.resolve(__dirname, "../..") })],
   resolve: {
     alias: {
       "@/": `${path.resolve(__dirname, "src")}/`,
@@ -15,7 +15,6 @@ export default defineConfig({
   test: {
     name: "rules-baseline",
     globals: true,
-    passWithNoTests: true,
     include: ["test/**/*.test.ts"],
   },
 });
