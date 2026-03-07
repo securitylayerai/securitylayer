@@ -10,6 +10,7 @@
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
+    "@securitylayerai/adapters": "workspace:*",
     "@securitylayerai/core": "workspace:*"
   },
   "devDependencies": {
