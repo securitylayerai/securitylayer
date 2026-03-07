@@ -121,6 +121,7 @@
       "name": "@securitylayerai/proxy",
       "version": "0.0.1",
       "dependencies": {
+        "@securitylayerai/adapters": "workspace:*",
         "@securitylayerai/core": "workspace:*",
       },
       "devDependencies": {
@@ -131,7 +132,11 @@
     "packages/rules": {
       "name": "@securitylayerai/rules",
       "version": "0.0.1",
+      "dependencies": {
+        "yaml": "^2",
+      },
       "devDependencies": {
+        "@securitylayerai/core": "workspace:*",
         "bun-types": "latest",
         "typescript": "^5",
       },
