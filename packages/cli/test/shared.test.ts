@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-// Mock @securitylayer/core before anything imports it
-vi.mock("@securitylayer/core", () => ({
+// Mock @securitylayerai/core before anything imports it
+vi.mock("@securitylayerai/core", () => ({
   CONFIG_DIR: "/tmp/.securitylayer-test",
   CONFIG_PATHS: {
     main: "/tmp/.securitylayer-test/config.yaml",

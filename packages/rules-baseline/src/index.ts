@@ -1,1 +1,0 @@
-// @securitylayer/rules-baseline

@@ -1,5 +1,5 @@
 {
-  "name": "@securitylayer/sdk",
+  "name": "@securitylayerai/sdk",
   "version": "0.0.1",
   "type": "module",
   "main": "src/index.ts",
@@ -10,7 +10,7 @@
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@securitylayer/core": "workspace:*"
+    "@securitylayerai/core": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",

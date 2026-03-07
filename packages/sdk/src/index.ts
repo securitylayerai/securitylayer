@@ -1,1 +1,1 @@
-// @securitylayer/sdk
+// @securitylayerai/sdk

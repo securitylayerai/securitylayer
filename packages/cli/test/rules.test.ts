@@ -9,7 +9,7 @@ const { RULES_PATH, TEST_DIR } = vi.hoisted(() => {
   return { TEST_DIR: d, RULES_PATH: path.join(d, "learned-rules.json") };
 });
 
-vi.mock("@securitylayer/core", () => ({
+vi.mock("@securitylayerai/core", () => ({
   CONFIG_PATHS: {
     main: "/tmp/.securitylayer-test/config.yaml",
     sessions: "/tmp/.securitylayer-test/capabilities/sessions.yaml",

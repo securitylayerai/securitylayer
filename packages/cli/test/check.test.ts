@@ -7,7 +7,7 @@ const { mockLoadConfig, mockCreatePipeline, mockEvaluateAction } = vi.hoisted(()
   mockEvaluateAction: vi.fn(),
 }));
 
-vi.mock("@securitylayer/core", () => ({
+vi.mock("@securitylayerai/core", () => ({
   loadConfig: mockLoadConfig,
   createPipeline: mockCreatePipeline,
   evaluateAction: mockEvaluateAction,

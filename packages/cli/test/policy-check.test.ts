@@ -15,7 +15,7 @@ const {
   mockGetProjectTaint: vi.fn(),
 }));
 
-vi.mock("@securitylayer/core", () => ({
+vi.mock("@securitylayerai/core", () => ({
   loadConfig: vi.fn(),
   createPipeline: mockCreatePipeline,
   evaluateAction: mockEvaluateAction,

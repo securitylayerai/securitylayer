@@ -19,7 +19,7 @@ vi.mock("node:os", async (importOriginal) => {
   return { ...original, homedir: () => TEST_DIR };
 });
 
-vi.mock("@securitylayer/core", () => ({
+vi.mock("@securitylayerai/core", () => ({
   CONFIG_DIR: "/tmp/.securitylayer-test",
   CONFIG_PATHS: {
     main: "/tmp/.securitylayer-test/config.yaml",

@@ -1,4 +1,4 @@
-# @securitylayer/web
+# @securitylayerai/web
 
 The web application for Security Layer — handles the landing page, dashboard, documentation, authentication, and API.
 

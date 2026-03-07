@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { CONFIG_DIR, CONFIG_PATHS } from "@securitylayer/core";
+import { CONFIG_DIR, CONFIG_PATHS } from "@securitylayerai/core";
 import type { CliArgs } from "@/index";
 import { CLI_CONFIG_PATHS, configExists } from "@/shared";
 
@@ -63,7 +63,7 @@ export async function runStatus(_args: CliArgs): Promise<void> {
 
   // Session info
   try {
-    const { loadConfig } = await import("@securitylayer/core");
+    const { loadConfig } = await import("@securitylayerai/core");
     const config = await loadConfig();
     const sessions = config.sessions.sessions as Record<
       string,

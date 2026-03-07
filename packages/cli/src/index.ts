@@ -1,4 +1,4 @@
-// @securitylayer/cli — command router
+// securitylayer — command router
 
 import { runCallersList, runCallersProfile } from "@/callers";
 import { runCapabilitiesShow } from "@/capabilities";

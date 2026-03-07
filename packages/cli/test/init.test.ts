@@ -52,7 +52,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   return { ...original, writeFile: mockWriteFile };
 });
 
-vi.mock("@securitylayer/core", () => ({
+vi.mock("@securitylayerai/core", () => ({
   CONFIG_DIR: TEST_DIR,
   BASE_CAPABILITIES: [
     "exec",

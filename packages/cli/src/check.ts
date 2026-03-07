@@ -4,7 +4,7 @@ import {
   evaluateAction,
   loadConfig,
   type TaintLevel,
-} from "@securitylayer/core";
+} from "@securitylayerai/core";
 import { detectCaller } from "@/caller-detect";
 import type { CliArgs } from "@/index";
 import { formatDecision, getProjectTaint, loadCallersConfig, loadProjectsConfig } from "@/shared";

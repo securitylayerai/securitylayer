@@ -1,11 +1,11 @@
-# @securitylayer/cli
+# securitylayer
 
 Command-line interface for Security Layer. Provides policy enforcement, shell shim protection, AI tool integration hooks, and configuration management.
 
 ## Installation
 
 ```bash
-bun install @securitylayer/cli
+bun install securitylayer
 ```
 
 The CLI binary is available as `securitylayer` or the shorthand `sl`:

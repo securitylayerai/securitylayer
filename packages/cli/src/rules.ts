@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { CONFIG_PATHS } from "@securitylayer/core";
+import { CONFIG_PATHS } from "@securitylayerai/core";
 import type { CliArgs } from "@/index";
 import { loadConfigOrSuggestInit } from "@/shared";
 
