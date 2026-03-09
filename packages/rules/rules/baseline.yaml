@@ -5,7 +5,7 @@ rules:
     description: Prevent recursive chmod 777 on root
     match:
       type: pattern
-      value: "\\bchmod\\s+(-R|--recursive)\\s+777\\s+/"
+      value: "\\bchmod\\s+(-R|--recursive)\\s+777\\s+/|\\bchmod\\s+777\\s+(-R|--recursive)\\s+/"
     decision: DENY
     reason: "Recursive chmod 777 on root filesystem"
 
@@ -55,9 +55,9 @@ rules:
     description: Prevent base64 encoding piped to curl
     match:
       type: pipe_pair
-      value: pipe_pair
+      value: ""
       from: ["base64"]
-      to: ["curl", "wget", "nc"]
+      to: ["curl", "wget", "nc", "ncat"]
     decision: DENY
     reason: "Base64-encoded data piped to network tool (potential exfiltration)"
 
@@ -65,9 +65,9 @@ rules:
     description: Prevent tar archive piped to curl
     match:
       type: pipe_pair
-      value: pipe_pair
+      value: ""
       from: ["tar", "zip", "gzip"]
-      to: ["curl", "wget", "nc"]
+      to: ["curl", "wget", "nc", "ncat"]
     decision: DENY
     reason: "Archive piped to network tool (potential exfiltration)"
 
@@ -76,7 +76,7 @@ rules:
     description: Prevent piping remote content to Python
     match:
       type: pipe_pair
-      value: pipe_pair
+      value: ""
       from: ["curl", "wget"]
       to: ["python", "python3"]
     decision: DENY
@@ -116,3 +116,12 @@ rules:
       value: "\\bdocker\\s+run\\s+.*--privileged"
     decision: DENY
     reason: "Privileged Docker container gives full host access"
+
+  # Reverse shell detection
+  - id: rce-netcat-listener
+    description: Prevent netcat listener (potential reverse shell)
+    match:
+      type: pattern
+      value: "\\b(nc|ncat|netcat)\\s+.*-l"
+    decision: DENY
+    reason: "Netcat listener detected (potential reverse shell)"

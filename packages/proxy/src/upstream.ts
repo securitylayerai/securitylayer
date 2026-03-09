@@ -27,6 +27,7 @@ export function createUpstreamConnection(config: UpstreamConfig): UpstreamConnec
   let connected = false;
   let retryCount = 0;
   let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+  let intentionalDisconnect = false;
 
   const messageHandlers: Array<(data: Buffer) => void> = [];
   const connectHandlers: Array<() => void> = [];
@@ -64,6 +65,8 @@ export function createUpstreamConnection(config: UpstreamConfig): UpstreamConnec
       headers["X-SecurityLayer-Token"] = config.token;
     }
 
+    // Bun's WebSocket supports a `headers` option not in the standard WebSocket API.
+    // The double-cast works around the TypeScript type mismatch.
     ws = new WebSocket(config.url, { headers } as unknown as string[]);
 
     ws.binaryType = "arraybuffer";
@@ -88,8 +91,8 @@ export function createUpstreamConnection(config: UpstreamConfig): UpstreamConnec
       ws = null;
       for (const handler of disconnectHandlers) handler();
 
-      // Attempt reconnection with backoff
-      if (maxRetries === 0 || retryCount < maxRetries) {
+      // Attempt reconnection with backoff (unless intentionally disconnected)
+      if (!intentionalDisconnect && (maxRetries === 0 || retryCount < maxRetries)) {
         const delay = getBackoffDelay();
         retryCount++;
         retryTimeout = setTimeout(() => attemptConnect(), delay);
@@ -127,15 +130,16 @@ export function createUpstreamConnection(config: UpstreamConfig): UpstreamConnec
     },
 
     connect() {
+      intentionalDisconnect = false;
       attemptConnect();
     },
 
     disconnect() {
+      intentionalDisconnect = true;
       if (retryTimeout) {
         clearTimeout(retryTimeout);
         retryTimeout = null;
       }
-      retryCount = maxRetries; // Prevent reconnection
       ws?.close();
       ws = null;
       connected = false;

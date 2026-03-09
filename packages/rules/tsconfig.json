@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "paths": {
-      "@/*": ["./src/*", "./packages/rules-baseline/src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src", "test"]

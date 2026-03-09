@@ -29,7 +29,7 @@ export function getPackMetadata(): RulePackMetadata {
     version: "0.0.1",
     description: "Baseline security rules and capability templates for SecurityLayer",
     type: "rule-pack",
-    ruleCount: 13,
+    ruleCount: 14,
   };
 }
 

@@ -16,7 +16,6 @@
     "yaml": "^2"
   },
   "devDependencies": {
-    "@securitylayerai/core": "workspace:*",
     "bun-types": "latest",
     "typescript": "^5"
   }

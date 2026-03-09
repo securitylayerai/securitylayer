@@ -1,13 +1,11 @@
 import { randomUUID } from "node:crypto";
-import type { AgentAdapter } from "@securitylayerai/adapters";
 import type { ConnectionInfo, ProxyState } from "./types";
 
 export interface ProxyServerConfig {
   port: number;
   host: string;
-  adapter: AgentAdapter;
   onClientMessage: (connectionId: string, data: Buffer) => Promise<Buffer | null>;
-  onUpstreamMessage?: (connectionId: string, data: Buffer) => Promise<Buffer | null>;
+  getMetricsText?: () => string;
 }
 
 export interface ProxyServer {
@@ -17,6 +15,7 @@ export interface ProxyServer {
   stop(): void;
   broadcastToClients(data: Buffer): void;
   sendToClient(connectionId: string, data: Buffer): void;
+  updateConnectionSession(connectionId: string, sessionId: string): void;
 }
 
 export function createProxyServer(config: ProxyServerConfig): ProxyServer {
@@ -51,6 +50,13 @@ export function createProxyServer(config: ProxyServerConfig): ProxyServer {
             });
           }
 
+          // Prometheus metrics endpoint
+          if (url.pathname === "/metrics" && config.getMetricsText) {
+            return new Response(config.getMetricsText(), {
+              headers: { "Content-Type": "text/plain; version=0.0.4; charset=utf-8" },
+            });
+          }
+
           // WebSocket upgrade
           if (req.headers.get("upgrade")?.toLowerCase() === "websocket") {
             const connectionId = randomUUID();
@@ -80,7 +86,7 @@ export function createProxyServer(config: ProxyServerConfig): ProxyServer {
 
           async message(ws, message) {
             const connectionId = (ws.data as { connectionId: string }).connectionId;
-            const raw = typeof message === "string" ? Buffer.from(message) : Buffer.from(message);
+            const raw = Buffer.from(message);
 
             const result = await config.onClientMessage(connectionId, raw);
             if (result) {
@@ -120,6 +126,13 @@ export function createProxyServer(config: ProxyServerConfig): ProxyServer {
     sendToClient(connectionId: string, data: Buffer) {
       const socket = clientSockets.get(connectionId);
       socket?.send(data);
+    },
+
+    updateConnectionSession(connectionId: string, sessionId: string) {
+      const info = connections.get(connectionId);
+      if (info) {
+        info.sessionId = sessionId;
+      }
     },
   };
 }

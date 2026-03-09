@@ -44,12 +44,27 @@ function parseRulesFromYaml(content: string): ParsedRule[] {
   });
 }
 
+function getPatternRegex(rules: ParsedRule[], ruleId: string): RegExp {
+  const rule = rules.find((r) => r.id === ruleId);
+  if (!rule || !(rule.match.value instanceof RegExp)) {
+    throw new Error(`Rule "${ruleId}" not found or not a pattern rule`);
+  }
+  return rule.match.value;
+}
+
 describe("rules pack metadata", () => {
   it("returns correct pack metadata", () => {
     const meta = getPackMetadata();
     expect(meta.name).toBe("@securitylayerai/rules");
     expect(meta.type).toBe("rule-pack");
     expect(meta.ruleCount).toBeGreaterThan(0);
+  });
+
+  it("metadata ruleCount matches actual rule count", async () => {
+    const meta = getPackMetadata();
+    const yaml = await loadBaselineRules();
+    const rules = parseRulesFromYaml(yaml);
+    expect(meta.ruleCount).toBe(rules.length);
   });
 });
 
@@ -61,10 +76,10 @@ describe("loadBaselineRules", () => {
     expect(yaml).toContain("rules:");
   });
 
-  it("parses into 13 rules", async () => {
+  it("parses into 14 rules", async () => {
     const yaml = await loadBaselineRules();
     const rules = parseRulesFromYaml(yaml);
-    expect(rules.length).toBe(13);
+    expect(rules.length).toBe(14);
   });
 
   it("every rule has required fields", async () => {
@@ -97,6 +112,7 @@ describe("loadBaselineRules", () => {
     expect(ids).toContain("dangerous-git-force-push");
     expect(ids).toContain("dangerous-npm-publish");
     expect(ids).toContain("dangerous-docker-privileged");
+    expect(ids).toContain("rce-netcat-listener");
   });
 
   it("has correct match types for each rule category", async () => {
@@ -110,6 +126,7 @@ describe("loadBaselineRules", () => {
     expect(byId["cred-kube-config"].match.type).toBe("path");
     expect(byId["exfil-base64-to-curl"].match.type).toBe("pipe_pair");
     expect(byId["rce-python-pipe"].match.type).toBe("pipe_pair");
+    expect(byId["rce-netcat-listener"].match.type).toBe("pattern");
   });
 
   it("eval rule uses REQUIRE_APPROVAL, not DENY", async () => {
@@ -145,6 +162,179 @@ describe("loadBaselineRules", () => {
       expect(rule.match.from?.length).toBeGreaterThan(0);
       expect(rule.match.to?.length).toBeGreaterThan(0);
     }
+  });
+
+  it("pipe_pair rules have empty string value", async () => {
+    const yaml = await loadBaselineRules();
+    const rules = parseRulesFromYaml(yaml);
+    const pipePairRules = rules.filter((r) => r.match.type === "pipe_pair");
+    for (const rule of pipePairRules) {
+      expect(rule.match.value).toBe("");
+    }
+  });
+});
+
+describe("rule pattern matching accuracy", () => {
+  let rules: ParsedRule[];
+
+  // Load rules once for all accuracy tests
+  async function getRules(): Promise<ParsedRule[]> {
+    if (!rules) {
+      const yaml = await loadBaselineRules();
+      rules = parseRulesFromYaml(yaml);
+    }
+    return rules;
+  }
+
+  describe("destructive-chmod-recursive-777", () => {
+    it("matches chmod -R 777 /", async () => {
+      const r = getPatternRegex(await getRules(), "destructive-chmod-recursive-777");
+      expect(r.test("chmod -R 777 /")).toBe(true);
+    });
+
+    it("matches chmod --recursive 777 /home", async () => {
+      const r = getPatternRegex(await getRules(), "destructive-chmod-recursive-777");
+      expect(r.test("chmod --recursive 777 /home")).toBe(true);
+    });
+
+    it("matches chmod 777 -R / (flag-after-mode ordering)", async () => {
+      const r = getPatternRegex(await getRules(), "destructive-chmod-recursive-777");
+      expect(r.test("chmod 777 -R /")).toBe(true);
+    });
+
+    it("does not match chmod 644 file.txt", async () => {
+      const r = getPatternRegex(await getRules(), "destructive-chmod-recursive-777");
+      expect(r.test("chmod 644 file.txt")).toBe(false);
+    });
+
+    it("does not match chmod 777 single-file.txt", async () => {
+      const r = getPatternRegex(await getRules(), "destructive-chmod-recursive-777");
+      expect(r.test("chmod 777 single-file.txt")).toBe(false);
+    });
+  });
+
+  describe("destructive-chown-recursive", () => {
+    it("matches chown -R root /etc", async () => {
+      const r = getPatternRegex(await getRules(), "destructive-chown-recursive");
+      expect(r.test("chown -R root /etc")).toBe(true);
+    });
+
+    it("matches chown --recursive user:group /usr", async () => {
+      const r = getPatternRegex(await getRules(), "destructive-chown-recursive");
+      expect(r.test("chown --recursive user:group /usr")).toBe(true);
+    });
+
+    it("does not match chown user file.txt", async () => {
+      const r = getPatternRegex(await getRules(), "destructive-chown-recursive");
+      expect(r.test("chown user file.txt")).toBe(false);
+    });
+  });
+
+  describe("cred-pem-files", () => {
+    it("matches cat server.pem", async () => {
+      const r = getPatternRegex(await getRules(), "cred-pem-files");
+      expect(r.test("cat server.pem")).toBe(true);
+    });
+
+    it("matches cp id_rsa.key /tmp/", async () => {
+      const r = getPatternRegex(await getRules(), "cred-pem-files");
+      expect(r.test("cp id_rsa.key /tmp/")).toBe(true);
+    });
+
+    it("matches scp host:file.pem ./", async () => {
+      const r = getPatternRegex(await getRules(), "cred-pem-files");
+      expect(r.test("scp host:file.pem ./")).toBe(true);
+    });
+
+    it("does not match ls *.pem", async () => {
+      const r = getPatternRegex(await getRules(), "cred-pem-files");
+      expect(r.test("ls *.pem")).toBe(false);
+    });
+  });
+
+  describe("rce-eval-command", () => {
+    it("matches eval $COMMAND", async () => {
+      const r = getPatternRegex(await getRules(), "rce-eval-command");
+      expect(r.test("eval $COMMAND")).toBe(true);
+    });
+
+    it('matches eval "$(some_cmd)"', async () => {
+      const r = getPatternRegex(await getRules(), "rce-eval-command");
+      expect(r.test('eval "$(some_cmd)"')).toBe(true);
+    });
+
+    it("does not match evaluate()", async () => {
+      const r = getPatternRegex(await getRules(), "rce-eval-command");
+      expect(r.test("evaluate()")).toBe(false);
+    });
+  });
+
+  describe("dangerous-git-force-push", () => {
+    it("matches git push --force origin main", async () => {
+      const r = getPatternRegex(await getRules(), "dangerous-git-force-push");
+      expect(r.test("git push --force origin main")).toBe(true);
+    });
+
+    it("matches git push -f origin master", async () => {
+      const r = getPatternRegex(await getRules(), "dangerous-git-force-push");
+      expect(r.test("git push -f origin master")).toBe(true);
+    });
+
+    it("does not match git push origin feature-branch", async () => {
+      const r = getPatternRegex(await getRules(), "dangerous-git-force-push");
+      expect(r.test("git push origin feature-branch")).toBe(false);
+    });
+  });
+
+  describe("dangerous-npm-publish", () => {
+    it("matches npm publish", async () => {
+      const r = getPatternRegex(await getRules(), "dangerous-npm-publish");
+      expect(r.test("npm publish")).toBe(true);
+    });
+
+    it("matches npm publish --access public", async () => {
+      const r = getPatternRegex(await getRules(), "dangerous-npm-publish");
+      expect(r.test("npm publish --access public")).toBe(true);
+    });
+
+    it("does not match npm install", async () => {
+      const r = getPatternRegex(await getRules(), "dangerous-npm-publish");
+      expect(r.test("npm install")).toBe(false);
+    });
+  });
+
+  describe("dangerous-docker-privileged", () => {
+    it("matches docker run --privileged ubuntu", async () => {
+      const r = getPatternRegex(await getRules(), "dangerous-docker-privileged");
+      expect(r.test("docker run --privileged ubuntu")).toBe(true);
+    });
+
+    it("does not match docker run ubuntu", async () => {
+      const r = getPatternRegex(await getRules(), "dangerous-docker-privileged");
+      expect(r.test("docker run ubuntu")).toBe(false);
+    });
+  });
+
+  describe("rce-netcat-listener", () => {
+    it("matches nc -l 4444", async () => {
+      const r = getPatternRegex(await getRules(), "rce-netcat-listener");
+      expect(r.test("nc -l 4444")).toBe(true);
+    });
+
+    it("matches ncat -l -p 8080", async () => {
+      const r = getPatternRegex(await getRules(), "rce-netcat-listener");
+      expect(r.test("ncat -l -p 8080")).toBe(true);
+    });
+
+    it("matches netcat -lp 9999", async () => {
+      const r = getPatternRegex(await getRules(), "rce-netcat-listener");
+      expect(r.test("netcat -lp 9999")).toBe(true);
+    });
+
+    it("does not match nc example.com 80", async () => {
+      const r = getPatternRegex(await getRules(), "rce-netcat-listener");
+      expect(r.test("nc example.com 80")).toBe(false);
+    });
   });
 });
 

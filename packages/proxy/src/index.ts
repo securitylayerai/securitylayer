@@ -18,6 +18,7 @@ export type {
 export type { UpstreamConfig, UpstreamConnection } from "./upstream";
 export { createUpstreamConnection } from "./upstream";
 
+import { FrameParseError } from "@securitylayerai/adapters";
 import { createGatewayLock } from "./gateway-lock";
 import { createInterceptor } from "./interceptor";
 import { createMetricsCollector } from "./metrics";
@@ -26,8 +27,8 @@ import type { ProxyConfig } from "./types";
 import { createUpstreamConnection } from "./upstream";
 
 export interface ProxyInstance {
-  start(): void;
-  stop(): void;
+  start(): Promise<void>;
+  stop(): Promise<void>;
   readonly metricsText: () => string;
 }
 
@@ -45,50 +46,82 @@ export function startProxy(config: ProxyConfig): ProxyInstance {
     token: gatewayLock?.config.token,
   });
 
+  let lastKnownSessionId = "default";
+
   const server = createProxyServer({
     port: config.listenPort,
     host: config.listenHost,
-    adapter: config.adapter,
+    getMetricsText: () => metrics.toPrometheus(),
     async onClientMessage(connectionId, data) {
-      // Process inbound for taint tagging
-      const inbound = interceptor.processInbound(data);
-
-      // Forward to upstream
-      upstream.send(data);
-
-      return null; // No immediate response to the client
+      try {
+        const inbound = interceptor.processInbound(data);
+        if (inbound.sessionId && inbound.sessionId !== "unknown") {
+          lastKnownSessionId = inbound.sessionId;
+          server.updateConnectionSession(connectionId, inbound.sessionId);
+        }
+        upstream.send(data);
+      } catch (err) {
+        console.error("[SecurityLayer] Error processing inbound frame:", err);
+      }
+      return null;
     },
   });
 
   // Route upstream messages back through interceptor
   upstream.onMessage(async (data) => {
-    const result = await interceptor.interceptOutbound(data, "default");
+    try {
+      const result = await interceptor.interceptOutbound(data, lastKnownSessionId);
 
-    for (const action of result.actions) {
-      metrics.recordAction(action.decision, "rules", result.latencyMs);
-    }
+      // Record latency once per frame, not per action (P6 fix)
+      if (result.actions.length > 0) {
+        metrics.recordAction(result.decision, "pipeline", result.latencyMs);
+      }
 
-    if (result.decision === "ALLOW" && result.frame) {
-      server.broadcastToClients(result.frame);
-    } else if (result.decision === "DENY" && result.denyResponse) {
-      server.broadcastToClients(result.denyResponse);
+      if (result.decision === "ALLOW" && result.frame) {
+        server.broadcastToClients(result.frame);
+      } else if (result.decision === "DENY" && result.denyResponse) {
+        server.broadcastToClients(result.denyResponse);
+      } else if (result.decision === "REQUIRE_APPROVAL") {
+        const pendingActions = result.actions
+          .filter((a) => a.decision === "REQUIRE_APPROVAL")
+          .map((a) => a.tool);
+        console.warn(
+          `[SecurityLayer] Actions require approval: ${pendingActions.join(", ")} (session: ${lastKnownSessionId})`,
+        );
+        // v0: send placeholder deny — approval flow will replay in v1
+        const firstPending = result.actions.find((a) => a.decision === "REQUIRE_APPROVAL");
+        if (firstPending) {
+          const placeholder = config.adapter.injectDenyResponse(
+            { tool: firstPending.tool, params: {} },
+            "Action requires approval — approval flow not yet implemented",
+          );
+          server.broadcastToClients(placeholder);
+        }
+      }
+    } catch (err) {
+      if (err instanceof FrameParseError) {
+        console.error("[SecurityLayer] Malformed frame received, dropping:", err.message);
+      } else {
+        console.error("[SecurityLayer] Error in outbound interception, defaulting to DENY:", err);
+      }
+      // Fail safe: deny on error — don't forward the frame to clients
     }
   });
 
   return {
-    start() {
+    async start() {
       if (gatewayLock) {
-        gatewayLock.lock();
+        await gatewayLock.lock();
       }
       upstream.connect();
       server.start();
     },
 
-    stop() {
+    async stop() {
       server.stop();
       upstream.disconnect();
       if (gatewayLock) {
-        gatewayLock.unlock();
+        await gatewayLock.unlock();
       }
     },
 

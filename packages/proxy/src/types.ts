@@ -24,10 +24,6 @@ export interface ProxyConfig {
   evaluateAction: EvaluateActionFn;
   /** Gateway lockdown configuration */
   gatewayLock?: GatewayLockConfig;
-  /** Enable Prometheus metrics endpoint */
-  metricsEnabled?: boolean;
-  /** Port for the metrics HTTP server */
-  metricsPort?: number;
 }
 
 export interface GatewayLockConfig {
@@ -43,6 +39,7 @@ export interface GatewayLockConfig {
 export interface ProxyState {
   running: boolean;
   clientCount: number;
+  // TODO: wire to upstream.onConnect/onDisconnect
   upstreamConnected: boolean;
   startedAt: number | null;
 }

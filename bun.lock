@@ -122,7 +122,6 @@
       "version": "0.0.1",
       "dependencies": {
         "@securitylayerai/adapters": "workspace:*",
-        "@securitylayerai/core": "workspace:*",
       },
       "devDependencies": {
         "bun-types": "latest",
@@ -136,7 +135,6 @@
         "yaml": "^2",
       },
       "devDependencies": {
-        "@securitylayerai/core": "workspace:*",
         "bun-types": "latest",
         "typescript": "^5",
       },
