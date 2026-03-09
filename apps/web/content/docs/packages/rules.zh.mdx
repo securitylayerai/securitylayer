@@ -1,0 +1,132 @@
+---
+title: Rules
+description: 基线安全规则和能力模板。
+icon: Gear
+---
+
+`@securitylayerai/rules` 是一个数据包 — 包含 YAML 规则定义和能力模板，以及一个轻量的 TypeScript 加载器。它在运行时不依赖 core。CLI 和其他包在运行时通过 core 的 `parseRulesYaml()` 来消费这些 YAML。
+
+## 内容
+
+### 基线规则 (`rules/baseline.yaml`)
+
+14 条确定性规则，补充了 core 的内置规则。这些规则覆盖了内置规则未涉及的模式：
+
+| 类别 | 规则 ID | 决策 | 捕获内容 |
+|---|---|---|---|
+| 破坏性 | `destructive-chmod-recursive-777` | DENY | `chmod -R 777 /`（对根目录递归设置所有人可写） |
+| 破坏性 | `destructive-chown-recursive` | DENY | 在系统路径上执行 `chown -R`（`/usr`、`/etc`、`/var` 等） |
+| 凭证 | `cred-gnupg` | DENY | 访问 `~/.gnupg/**`（GnuPG 密钥环） |
+| 凭证 | `cred-pem-files` | DENY | 对 `.pem` / `.key` 文件执行 `cat`、`cp`、`scp` 等操作 |
+| 凭证 | `cred-kube-config` | DENY | 访问 `~/.kube/config` |
+| 凭证 | `cred-docker-config` | DENY | 访问 `~/.docker/config.json` |
+| 数据窃取 | `exfil-base64-to-curl` | DENY | `base64 \| curl` 管道模式 |
+| 数据窃取 | `exfil-tar-to-curl` | DENY | `tar \| curl` 管道模式（归档到网络） |
+| 远程代码执行 | `rce-python-pipe` | DENY | `curl \| python` 管道模式 |
+| 远程代码执行 | `rce-eval-command` | REQUIRE_APPROVAL | `eval` 用法（可能执行任意代码） |
+| 远程代码执行 | `rce-netcat-listener` | DENY | `nc -l`（潜在的反向 shell） |
+| Git | `dangerous-git-force-push` | DENY | `git push --force` 到 main/master |
+| 包管理 | `dangerous-npm-publish` | REQUIRE_APPROVAL | `npm publish` |
+| 容器 | `dangerous-docker-privileged` | DENY | `docker run --privileged` |
+
+### 会话模板 (`capabilities/sessions.yaml`)
+
+预配置的会话能力集：
+
+| 模板 | 能力 | 默认污点 |
+|---|---|---|
+| `main` | 全部 15 种能力 | `owner` |
+| `group` | `channel.send`、`file.read`、`memory.read.trusted`、`web_fetch` | `trusted` |
+| `dm-unknown` | 仅 `channel.send` | `untrusted` |
+
+### 通道默认值 (`capabilities/channels.yaml`)
+
+每个通道的能力限制：
+
+| 通道 | 最大能力 |
+|---|---|
+| `owner-terminal` | 全部 |
+| `whatsapp` | `channel.send`、`file.read`、`memory.read.trusted` |
+| `telegram` | `channel.send`、`file.read`、`memory.read.trusted`、`web_fetch` |
+| `slack` | `channel.send`、`file.read`、`web_fetch` |
+| `discord` | `channel.send`、`file.read` |
+| `email` | `channel.send` |
+| `webchat` | `channel.send`、`web_fetch` |
+
+### 技能默认值 (`capabilities/skills-defaults.yaml`)
+
+常用的技能能力配置：
+
+| 配置 | 能力 |
+|---|---|
+| `read-only` | `file.read`、`web_fetch` |
+| `file-editor` | `file.read`、`file.write` |
+| `web-only` | `web_fetch` |
+| `full-access` | 所有非提升能力 |
+
+## TypeScript API
+
+```typescript
+import {
+  getPackMetadata,
+  loadBaselineRules,
+  loadSessionTemplates,
+  loadChannelDefaults,
+  loadSkillDefaults,
+} from "@securitylayerai/rules";
+
+// 包元数据
+const meta = getPackMetadata();
+// { name: "@securitylayerai/rules", version: "0.0.1", type: "rule-pack", ruleCount: 14 }
+
+// 以原始 YAML 字符串加载基线规则
+const rulesYaml = await loadBaselineRules();
+
+// 加载解析后的能力模板
+const sessions = await loadSessionTemplates();
+const channels = await loadChannelDefaults();
+const skills = await loadSkillDefaults();
+```
+
+## 包结构
+
+```
+packages/rules/
+├── src/
+│   ├── index.ts          # 加载器函数
+│   └── types.ts          # RulePackMetadata、模板类型
+├── rules/
+│   └── baseline.yaml     # 14 条安全规则
+├── capabilities/
+│   ├── sessions.yaml     # 会话模板
+│   ├── channels.yaml     # 通道默认值
+│   └── skills-defaults.yaml  # 技能配置
+└── test/
+    └── loader.test.ts    # YAML 加载 + 正则精度测试
+```
+
+## 编写自定义规则
+
+基线规则是一个起点。您可以使用相同的 YAML 格式添加自己的规则：
+
+```yaml
+version: 1
+rules:
+  - id: my-custom-rule
+    description: Block access to production database
+    match:
+      type: pattern
+      value: "\\bpsql\\s+.*production"
+    decision: DENY
+    reason: "Direct access to production database"
+```
+
+规则匹配类型：
+- `pattern` — 针对完整命令字符串的正则匹配
+- `path` — 针对文件路径的 glob 匹配
+- `pipe_pair` — 匹配管道命令结构（`from` → `to`）
+
+## 另请参阅
+
+- [rules 命令](/docs/commands/rules) — CLI 规则管理
+- [安全管道](/docs/concepts/security-pipeline) — 规则在第三层中的作用

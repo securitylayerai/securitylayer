@@ -1,0 +1,132 @@
+---
+title: Rules
+description: Reglas de seguridad base y plantillas de capacidades.
+icon: Gear
+---
+
+`@securitylayerai/rules` es un paquete de datos -- definiciones de reglas en YAML y plantillas de capacidades con un loader ligero en TypeScript. No tiene dependencia de runtime con core. El CLI y otros paquetes consumen el YAML en tiempo de ejecucin usando `parseRulesYaml()` de core.
+
+## Contenido
+
+### Reglas base (`rules/baseline.yaml`)
+
+14 reglas deterministas que complementan las reglas integradas de core. Cubren patrones que las reglas integradas no contemplan:
+
+| Categora | ID de regla | Decisin | Qu detecta |
+|---|---|---|---|
+| Destructivo | `destructive-chmod-recursive-777` | DENY | `chmod -R 777 /` (escritura mundial recursiva en root) |
+| Destructivo | `destructive-chown-recursive` | DENY | `chown -R` en rutas del sistema (`/usr`, `/etc`, `/var`, etc.) |
+| Credenciales | `cred-gnupg` | DENY | Acceso a `~/.gnupg/**` (llavero GnuPG) |
+| Credenciales | `cred-pem-files` | DENY | `cat`, `cp`, `scp` etc. en archivos `.pem` / `.key` |
+| Credenciales | `cred-kube-config` | DENY | Acceso a `~/.kube/config` |
+| Credenciales | `cred-docker-config` | DENY | Acceso a `~/.docker/config.json` |
+| Exfiltracin | `exfil-base64-to-curl` | DENY | Patrn de pipe `base64 \| curl` |
+| Exfiltracin | `exfil-tar-to-curl` | DENY | Patrn de pipe `tar \| curl` (archivo a red) |
+| RCE | `rce-python-pipe` | DENY | Patrn de pipe `curl \| python` |
+| RCE | `rce-eval-command` | REQUIRE_APPROVAL | Uso de `eval` (puede ejecutar cdigo arbitrario) |
+| RCE | `rce-netcat-listener` | DENY | `nc -l` (potencial reverse shell) |
+| Git | `dangerous-git-force-push` | DENY | `git push --force` a main/master |
+| Paquetes | `dangerous-npm-publish` | REQUIRE_APPROVAL | `npm publish` |
+| Contenedores | `dangerous-docker-privileged` | DENY | `docker run --privileged` |
+
+### Plantillas de sesin (`capabilities/sessions.yaml`)
+
+Conjuntos de capacidades de sesin preconfigurados:
+
+| Plantilla | Capacidades | Taint por defecto |
+|---|---|---|
+| `main` | Las 15 capacidades | `owner` |
+| `group` | `channel.send`, `file.read`, `memory.read.trusted`, `web_fetch` | `trusted` |
+| `dm-unknown` | Solo `channel.send` | `untrusted` |
+
+### Valores por defecto de canal (`capabilities/channels.yaml`)
+
+Lmites de capacidades por canal:
+
+| Canal | Capacidades mximas |
+|---|---|
+| `owner-terminal` | TODAS |
+| `whatsapp` | `channel.send`, `file.read`, `memory.read.trusted` |
+| `telegram` | `channel.send`, `file.read`, `memory.read.trusted`, `web_fetch` |
+| `slack` | `channel.send`, `file.read`, `web_fetch` |
+| `discord` | `channel.send`, `file.read` |
+| `email` | `channel.send` |
+| `webchat` | `channel.send`, `web_fetch` |
+
+### Valores por defecto de skills (`capabilities/skills-defaults.yaml`)
+
+Perfiles comunes de capacidades para skills:
+
+| Perfil | Capacidades |
+|---|---|
+| `read-only` | `file.read`, `web_fetch` |
+| `file-editor` | `file.read`, `file.write` |
+| `web-only` | `web_fetch` |
+| `full-access` | Todas las capacidades no elevadas |
+
+## API de TypeScript
+
+```typescript
+import {
+  getPackMetadata,
+  loadBaselineRules,
+  loadSessionTemplates,
+  loadChannelDefaults,
+  loadSkillDefaults,
+} from "@securitylayerai/rules";
+
+// Metadatos del paquete
+const meta = getPackMetadata();
+// { name: "@securitylayerai/rules", version: "0.0.1", type: "rule-pack", ruleCount: 14 }
+
+// Cargar reglas base como cadena YAML sin procesar
+const rulesYaml = await loadBaselineRules();
+
+// Cargar plantillas de capacidades parseadas
+const sessions = await loadSessionTemplates();
+const channels = await loadChannelDefaults();
+const skills = await loadSkillDefaults();
+```
+
+## Estructura del paquete
+
+```
+packages/rules/
+├── src/
+│   ├── index.ts          # Funciones del loader
+│   └── types.ts          # RulePackMetadata, tipos de plantillas
+├── rules/
+│   └── baseline.yaml     # 14 reglas de seguridad
+├── capabilities/
+│   ├── sessions.yaml     # Plantillas de sesin
+│   ├── channels.yaml     # Valores por defecto de canal
+│   └── skills-defaults.yaml  # Perfiles de skills
+└── test/
+    └── loader.test.ts    # Tests de carga YAML + precisin de regex
+```
+
+## Escribir reglas personalizadas
+
+Las reglas base son un punto de partida. Puedes agregar tus propias reglas usando el mismo formato YAML:
+
+```yaml
+version: 1
+rules:
+  - id: my-custom-rule
+    description: Block access to production database
+    match:
+      type: pattern
+      value: "\\bpsql\\s+.*production"
+    decision: DENY
+    reason: "Direct access to production database"
+```
+
+Tipos de coincidencia de reglas:
+- `pattern` -- Coincidencia regex contra la cadena completa del comando
+- `path` -- Coincidencia glob contra rutas de archivos
+- `pipe_pair` -- Coincidencia de estructuras de comandos encadenados (`from`  `to`)
+
+## Ver tambin
+
+- [Comando rules](/docs/commands/rules) -- Gestin de reglas desde el CLI
+- [Pipeline de seguridad](/docs/concepts/security-pipeline) -- Cmo encajan las reglas en la Capa 3

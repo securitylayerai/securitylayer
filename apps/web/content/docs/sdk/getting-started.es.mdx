@@ -1,0 +1,145 @@
+---
+title: Primeros pasos
+description: Instala el SDK y ejecuta tu primera verificacin de seguridad.
+icon: Rocket
+---
+
+<Callout type="info" title="Vista previa">
+  El SDK est en desarrollo activo. Las APIs mostradas aqu reflejan el diseo planificado y pueden cambiar antes de la versin estable.
+</Callout>
+
+## Requisitos previos
+
+- CLI de Security Layer instalado e inicializado (`sl init`)
+- Node.js 18+ o Bun 1.0+
+
+## Instalacin
+
+<Tabs items={["npm", "yarn", "pnpm", "bun"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @securitylayerai/sdk
+    ```
+  </Tab>
+</Tabs>
+
+## Configuracin bsica
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+// Inicializar con configuracin por defecto (lee ~/.securitylayer/)
+const sl = new SecurityLayer();
+
+// O con configuracin explcita
+const sl = new SecurityLayer({
+  configDir: "/path/to/.securitylayer",
+  caller: "my-agent",
+  sessionId: "session-123",
+});
+```
+
+## Tu primera verificacin
+
+Cada llamada a herramienta que tu agente realice debera pasar por `sl.check()` antes de ejecutarse:
+
+```typescript
+async function runTool(tool: string, params: Record<string, unknown>) {
+  const result = await sl.check(tool, params, {
+    sessionId: "current-session",
+    taint: sl.getSessionTaint(),
+    caller: "my-agent",
+  });
+
+  switch (result.decision) {
+    case "ALLOW":
+      // Seguro para ejecutar
+      return executeToolCall(tool, params);
+
+    case "DENY":
+      // Estructuralmente bloqueado -- no ejecutar
+      throw new Error(`Security Layer: ${result.reason}`);
+
+    case "REQUIRE_APPROVAL":
+      // Necesita aprobacin humana antes de continuar
+      const approved = await sl.waitForApproval(result.approvalId);
+      if (!approved) throw new Error("Aprobacin denegada o tiempo agotado");
+      return executeToolCall(tool, params);
+  }
+}
+```
+
+## Entendiendo las decisiones
+
+Cada verificacin retorna un `CheckResult` con la decisin de las tres capas de seguridad:
+
+```typescript
+const result = await sl.check("exec", { command: "git push --force" });
+
+// Qu capa lo bloque?
+console.log(result.layers.capability); // { allowed: true }
+console.log(result.layers.taint);      // { level: "owner", allowed: true }
+console.log(result.layers.rules);      // { decision: "DENY", reason: "Force push" }
+console.log(result.layers.llm);        // { decision: "NORMAL", confidence: 0.9 }
+
+// Rendimiento
+console.log(result.timing.total_ms);   // 12
+console.log(result.degraded);          // false (LLM estaba disponible)
+```
+
+## Seguimiento de taint
+
+Cuando tu agente lee contenido externo, actualiza el rastreador de taint:
+
+```typescript
+// Despus de leer una pgina web
+const webContent = await fetch("https://example.com").then(r => r.text());
+sl.ingestContent(webContent, {
+  source: "web",
+  url: "https://example.com",
+});
+
+// Despus de leer un archivo de un proyecto no confiable
+const fileContent = await readFile("/tmp/downloaded-project/config.js", "utf-8");
+sl.ingestContent(fileContent, {
+  source: "file",
+  path: "/tmp/downloaded-project/config.js",
+});
+
+// Ahora las verificaciones subsiguientes reflejarn el taint elevado
+const taint = sl.getSessionTaint(); // "web" (elevado desde "owner")
+```
+
+## Escaneo de contenido saliente
+
+Antes de que tu agente enve datos externamente, escanea en busca de secretos filtrados:
+
+```typescript
+const message = agent.generateResponse();
+
+const scan = sl.scanEgress(message);
+if (!scan.clean) {
+  console.error("Secretos detectados:", scan.findings.map(f => f.type));
+  // No enviar el mensaje -- contiene datos sensibles
+}
+```
+
+## Prximos pasos
+
+- [Patrones de integracin](/docs/sdk/patterns) -- Elige el patrn adecuado para tu framework
+- [Referencia de API](/docs/sdk/api-reference) -- Documentacin completa de mtodos y tipos

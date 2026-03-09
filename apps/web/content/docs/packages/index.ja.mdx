@@ -1,0 +1,112 @@
+---
+title: パッケージ
+description: モノレポのパッケージアーキテクチャと各パッケージの役割。
+icon: Cube
+---
+
+Security Layer は 5 つのパッケージを持つ Bun モノレポです。各パッケージは単一の責務と明確な境界を持ちます。
+
+## アーキテクチャ
+
+```
+┌──────────────────────────────────────────────────────┐
+│                   securitylayer (CLI)                 │
+│          ユーザー向けコマンド、セットアップ、フック          │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
+│  │    proxy      │  │     sdk      │  │   rules    │ │
+│  │  WebSocket    │  │ インプロセス   │  │   YAML     │ │
+│  │  ゲートウェイ   │  │  チェック    │  │ ルールパック │ │
+│  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
+│         │                 │                │         │
+│  ┌──────┴───────┐         │                │         │
+│  │   adapters    │         │                │         │
+│  │ エージェント    │         │                │         │
+│  │ フレーム解析   │         │                │         │
+│  └──────┬───────┘         │                │         │
+│         │                 │                │         │
+│  ┌──────┴─────────────────┴────────────────┴───────┐ │
+│  │                    core                          │ │
+│  │  ケイパビリティ、テイント、ルールエンジン、パイプライン、│ │
+│  │  正規化、Egress スキャニング、LLM ジャッジ          │ │
+│  └──────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────┘
+```
+
+## パッケージ概要
+
+| パッケージ | npm | 説明 |
+|---|---|---|
+| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | セキュリティエンジン — ケイパビリティ、テイント、ルール、パイプライン、正規化 |
+| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | ベースラインルールとケイパビリティテンプレート（YAML） |
+| [`@securitylayerai/adapters`](/docs/packages/adapters) | `@securitylayerai/adapters` | エージェントプロトコルアダプター（OpenClaw、汎用） |
+| [`@securitylayerai/proxy`](/docs/packages/proxy) | `@securitylayerai/proxy` | クライアントとエージェントゲートウェイ間の WebSocket セキュリティプロキシ |
+| [`@securitylayerai/sdk`](/docs/sdk) | `@securitylayerai/sdk` | インプロセスセキュリティチェック用の TypeScript SDK |
+| `securitylayer` | `securitylayer` | CLI — ユーザー向けコマンド、セットアップ、フック |
+
+## 依存関係グラフ
+
+```
+securitylayer (CLI)
+├── @securitylayerai/core
+├── @securitylayerai/rules
+└── @securitylayerai/proxy
+    └── @securitylayerai/adapters
+
+@securitylayerai/sdk
+└── @securitylayerai/core
+
+@securitylayerai/rules
+└── (スタンドアロン — YAML のみ、コード依存なし)
+```
+
+主要な制約:
+- **core** は内部依存ゼロ — 基盤となるパッケージ
+- **rules** はデータのみ — YAML ファイルと薄いローダーで、ランタイムに core への依存なし
+- **adapters** はスタンドアロン — エージェントプロトコルのインターフェースと実装を定義
+- **proxy** はフレーム解析のために adapters に依存
+- **sdk** はセキュリティパイプラインのために core に依存
+
+## 開発
+
+```bash
+# すべての依存関係をインストール
+bun install
+
+# すべてのテストを実行
+bun run test
+
+# 特定のパッケージのテストを実行
+bun run test --filter=@securitylayerai/core
+
+# すべてを型チェック
+bun run typecheck
+```
+
+<Cards>
+  <Card
+    title="Core"
+    description="セキュリティエンジン、パイプライン、ケイパビリティ、テイントトラッキング。"
+    href="/docs/packages/core"
+    icon={<Shield weight="duotone" />}
+  />
+  <Card
+    title="Rules"
+    description="ベースラインルールとケイパビリティテンプレート。"
+    href="/docs/packages/rules"
+    icon={<Gear weight="duotone" />}
+  />
+  <Card
+    title="Adapters"
+    description="フレーム解析用のエージェントプロトコルアダプター。"
+    href="/docs/packages/adapters"
+    icon={<Plug weight="duotone" />}
+  />
+  <Card
+    title="Proxy"
+    description="エージェントゲートウェイ用の WebSocket セキュリティプロキシ。"
+    href="/docs/packages/proxy"
+    icon={<Globe weight="duotone" />}
+  />
+</Cards>

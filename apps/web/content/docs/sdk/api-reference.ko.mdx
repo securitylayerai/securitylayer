@@ -1,0 +1,202 @@
+---
+title: API 레퍼런스
+description: 모든 SDK 메서드와 타입에 대한 전체 레퍼런스입니다.
+icon: Code
+---
+
+<Callout type="info" title="Preview">
+  SDK는 현재 활발하게 개발 중입니다. 여기에 표시된 API는 계획된 설계를 반영하며 안정 릴리스 전에 변경될 수 있습니다.
+</Callout>
+
+## SecurityLayer
+
+메인 SDK 진입점입니다.
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer(options?: SecurityLayerOptions);
+```
+
+### 옵션
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `configDir` | `string` | `~/.securitylayer` | Security Layer 설정 디렉토리 경로 |
+| `caller` | `string` | 자동 감지 | 호출 애플리케이션의 식별자 |
+| `sessionId` | `string` | 자동 생성 | 검사에 사용되는 기본 세션 ID |
+
+---
+
+## 메서드
+
+### `check()`
+
+실행 전에 3개 보안 레이어를 통해 동작을 평가합니다.
+
+```typescript
+const result = await sl.check(
+  tool: string,
+  params: Record<string, unknown>,
+  context?: ExecutionContext,
+): Promise<CheckResult>;
+```
+
+**매개변수:**
+
+| 매개변수 | 타입 | 설명 |
+|---|---|---|
+| `tool` | `string` | 사용되는 capability: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"` 등 |
+| `params` | `object` | 도구별 매개변수 (예: exec의 경우 `{ command: "ls -la" }`) |
+| `context` | `ExecutionContext` | 검사를 위한 선택적 세션 컨텍스트 |
+
+**반환값:** `Promise<CheckResult>`
+
+### `waitForApproval()`
+
+사람이 `REQUIRE_APPROVAL` 결정을 승인하거나 거부할 때까지 대기합니다.
+
+```typescript
+const approved = await sl.waitForApproval(
+  approvalId: string,
+  options?: ApprovalOptions,
+): Promise<boolean>;
+```
+
+**매개변수:**
+
+| 매개변수 | 타입 | 설명 |
+|---|---|---|
+| `approvalId` | `string` | `REQUIRE_APPROVAL` 결과에서 받은 승인 ID |
+| `options.timeout` | `number` | 타임아웃(밀리초) (기본값: 300000 / 5분) |
+
+**반환값:** 승인되면 `true`, 거부되거나 시간 초과되면 `false`.
+
+### `ingestContent()`
+
+외부 콘텐츠가 세션에 유입될 때 taint 추적기를 업데이트합니다.
+
+```typescript
+sl.ingestContent(
+  content: string,
+  metadata: ContentMetadata,
+): void;
+```
+
+**매개변수:**
+
+| 매개변수 | 타입 | 설명 |
+|---|---|---|
+| `content` | `string` | 읽거나 가져온 콘텐츠 |
+| `metadata.source` | `"web" \| "file"` | 콘텐츠의 출처 |
+| `metadata.path` | `string?` | 파일 경로 (파일 소스인 경우) |
+| `metadata.url` | `string?` | URL (웹 소스인 경우) |
+
+이 메서드를 호출하면 소스에 따라 세션 taint 레벨이 상승합니다. 웹 콘텐츠는 `WEB_CONTENT`로, 신뢰할 수 없는 프로젝트 파일은 `UNTRUSTED_HUMAN`으로 상승합니다.
+
+### `scanEgress()`
+
+전송 전에 발신 콘텐츠에서 유출된 비밀, PII 및 민감한 데이터를 스캔합니다.
+
+```typescript
+const result = sl.scanEgress(content: string): EgressScanResult;
+```
+
+**반환값:** `clean: boolean`과 `findings[]`가 포함된 `EgressScanResult`.
+
+### `getSessionTaint()`
+
+현재 세션의 taint 레벨을 가져옵니다.
+
+```typescript
+const taint = sl.getSessionTaint(): TaintLevel;
+```
+
+**반환값:** `"owner"`, `"trusted"`, `"untrusted"`, `"web"`, `"skill"`, `"memory"` 중 하나.
+
+---
+
+## 타입
+
+### CheckResult
+
+```typescript
+interface CheckResult {
+  decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL";
+  reason?: string;
+  approvalId?: string;
+  layers: {
+    capability: { allowed: boolean; reason?: string };
+    taint: { level: TaintLevel; allowed: boolean; reason?: string };
+    rules: { decision: string; reason?: string } | null;
+    llm: {
+      decision: string;
+      confidence: number;
+      reasoning?: string;
+    } | null;
+  };
+  degraded: boolean;
+  timing: {
+    capability_ms: number;
+    taint_ms: number;
+    normalize_ms: number;
+    rules_ms: number;
+    llm_ms: number | null;
+    total_ms: number;
+  };
+}
+```
+
+### EgressScanResult
+
+```typescript
+interface EgressScanResult {
+  clean: boolean;
+  findings: EgressFinding[];
+}
+
+interface EgressFinding {
+  type:
+    | "api_key"
+    | "pem_block"
+    | "private_key"
+    | "password"
+    | "high_entropy"
+    | "pii"
+    | "credential_pattern";
+  confidence: number;
+  location: { start: number; end: number };
+  redacted: string;
+}
+```
+
+### TaintLevel
+
+```typescript
+type TaintLevel =
+  | "owner"     // 인증된 소유자로부터 직접
+  | "trusted"   // 허용 목록의 연락처로부터
+  | "untrusted" // 알 수 없는/미확인 사람으로부터
+  | "web"       // 웹 요청, 브라우저, 이메일로부터
+  | "skill"     // 스킬에 의해 생성됨
+  | "memory";   // 영구 메모리에서 로드됨
+```
+
+### ExecutionContext
+
+```typescript
+interface ExecutionContext {
+  sessionId: string;
+  taint?: TaintLevel;
+  caller?: string;
+  skillId?: string;
+  channelId?: string;
+}
+```
+
+## 참고
+
+- [통합 패턴](/docs/sdk/patterns) — 프레임워크에 맞는 올바른 패턴을 선택하세요
+- [Capability](/docs/concepts/capabilities) — 15가지 기본 capability
+- [Taint 레벨](/docs/concepts/taint-levels) — taint 추적의 작동 방식
+- [보안 파이프라인](/docs/concepts/security-pipeline) — 3계층 파이프라인

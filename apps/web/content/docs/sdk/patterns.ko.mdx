@@ -1,0 +1,133 @@
+---
+title: 통합 패턴
+description: SDK를 통합하는 세 가지 방법 — 직접 검사, 미들웨어 래퍼, 이벤트 기반.
+icon: GitBranch
+---
+
+<Callout type="info" title="Preview">
+  SDK는 현재 활발하게 개발 중입니다. 여기에 표시된 API는 계획된 설계를 반영하며 안정 릴리스 전에 변경될 수 있습니다.
+</Callout>
+
+SDK는 세 가지 통합 패턴을 지원합니다. 에이전트 프레임워크가 도구 실행을 처리하는 방식에 따라 선택하세요.
+
+## 직접 검사
+
+각 도구 실행 전에 `sl.check()`를 호출합니다. 도구 디스패치 루프를 직접 제어하는 프레임워크에 적합합니다.
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+async function executeTool(tool: string, params: Record<string, unknown>) {
+  const result = await sl.check(tool, params, {
+    sessionId: currentSession.id,
+    taint: sl.getSessionTaint(),
+    caller: "my-agent-framework",
+  });
+
+  if (result.decision === "DENY") {
+    throw new ToolBlockedError(result.reason);
+  }
+
+  if (result.decision === "REQUIRE_APPROVAL") {
+    const approved = await sl.waitForApproval(result.approvalId);
+    if (!approved) throw new ToolBlockedError("승인이 거부되었습니다");
+  }
+
+  return actualToolExecution(tool, params);
+}
+```
+
+**사용 시기:** 도구 디스패치 루프를 소유하고 있으며 보안 결정에 대한 명시적 제어를 원할 때 사용합니다.
+
+## 미들웨어 래퍼
+
+기존 도구 실행기를 `withSecurityLayer()`로 래핑합니다. 래퍼가 호출을 투명하게 가로채므로 호출하는 쪽의 코드를 변경할 필요가 없습니다.
+
+```typescript
+import { SecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// 도구 실행기를 래핑합니다
+const protectedExec = withSecurityLayer(sl, originalExecFunction, "exec");
+const protectedWrite = withSecurityLayer(sl, originalWriteFunction, "file.write");
+
+// 사용법 — 동일한 API, 보안 검사가 투명하게 수행됩니다
+await protectedExec("git push origin main");
+await protectedWrite("/tmp/output.txt", content);
+```
+
+**사용 시기:** 최소한의 변경으로 기존 코드베이스에 보안을 추가하고 싶을 때 사용합니다. 도구 실행기를 한 번 래핑하면 나머지 코드는 그대로 유지됩니다.
+
+## 이벤트 기반
+
+프레임워크의 수명 주기 이벤트에 연결합니다. `beforeToolUse` / `afterToolUse` 이벤트를 제공하는 프레임워크에 적합합니다.
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// 실행 전: 검사 후 필요시 차단합니다
+agentFramework.on("beforeToolUse", async (event) => {
+  const result = await sl.check(event.tool, event.params);
+  if (result.decision !== "ALLOW") {
+    event.preventDefault();
+    event.setError(`Security Layer: ${result.reason}`);
+  }
+});
+
+// 실행 후: taint 추적을 업데이트합니다
+agentFramework.on("afterToolUse", (event) => {
+  if (event.tool === "file.read" || event.tool === "web_fetch") {
+    sl.ingestContent(event.output, {
+      source: event.tool === "web_fetch" ? "web" : "file",
+      path: event.params.path,
+      url: event.params.url,
+    });
+  }
+});
+```
+
+**사용 시기:** 프레임워크에 이미 플러그인/이벤트 시스템이 있을 때 사용합니다. 이벤트 기반 패턴은 보안 로직을 도구 실행과 분리된 상태로 유지합니다.
+
+## 패턴 비교
+
+| 측면 | 직접 검사 | 미들웨어 | 이벤트 기반 |
+|---|---|---|---|
+| 코드 변경량 | 보통 | 최소 | 최소 |
+| 제어 수준 | 완전 | 투명 | 분리 |
+| Taint 추적 | 수동 | 자동 | 수동 |
+| 적합한 경우 | 커스텀 프레임워크 | 기존 코드베이스 | 플러그인 아키텍처 |
+| 승인 흐름 | 명시적 | 내장 | 수동 |
+
+## 패턴 조합
+
+동일한 애플리케이션에서 여러 패턴을 혼합하여 사용할 수 있습니다:
+
+```typescript
+// 표준 도구에는 미들웨어 사용
+const protectedExec = withSecurityLayer(sl, exec, "exec");
+const protectedWrite = withSecurityLayer(sl, writeFile, "file.write");
+
+// 커스텀 로직에는 직접 검사 사용
+async function handleDangerousOperation() {
+  const result = await sl.check("exec.elevated", {
+    command: "sudo systemctl restart nginx",
+  });
+  // 커스텀 처리...
+}
+
+// taint 추적에는 이벤트 기반 사용
+framework.on("afterToolUse", (event) => {
+  sl.ingestContent(event.output, { source: "file", path: event.params.path });
+});
+```
+
+## 참고
+
+- [시작하기](/docs/sdk/getting-started) — 설치 및 기본 설정
+- [API 레퍼런스](/docs/sdk/api-reference) — 전체 메서드 문서
+- [보안 파이프라인](/docs/concepts/security-pipeline) — 3계층 파이프라인의 작동 방식

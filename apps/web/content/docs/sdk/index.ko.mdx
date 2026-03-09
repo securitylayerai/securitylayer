@@ -1,0 +1,111 @@
+---
+title: SDK
+description: 에이전트 애플리케이션에 Security Layer를 통합하기 위한 네이티브 TypeScript SDK입니다.
+icon: Package
+---
+
+<Callout type="info" title="Preview">
+  SDK는 현재 활발하게 개발 중입니다. 여기에 문서화된 API 인터페이스는 계획된 설계를 반영합니다. 지금 패키지를 설치하고 기능이 추가되는 과정을 함께 따라가 보세요.
+</Callout>
+
+## SDK를 사용해야 하는 이유
+
+CLI 통합(hooks, shell shim)은 코드 변경 없이 작동하지만 경계에서만 동작합니다. SDK는 전체 컨텍스트와 함께 **프로세스 내 보안**을 제공합니다:
+
+| | Shell Shim | Hooks | SDK |
+|---|---|---|---|
+| 실행 가로채기 | 예 | 예 | 예 |
+| 파일 쓰기 가로채기 | 아니오 | 예 | 예 |
+| 웹 요청 가로채기 | 아니오 | 예 | 예 |
+| 전체 세션 컨텍스트 | 아니오 | 부분적 | **예** |
+| Taint 추적 정밀도 | 대략적 | 보통 | **작업별** |
+| 우회 위험 | PATH 조작 | 없음 | **없음 (프로세스 내)** |
+| 모든 프레임워크 지원 | 예 (셸만) | Claude Code만 | **모든 프레임워크** |
+| 통합 난이도 | 제로 | 명령 하나 | 코드 변경 |
+
+SDK는 에이전트 애플리케이션을 구축하면서 구조적 보안 보장을 원할 때 올바른 선택입니다 — 단순한 명령줄 가로채기가 아닙니다.
+
+## 설치
+
+<Tabs items={["npm", "yarn", "pnpm", "bun"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @securitylayerai/sdk
+    ```
+  </Tab>
+</Tabs>
+
+## 빠른 예제
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// 실행 전에 동작을 검사합니다
+const result = await sl.check("exec", { command: "rm -rf /tmp/output" });
+
+if (result.decision === "DENY") {
+  console.error(`차단됨: ${result.reason}`);
+} else if (result.decision === "REQUIRE_APPROVAL") {
+  const approved = await sl.waitForApproval(result.approvalId);
+  if (!approved) console.error("승인이 거부되었습니다");
+}
+```
+
+## 통합 패턴
+
+SDK는 에이전트 프레임워크의 구조에 따라 세 가지 패턴을 지원합니다:
+
+<Cards>
+  <Card
+    title="직접 검사"
+    description="각 도구 실행 전에 sl.check()를 호출합니다."
+    href="/docs/sdk/patterns#direct-check"
+    icon={<Code weight="duotone" />}
+  />
+  <Card
+    title="미들웨어 래퍼"
+    description="withSecurityLayer()로 도구 실행기를 투명하게 래핑합니다."
+    href="/docs/sdk/patterns#middleware-wrapper"
+    icon={<Wrench weight="duotone" />}
+  />
+  <Card
+    title="이벤트 기반"
+    description="beforeToolUse / afterToolUse 수명 주기 이벤트에 연결합니다."
+    href="/docs/sdk/patterns#event-based"
+    icon={<Lightning weight="duotone" />}
+  />
+</Cards>
+
+## 다음 단계
+
+<Cards>
+  <Card
+    title="시작하기"
+    description="설정, 구성 및 첫 번째 검사."
+    href="/docs/sdk/getting-started"
+    icon={<Lightning weight="duotone" />}
+  />
+  <Card
+    title="API 레퍼런스"
+    description="모든 SDK 메서드와 타입에 대한 전체 레퍼런스."
+    href="/docs/sdk/api-reference"
+    icon={<Code weight="duotone" />}
+  />
+</Cards>

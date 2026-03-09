@@ -1,0 +1,202 @@
+---
+title: Referencia de API
+description: Referencia completa de todos los mtodos y tipos del SDK.
+icon: Code
+---
+
+<Callout type="info" title="Vista previa">
+  El SDK est en desarrollo activo. Las APIs mostradas aqu reflejan el diseo planificado y pueden cambiar antes de la versin estable.
+</Callout>
+
+## SecurityLayer
+
+El punto de entrada principal del SDK.
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer(options?: SecurityLayerOptions);
+```
+
+### Opciones
+
+| Opcin | Tipo | Valor por defecto | Descripcin |
+|---|---|---|---|
+| `configDir` | `string` | `~/.securitylayer` | Ruta al directorio de configuracin de Security Layer |
+| `caller` | `string` | Auto-detectado | Identificador de la aplicacin que llama |
+| `sessionId` | `string` | Auto-generado | ID de sesin por defecto para verificaciones |
+
+---
+
+## Mtodos
+
+### `check()`
+
+Evala una accin a travs de las 3 capas de seguridad antes de su ejecucin.
+
+```typescript
+const result = await sl.check(
+  tool: string,
+  params: Record<string, unknown>,
+  context?: ExecutionContext,
+): Promise<CheckResult>;
+```
+
+**Parmetros:**
+
+| Parmetro | Tipo | Descripcin |
+|---|---|---|
+| `tool` | `string` | La capacidad que se est usando: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"`, etc. |
+| `params` | `object` | Parmetros especficos de la herramienta (ej., `{ command: "ls -la" }` para exec) |
+| `context` | `ExecutionContext` | Contexto de sesin opcional para la verificacin |
+
+**Retorna:** `Promise<CheckResult>`
+
+### `waitForApproval()`
+
+Bloquea hasta que un humano apruebe o deniegue una decisin `REQUIRE_APPROVAL`.
+
+```typescript
+const approved = await sl.waitForApproval(
+  approvalId: string,
+  options?: ApprovalOptions,
+): Promise<boolean>;
+```
+
+**Parmetros:**
+
+| Parmetro | Tipo | Descripcin |
+|---|---|---|
+| `approvalId` | `string` | El ID de aprobacin de un resultado `REQUIRE_APPROVAL` |
+| `options.timeout` | `number` | Tiempo lmite en milisegundos (por defecto: 300000 / 5 minutos) |
+
+**Retorna:** `true` si fue aprobado, `false` si fue denegado o se agot el tiempo.
+
+### `ingestContent()`
+
+Actualiza el rastreador de taint cuando contenido externo entra en la sesin.
+
+```typescript
+sl.ingestContent(
+  content: string,
+  metadata: ContentMetadata,
+): void;
+```
+
+**Parmetros:**
+
+| Parmetro | Tipo | Descripcin |
+|---|---|---|
+| `content` | `string` | El contenido que fue ledo/obtenido |
+| `metadata.source` | `"web" \| "file"` | De dnde proviene el contenido |
+| `metadata.path` | `string?` | Ruta del archivo (para fuentes de archivo) |
+| `metadata.url` | `string?` | URL (para fuentes web) |
+
+Llamar a este mtodo eleva el nivel de taint de la sesin segn la fuente. El contenido web eleva a `WEB_CONTENT`, los archivos de proyectos no confiables elevan a `UNTRUSTED_HUMAN`.
+
+### `scanEgress()`
+
+Escanea contenido saliente en busca de secretos filtrados, PII y datos sensibles antes de enviarlos.
+
+```typescript
+const result = sl.scanEgress(content: string): EgressScanResult;
+```
+
+**Retorna:** `EgressScanResult` con `clean: boolean` y `findings[]`.
+
+### `getSessionTaint()`
+
+Obtiene el nivel de taint actual de la sesin.
+
+```typescript
+const taint = sl.getSessionTaint(): TaintLevel;
+```
+
+**Retorna:** Uno de `"owner"`, `"trusted"`, `"untrusted"`, `"web"`, `"skill"`, `"memory"`.
+
+---
+
+## Tipos
+
+### CheckResult
+
+```typescript
+interface CheckResult {
+  decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL";
+  reason?: string;
+  approvalId?: string;
+  layers: {
+    capability: { allowed: boolean; reason?: string };
+    taint: { level: TaintLevel; allowed: boolean; reason?: string };
+    rules: { decision: string; reason?: string } | null;
+    llm: {
+      decision: string;
+      confidence: number;
+      reasoning?: string;
+    } | null;
+  };
+  degraded: boolean;
+  timing: {
+    capability_ms: number;
+    taint_ms: number;
+    normalize_ms: number;
+    rules_ms: number;
+    llm_ms: number | null;
+    total_ms: number;
+  };
+}
+```
+
+### EgressScanResult
+
+```typescript
+interface EgressScanResult {
+  clean: boolean;
+  findings: EgressFinding[];
+}
+
+interface EgressFinding {
+  type:
+    | "api_key"
+    | "pem_block"
+    | "private_key"
+    | "password"
+    | "high_entropy"
+    | "pii"
+    | "credential_pattern";
+  confidence: number;
+  location: { start: number; end: number };
+  redacted: string;
+}
+```
+
+### TaintLevel
+
+```typescript
+type TaintLevel =
+  | "owner"     // Directamente del propietario autenticado
+  | "trusted"   // De un contacto en la lista de confianza
+  | "untrusted" // De un humano desconocido/no verificado
+  | "web"       // De web fetch, navegador, email
+  | "skill"     // Generado por un skill
+  | "memory";   // Cargado desde memoria persistente
+```
+
+### ExecutionContext
+
+```typescript
+interface ExecutionContext {
+  sessionId: string;
+  taint?: TaintLevel;
+  caller?: string;
+  skillId?: string;
+  channelId?: string;
+}
+```
+
+## Ver tambin
+
+- [Patrones de integracin](/docs/sdk/patterns) -- Elige el patrn adecuado para tu framework
+- [Capacidades](/docs/concepts/capabilities) -- Las 15 capacidades base
+- [Niveles de taint](/docs/concepts/taint-levels) -- Cmo funciona el seguimiento de taint
+- [Pipeline de seguridad](/docs/concepts/security-pipeline) -- El pipeline de 3 capas

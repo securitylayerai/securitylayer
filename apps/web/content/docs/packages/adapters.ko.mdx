@@ -1,0 +1,185 @@
+---
+title: Adapters
+description: 에이전트 프레임을 파싱하고 가로채기 위한 에이전트 프로토콜 어댑터.
+icon: Plug
+---
+
+`@securitylayerai/adapters`는 `AgentAdapter` 인터페이스를 정의하고 다양한 에이전트 프로토콜에 대한 구현을 제공합니다. 프록시는 어댑터를 사용하여 에이전트 통신 프레임을 타입이 지정된 보안 이벤트로 파싱합니다.
+
+## AgentAdapter 인터페이스
+
+모든 어댑터는 이 계약을 구현합니다:
+
+```typescript
+interface AgentAdapter {
+  // 클라이언트→에이전트 프레임을 타입이 지정된 이벤트로 파싱
+  parseInboundFrame(raw: Buffer): InboundEvent;
+
+  // 에이전트→외부 프레임을 타입이 지정된 동작으로 파싱
+  parseOutboundFrame(raw: Buffer): OutboundAction[];
+
+  // 에이전트에 다시 주입할 거부 응답 생성
+  injectDenyResponse(
+    action: OutboundAction,
+    reason: string,
+    toolCallId?: string,
+  ): Buffer;
+
+  // 세션 메타데이터 가져오기 (채널, 신뢰 수준, 활성 스킬)
+  getSessionMetadata(sessionId: string): SessionInfo | null;
+
+  // 에이전트 응답 프레임에서 도구 호출 추출
+  extractToolCalls(frame: Buffer): ToolCall[];
+
+  // 승인된 동작을 에이전트에 다시 주입하기 위해 래핑
+  wrapReplayAction(action: OutboundAction): Buffer;
+}
+```
+
+## 포함된 어댑터
+
+### OpenClaw 어댑터
+
+타입이 지정된 프레임 유형(`req:send`, `req:agent`, `res:agent`, `event:chat` 등)을 사용하는 OpenClaw의 WebSocket 프로토콜용입니다.
+
+```typescript
+import { createOpenClawAdapter } from "@securitylayerai/adapters";
+
+const adapter = createOpenClawAdapter({
+  gatewayUrl: "ws://localhost:18789",
+});
+```
+
+OpenClaw 전용 프레임 유형을 처리합니다:
+
+| 프레임 유형 | 방향 | 설명 |
+|---|---|---|
+| `req:send` | 클라이언트 → 에이전트 | 메시지 전송 요청 |
+| `req:agent` | 클라이언트 → 에이전트 | 에이전트 명령 |
+| `res:agent` | 에이전트 → 클라이언트 | 도구 호출이 포함된 에이전트 응답 |
+| `event:chat` | 에이전트 → 클라이언트 | 채팅 메시지 이벤트 |
+| `event:skills.install` | 에이전트 → 클라이언트 | 스킬 설치 이벤트 |
+
+### Generic 어댑터
+
+특정 프로토콜을 사용하지 않는 간단한 JSON 기반 도구 호출 에이전트용입니다.
+
+```typescript
+import { createGenericAdapter } from "@securitylayerai/adapters";
+
+const adapter = createGenericAdapter({
+  parseToolCall: (data) => ({
+    id: data.id,
+    name: data.tool,
+    input: data.params,
+  }),
+});
+```
+
+## 타입
+
+### InboundEvent
+
+클라이언트에서 에이전트로 흐르는 이벤트입니다:
+
+```typescript
+interface InboundEvent {
+  type: InboundEventType;
+  sessionId: string;
+  sender?: string;
+  channel?: string;
+  data: Record<string, unknown>;
+}
+
+type InboundEventType =
+  | "message"
+  | "agent_instruction"
+  | "config_change"
+  | "cron_create"
+  | "skill_install"
+  | "chat";
+```
+
+### OutboundAction
+
+에이전트가 수행하려는 동작입니다:
+
+```typescript
+interface OutboundAction {
+  tool: string;
+  params: Record<string, unknown>;
+  requiredCapability: string;
+  toolCallId?: string;
+}
+```
+
+### FrameParseError
+
+프레임을 파싱할 수 없을 때 발생합니다. 프록시는 이를 잡아서 크래시 없이 잘못된 형식의 프레임을 정상적으로 처리합니다.
+
+```typescript
+class FrameParseError extends Error {
+  constructor(message: string);
+}
+```
+
+## 커스텀 어댑터 만들기
+
+새로운 에이전트 프로토콜을 지원하려면 `AgentAdapter` 인터페이스를 구현합니다:
+
+```typescript
+import type { AgentAdapter } from "@securitylayerai/adapters";
+
+function createMyAdapter(config: MyConfig): AgentAdapter {
+  return {
+    parseInboundFrame(raw) {
+      const data = JSON.parse(raw.toString());
+      return {
+        type: "message",
+        sessionId: data.session,
+        data: data.payload,
+      };
+    },
+
+    parseOutboundFrame(raw) {
+      const data = JSON.parse(raw.toString());
+      return data.toolCalls.map((tc: any) => ({
+        tool: tc.name,
+        params: tc.arguments,
+        requiredCapability: mapToolToCapability(tc.name),
+        toolCallId: tc.id,
+      }));
+    },
+
+    injectDenyResponse(action, reason, toolCallId) {
+      return Buffer.from(JSON.stringify({
+        type: "error",
+        toolCallId,
+        error: reason,
+      }));
+    },
+
+    // ... 나머지 메서드
+  };
+}
+```
+
+## 패키지 구조
+
+```
+packages/adapters/
+├── src/
+│   ├── index.ts          # 배럴 내보내기
+│   ├── interface.ts      # AgentAdapter 인터페이스
+│   ├── types.ts          # InboundEvent, OutboundAction 등
+│   ├── openclaw.ts       # OpenClaw 어댑터
+│   └── generic.ts        # Generic JSON 어댑터
+└── test/
+    ├── openclaw.test.ts
+    └── generic.test.ts
+```
+
+## 참고
+
+- [Proxy](/docs/packages/proxy) — 어댑터를 사용하여 에이전트 프레임을 가로챕니다
+- [보안 파이프라인](/docs/concepts/security-pipeline) — 프레임 파싱 후의 처리 과정

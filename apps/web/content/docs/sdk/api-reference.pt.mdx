@@ -1,0 +1,202 @@
+---
+title: Referência da API
+description: Referência completa de todos os métodos e tipos do SDK.
+icon: Code
+---
+
+<Callout type="info" title="Preview">
+  O SDK está em desenvolvimento ativo. As APIs mostradas aqui refletem o design planejado e podem mudar antes do lançamento estável.
+</Callout>
+
+## SecurityLayer
+
+O ponto de entrada principal do SDK.
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer(options?: SecurityLayerOptions);
+```
+
+### Opções
+
+| Opção | Tipo | Padrão | Descrição |
+|---|---|---|---|
+| `configDir` | `string` | `~/.securitylayer` | Caminho para o diretório de configuração do Security Layer |
+| `caller` | `string` | Auto-detectado | Identificador da aplicação chamadora |
+| `sessionId` | `string` | Auto-gerado | ID de sessão padrão para verificações |
+
+---
+
+## Métodos
+
+### `check()`
+
+Avalia uma ação através das 3 camadas de segurança antes da execução.
+
+```typescript
+const result = await sl.check(
+  tool: string,
+  params: Record<string, unknown>,
+  context?: ExecutionContext,
+): Promise<CheckResult>;
+```
+
+**Parâmetros:**
+
+| Parâmetro | Tipo | Descrição |
+|---|---|---|
+| `tool` | `string` | A capability sendo utilizada: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"`, etc. |
+| `params` | `object` | Parâmetros específicos da ferramenta (ex.: `{ command: "ls -la" }` para exec) |
+| `context` | `ExecutionContext` | Contexto de sessão opcional para a verificação |
+
+**Retorna:** `Promise<CheckResult>`
+
+### `waitForApproval()`
+
+Bloqueia até que um humano aprove ou negue uma decisão `REQUIRE_APPROVAL`.
+
+```typescript
+const approved = await sl.waitForApproval(
+  approvalId: string,
+  options?: ApprovalOptions,
+): Promise<boolean>;
+```
+
+**Parâmetros:**
+
+| Parâmetro | Tipo | Descrição |
+|---|---|---|
+| `approvalId` | `string` | O ID de aprovação de um resultado `REQUIRE_APPROVAL` |
+| `options.timeout` | `number` | Timeout em milissegundos (padrão: 300000 / 5 minutos) |
+
+**Retorna:** `true` se aprovado, `false` se negado ou expirado.
+
+### `ingestContent()`
+
+Atualiza o rastreador de taint quando conteúdo externo entra na sessão.
+
+```typescript
+sl.ingestContent(
+  content: string,
+  metadata: ContentMetadata,
+): void;
+```
+
+**Parâmetros:**
+
+| Parâmetro | Tipo | Descrição |
+|---|---|---|
+| `content` | `string` | O conteúdo que foi lido/buscado |
+| `metadata.source` | `"web" \| "file"` | De onde o conteúdo veio |
+| `metadata.path` | `string?` | Caminho do arquivo (para fontes de arquivo) |
+| `metadata.url` | `string?` | URL (para fontes web) |
+
+Chamar este método eleva o nível de taint da sessão com base na fonte. Conteúdo web eleva para `WEB_CONTENT`, arquivos de projetos não confiáveis elevam para `UNTRUSTED_HUMAN`.
+
+### `scanEgress()`
+
+Escaneie conteúdo de saída em busca de segredos vazados, PII e dados sensíveis antes do envio.
+
+```typescript
+const result = sl.scanEgress(content: string): EgressScanResult;
+```
+
+**Retorna:** `EgressScanResult` com `clean: boolean` e `findings[]`.
+
+### `getSessionTaint()`
+
+Obtém o nível de taint atual da sessão.
+
+```typescript
+const taint = sl.getSessionTaint(): TaintLevel;
+```
+
+**Retorna:** Um dos valores `"owner"`, `"trusted"`, `"untrusted"`, `"web"`, `"skill"`, `"memory"`.
+
+---
+
+## Tipos
+
+### CheckResult
+
+```typescript
+interface CheckResult {
+  decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL";
+  reason?: string;
+  approvalId?: string;
+  layers: {
+    capability: { allowed: boolean; reason?: string };
+    taint: { level: TaintLevel; allowed: boolean; reason?: string };
+    rules: { decision: string; reason?: string } | null;
+    llm: {
+      decision: string;
+      confidence: number;
+      reasoning?: string;
+    } | null;
+  };
+  degraded: boolean;
+  timing: {
+    capability_ms: number;
+    taint_ms: number;
+    normalize_ms: number;
+    rules_ms: number;
+    llm_ms: number | null;
+    total_ms: number;
+  };
+}
+```
+
+### EgressScanResult
+
+```typescript
+interface EgressScanResult {
+  clean: boolean;
+  findings: EgressFinding[];
+}
+
+interface EgressFinding {
+  type:
+    | "api_key"
+    | "pem_block"
+    | "private_key"
+    | "password"
+    | "high_entropy"
+    | "pii"
+    | "credential_pattern";
+  confidence: number;
+  location: { start: number; end: number };
+  redacted: string;
+}
+```
+
+### TaintLevel
+
+```typescript
+type TaintLevel =
+  | "owner"     // Diretamente do proprietário autenticado
+  | "trusted"   // De contato na lista de confiança
+  | "untrusted" // De humano desconhecido/não verificado
+  | "web"       // De web fetch, navegador, email
+  | "skill"     // Gerado por uma skill
+  | "memory";   // Carregado da memória persistente
+```
+
+### ExecutionContext
+
+```typescript
+interface ExecutionContext {
+  sessionId: string;
+  taint?: TaintLevel;
+  caller?: string;
+  skillId?: string;
+  channelId?: string;
+}
+```
+
+## Veja também
+
+- [Padrões de integração](/docs/sdk/patterns) — Escolha o padrão certo para seu framework
+- [Capabilities](/docs/concepts/capabilities) — As 15 capabilities base
+- [Níveis de taint](/docs/concepts/taint-levels) — Como o rastreamento de taint funciona
+- [Pipeline de segurança](/docs/concepts/security-pipeline) — O pipeline de 3 camadas

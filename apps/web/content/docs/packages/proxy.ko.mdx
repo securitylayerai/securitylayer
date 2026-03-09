@@ -1,0 +1,177 @@
+---
+title: Proxy
+description: 클라이언트와 에이전트 게이트웨이 간 WebSocket 보안 프록시.
+icon: Globe
+---
+
+`@securitylayerai/proxy`는 클라이언트와 에이전트 게이트웨이 사이에 위치하는 WebSocket 프록시입니다. 모든 프레임을 가로채 어댑터를 통해 보안 파이프라인을 실행하고, 평가 결과에 따라 차단하거나 허용합니다.
+
+## 아키텍처
+
+```
+Client (port 18790) ──→ Proxy ──→ Agent Gateway (port 18789)
+                          │
+                          ├── Adapter (프레임 파싱)
+                          ├── Interceptor (동작 평가)
+                          ├── Gateway Lock (우회 방지)
+                          └── Metrics (/metrics 엔드포인트)
+```
+
+프록시는 투명합니다 — 클라이언트는 에이전트 게이트웨이 대신 프록시에 연결합니다. 게이트웨이 잠금은 에이전트 게이트웨이가 프록시로부터의 연결만 수락하도록 하여 우회를 방지합니다.
+
+## 구성 요소
+
+### 프록시 서버
+
+클라이언트 연결을 수락하고 인터셉터를 통해 프레임을 중계하는 Bun WebSocket 서버입니다.
+
+```typescript
+import { createProxyServer } from "@securitylayerai/proxy";
+
+const server = createProxyServer({
+  port: 18790,
+  host: "127.0.0.1",
+  getMetricsText: () => metrics.toPrometheusText(),
+});
+```
+
+Prometheus 스크래핑을 위한 HTTP `/metrics` 엔드포인트도 제공합니다.
+
+### 업스트림 연결
+
+자동 재연결 및 지수 백오프를 지원하는 에이전트 게이트웨이 WebSocket 클라이언트입니다.
+
+```typescript
+import { createUpstreamConnection } from "@securitylayerai/proxy";
+
+const upstream = createUpstreamConnection({
+  url: "ws://127.0.0.1:18789",
+  maxRetries: 10,
+  retryDelayMs: 1000,
+  maxRetryDelayMs: 30000,
+  onMessage: handleUpstreamMessage,
+  onConnect: () => console.log("게이트웨이에 연결됨"),
+  onDisconnect: () => console.log("게이트웨이 연결 해제됨"),
+});
+```
+
+### 인터셉터
+
+어댑터를 사용하여 파싱된 프레임을 보안 파이프라인으로 라우팅합니다.
+
+```typescript
+import { createInterceptor } from "@securitylayerai/proxy";
+
+const interceptor = createInterceptor({
+  adapter,
+  evaluateAction: pipeline.evaluate,
+});
+
+const result = await interceptor.intercept(rawFrame);
+// result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+// result.denyResponse?: Buffer (거부된 경우)
+```
+
+### 게이트웨이 잠금
+
+클라이언트가 에이전트 게이트웨이에 직접 연결하는 것을 방지하여 모든 트래픽이 프록시를 거치도록 보장합니다.
+
+세 가지 잠금 전략:
+
+| 전략 | 작동 방식 |
+|---|---|
+| `validation_token` | 프록시가 비밀 토큰을 포함하고, 게이트웨이는 토큰 없는 연결을 거부합니다 |
+| `unix_socket` | 게이트웨이가 프록시만 접근 가능한 Unix 소켓에서 수신 대기합니다 |
+| `firewall` | 방화벽 규칙으로 게이트웨이 포트를 localhost로 제한합니다 |
+
+```typescript
+import { createGatewayLock } from "@securitylayerai/proxy";
+
+const lock = createGatewayLock({
+  strategy: "validation_token",
+  token: process.env.GATEWAY_TOKEN,
+});
+
+await lock.verify(); // 잠금이 활성화되지 않으면 예외를 발생시킵니다
+```
+
+### 메트릭 수집기
+
+프록시 성능과 보안 결정을 추적합니다. Prometheus 호환 텍스트 출력을 노출합니다.
+
+```typescript
+import { createMetricsCollector } from "@securitylayerai/proxy";
+
+const metrics = createMetricsCollector();
+
+metrics.recordDecision("ALLOW", 12);  // 결정, 지연시간(ms)
+metrics.recordDecision("DENY", 3);
+metrics.recordTaintElevation("owner", "web");
+
+console.log(metrics.toPrometheusText());
+// securitylayer_decisions_total{decision="ALLOW"} 42
+// securitylayer_decisions_total{decision="DENY"} 3
+// securitylayer_latency_p50 8
+// securitylayer_latency_p95 45
+// securitylayer_latency_p99 120
+```
+
+## 프록시 시작
+
+`startProxy()` 함수가 모든 것을 연결합니다:
+
+```typescript
+import { startProxy } from "@securitylayerai/proxy";
+
+const proxy = startProxy({
+  listenPort: 18790,
+  listenHost: "127.0.0.1",
+  upstreamUrl: "ws://127.0.0.1:18789",
+  adapter: openClawAdapter,
+  evaluateAction: pipeline.evaluate,
+  gatewayLock: {
+    strategy: "validation_token",
+    token: process.env.GATEWAY_TOKEN,
+  },
+});
+
+// 나중에
+await proxy.stop();
+```
+
+## 설정
+
+```typescript
+interface ProxyConfig {
+  listenPort: number;        // 기본값: 18790
+  listenHost: string;        // 기본값: "127.0.0.1"
+  upstreamUrl: string;       // 에이전트 게이트웨이 URL
+  adapter: AgentAdapter;     // @securitylayerai/adapters에서
+  evaluateAction: EvaluateActionFn;  // 보안 파이프라인
+  gatewayLock?: GatewayLockConfig;
+}
+```
+
+## 패키지 구조
+
+```
+packages/proxy/
+├── src/
+│   ├── index.ts           # startProxy() + 배럴 내보내기
+│   ├── types.ts           # ProxyConfig, ProxyState 등
+│   ├── server.ts          # WebSocket 서버 + /metrics
+│   ├── upstream.ts        # 게이트웨이 연결 + 재연결
+│   ├── interceptor.ts     # 프레임 가로채기 로직
+│   ├── gateway-lock.ts    # 우회 방지
+│   └── metrics.ts         # Prometheus 메트릭
+└── test/
+    ├── interceptor.test.ts
+    ├── gateway-lock.test.ts
+    └── metrics.test.ts
+```
+
+## 참고
+
+- [Adapters](/docs/packages/adapters) — 다양한 에이전트 프로토콜의 프레임 파싱
+- [Core](/docs/packages/core) — 프록시가 호출하는 보안 파이프라인
+- [보안 파이프라인](/docs/concepts/security-pipeline) — 평가의 작동 방식

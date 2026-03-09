@@ -1,0 +1,111 @@
+---
+title: SDK
+description: SDK nativo de TypeScript para integrar Security Layer en aplicaciones agentivas.
+icon: Package
+---
+
+<Callout type="info" title="Vista previa">
+  El SDK est en desarrollo activo. La superficie de API documentada aqu refleja el diseo planificado. Instala el paquete hoy para seguir el progreso a medida que se implementan las funcionalidades.
+</Callout>
+
+## Por qu usar el SDK?
+
+Las integraciones del CLI (hooks, shell shim) funcionan sin cambios de cdigo -- pero operan en el borde. El SDK te da **seguridad en proceso** con contexto completo:
+
+| | Shell Shim | Hooks | SDK |
+|---|---|---|---|
+| Intercepta exec | S | S | S |
+| Intercepta escrituras de archivos | No | S | S |
+| Intercepta web fetch | No | S | S |
+| Contexto completo de sesin | No | Parcial | **S** |
+| Precisin de seguimiento de taint | Gruesa | Moderada | **Por operacin** |
+| Riesgo de bypass | Manipulacin de PATH | Ninguno | **Ninguno (en proceso)** |
+| Funciona con cualquier framework | S (solo shell) | Solo Claude Code | **Cualquier framework** |
+| Esfuerzo de integracin | Cero | Un comando | Cambios de cdigo |
+
+El SDK es la opcin correcta cuando ests construyendo una aplicacin agentiva y quieres garantas de seguridad estructural -- no solo intercepcin en lnea de comandos.
+
+## Instalacin
+
+<Tabs items={["npm", "yarn", "pnpm", "bun"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @securitylayerai/sdk
+    ```
+  </Tab>
+</Tabs>
+
+## Ejemplo rpido
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// Verificar una accin antes de ejecutarla
+const result = await sl.check("exec", { command: "rm -rf /tmp/output" });
+
+if (result.decision === "DENY") {
+  console.error(`Bloqueado: ${result.reason}`);
+} else if (result.decision === "REQUIRE_APPROVAL") {
+  const approved = await sl.waitForApproval(result.approvalId);
+  if (!approved) console.error("Aprobacin denegada");
+}
+```
+
+## Patrones de integracin
+
+El SDK soporta tres patrones dependiendo de cmo est estructurado tu framework de agentes:
+
+<Cards>
+  <Card
+    title="Verificacin directa"
+    description="Llama a sl.check() antes de cada ejecucin de herramienta."
+    href="/docs/sdk/patterns#direct-check"
+    icon={<Code weight="duotone" />}
+  />
+  <Card
+    title="Middleware wrapper"
+    description="Envuelve ejecutores de herramientas de forma transparente con withSecurityLayer()."
+    href="/docs/sdk/patterns#middleware-wrapper"
+    icon={<Wrench weight="duotone" />}
+  />
+  <Card
+    title="Basado en eventos"
+    description="Conecta a los eventos del ciclo de vida beforeToolUse / afterToolUse."
+    href="/docs/sdk/patterns#event-based"
+    icon={<Lightning weight="duotone" />}
+  />
+</Cards>
+
+## Prximos pasos
+
+<Cards>
+  <Card
+    title="Primeros pasos"
+    description="Configuracin, ajustes y tu primera verificacin."
+    href="/docs/sdk/getting-started"
+    icon={<Lightning weight="duotone" />}
+  />
+  <Card
+    title="Referencia de API"
+    description="Referencia completa de todos los mtodos y tipos del SDK."
+    href="/docs/sdk/api-reference"
+    icon={<Code weight="duotone" />}
+  />
+</Cards>

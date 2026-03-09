@@ -1,0 +1,177 @@
+---
+title: Proxy
+description: 客户端与代理网关之间的 WebSocket 安全代理。
+icon: Globe
+---
+
+`@securitylayerai/proxy` 是一个 WebSocket 代理，位于客户端和代理网关之间。它拦截每一帧数据，通过适配器将其送入安全管道，并根据评估结果进行阻止或放行。
+
+## 架构
+
+```
+客户端 (端口 18790) ──→ Proxy ──→ 代理网关 (端口 18789)
+                          │
+                          ├── Adapter（解析帧）
+                          ├── Interceptor（评估操作）
+                          ├── Gateway Lock（防止绕过）
+                          └── Metrics（/metrics 端点）
+```
+
+代理是透明的 — 客户端连接到代理而非直接连接到代理网关。网关锁确保代理网关只接受来自代理的连接，防止被绕过。
+
+## 组件
+
+### 代理服务器
+
+Bun WebSocket 服务器，接受客户端连接并通过拦截器转发帧。
+
+```typescript
+import { createProxyServer } from "@securitylayerai/proxy";
+
+const server = createProxyServer({
+  port: 18790,
+  host: "127.0.0.1",
+  getMetricsText: () => metrics.toPrometheusText(),
+});
+```
+
+同时提供 HTTP `/metrics` 端点供 Prometheus 抓取。
+
+### 上游连接
+
+连接到代理网关的 WebSocket 客户端，支持自动重连和指数退避。
+
+```typescript
+import { createUpstreamConnection } from "@securitylayerai/proxy";
+
+const upstream = createUpstreamConnection({
+  url: "ws://127.0.0.1:18789",
+  maxRetries: 10,
+  retryDelayMs: 1000,
+  maxRetryDelayMs: 30000,
+  onMessage: handleUpstreamMessage,
+  onConnect: () => console.log("已连接到网关"),
+  onDisconnect: () => console.log("与网关断开连接"),
+});
+```
+
+### 拦截器
+
+使用适配器将解析后的帧路由通过安全管道。
+
+```typescript
+import { createInterceptor } from "@securitylayerai/proxy";
+
+const interceptor = createInterceptor({
+  adapter,
+  evaluateAction: pipeline.evaluate,
+});
+
+const result = await interceptor.intercept(rawFrame);
+// result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+// result.denyResponse?: Buffer（如果被拒绝）
+```
+
+### 网关锁
+
+防止客户端直接连接到代理网关，确保所有流量都通过代理。
+
+三种锁定策略：
+
+| 策略 | 工作原理 |
+|---|---|
+| `validation_token` | 代理附带密钥令牌；网关拒绝没有令牌的连接 |
+| `unix_socket` | 网关仅在代理可访问的 Unix 套接字上监听 |
+| `firewall` | 防火墙规则限制网关端口仅允许本地访问 |
+
+```typescript
+import { createGatewayLock } from "@securitylayerai/proxy";
+
+const lock = createGatewayLock({
+  strategy: "validation_token",
+  token: process.env.GATEWAY_TOKEN,
+});
+
+await lock.verify(); // 如果锁定未激活则抛出异常
+```
+
+### 指标收集器
+
+追踪代理性能和安全决策。输出 Prometheus 兼容的文本格式。
+
+```typescript
+import { createMetricsCollector } from "@securitylayerai/proxy";
+
+const metrics = createMetricsCollector();
+
+metrics.recordDecision("ALLOW", 12);  // 决策, 延迟毫秒
+metrics.recordDecision("DENY", 3);
+metrics.recordTaintElevation("owner", "web");
+
+console.log(metrics.toPrometheusText());
+// securitylayer_decisions_total{decision="ALLOW"} 42
+// securitylayer_decisions_total{decision="DENY"} 3
+// securitylayer_latency_p50 8
+// securitylayer_latency_p95 45
+// securitylayer_latency_p99 120
+```
+
+## 启动代理
+
+`startProxy()` 函数将所有组件组装在一起：
+
+```typescript
+import { startProxy } from "@securitylayerai/proxy";
+
+const proxy = startProxy({
+  listenPort: 18790,
+  listenHost: "127.0.0.1",
+  upstreamUrl: "ws://127.0.0.1:18789",
+  adapter: openClawAdapter,
+  evaluateAction: pipeline.evaluate,
+  gatewayLock: {
+    strategy: "validation_token",
+    token: process.env.GATEWAY_TOKEN,
+  },
+});
+
+// 之后停止
+await proxy.stop();
+```
+
+## 配置
+
+```typescript
+interface ProxyConfig {
+  listenPort: number;        // 默认: 18790
+  listenHost: string;        // 默认: "127.0.0.1"
+  upstreamUrl: string;       // 代理网关 URL
+  adapter: AgentAdapter;     // 来自 @securitylayerai/adapters
+  evaluateAction: EvaluateActionFn;  // 安全管道
+  gatewayLock?: GatewayLockConfig;
+}
+```
+
+## 包结构
+
+```
+packages/proxy/
+├── src/
+│   ├── index.ts           # startProxy() + 统一导出
+│   ├── types.ts           # ProxyConfig、ProxyState 等
+│   ├── server.ts          # WebSocket 服务器 + /metrics
+│   ├── upstream.ts        # 网关连接 + 重连
+│   ├── interceptor.ts     # 帧拦截逻辑
+│   ├── gateway-lock.ts    # 防绕过
+│   └── metrics.ts         # Prometheus 指标
+└── test/
+    ├── interceptor.test.ts
+    ├── gateway-lock.test.ts
+    └── metrics.test.ts
+```
+
+## 另请参阅
+
+- [Adapters](/docs/packages/adapters) — 不同代理协议的帧解析
+- [Core](/docs/packages/core) — 代理调用的安全管道
+- [安全管道](/docs/concepts/security-pipeline) — 评估的工作原理

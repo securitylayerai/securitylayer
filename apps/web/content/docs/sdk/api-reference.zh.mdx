@@ -1,0 +1,202 @@
+---
+title: API 参考
+description: 所有 SDK 方法和类型的完整参考。
+icon: Code
+---
+
+<Callout type="info" title="预览">
+  SDK 正在积极开发中。此处展示的 API 反映了计划中的设计，在稳定版本发布前可能会有所变化。
+</Callout>
+
+## SecurityLayer
+
+SDK 的主入口。
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer(options?: SecurityLayerOptions);
+```
+
+### 选项
+
+| 选项 | 类型 | 默认值 | 描述 |
+|---|---|---|---|
+| `configDir` | `string` | `~/.securitylayer` | Security Layer 配置目录路径 |
+| `caller` | `string` | 自动检测 | 调用方应用的标识符 |
+| `sessionId` | `string` | 自动生成 | 检查时使用的默认会话 ID |
+
+---
+
+## 方法
+
+### `check()`
+
+在执行前通过所有 3 个安全层评估操作。
+
+```typescript
+const result = await sl.check(
+  tool: string,
+  params: Record<string, unknown>,
+  context?: ExecutionContext,
+): Promise<CheckResult>;
+```
+
+**参数：**
+
+| 参数 | 类型 | 描述 |
+|---|---|---|
+| `tool` | `string` | 使用的能力：`"exec"`、`"file.read"`、`"file.write"`、`"web_fetch"` 等 |
+| `params` | `object` | 工具特定的参数（例如，exec 的 `{ command: "ls -la" }`） |
+| `context` | `ExecutionContext` | 可选的检查会话上下文 |
+
+**返回值：** `Promise<CheckResult>`
+
+### `waitForApproval()`
+
+阻塞等待，直到人工批准或拒绝 `REQUIRE_APPROVAL` 决策。
+
+```typescript
+const approved = await sl.waitForApproval(
+  approvalId: string,
+  options?: ApprovalOptions,
+): Promise<boolean>;
+```
+
+**参数：**
+
+| 参数 | 类型 | 描述 |
+|---|---|---|
+| `approvalId` | `string` | `REQUIRE_APPROVAL` 结果中的审批 ID |
+| `options.timeout` | `number` | 超时毫秒数（默认：300000 / 5 分钟） |
+
+**返回值：** 批准返回 `true`，拒绝或超时返回 `false`。
+
+### `ingestContent()`
+
+当外部内容进入会话时，更新污点追踪器。
+
+```typescript
+sl.ingestContent(
+  content: string,
+  metadata: ContentMetadata,
+): void;
+```
+
+**参数：**
+
+| 参数 | 类型 | 描述 |
+|---|---|---|
+| `content` | `string` | 读取/获取的内容 |
+| `metadata.source` | `"web" \| "file"` | 内容来源 |
+| `metadata.path` | `string?` | 文件路径（用于文件来源） |
+| `metadata.url` | `string?` | URL（用于网络来源） |
+
+调用此方法会根据来源提升会话的污点级别。网络内容提升至 `WEB_CONTENT`，不受信任的项目文件提升至 `UNTRUSTED_HUMAN`。
+
+### `scanEgress()`
+
+在发送前扫描出站内容中泄露的密钥、PII 和敏感数据。
+
+```typescript
+const result = sl.scanEgress(content: string): EgressScanResult;
+```
+
+**返回值：** `EgressScanResult`，包含 `clean: boolean` 和 `findings[]`。
+
+### `getSessionTaint()`
+
+获取当前会话的污点级别。
+
+```typescript
+const taint = sl.getSessionTaint(): TaintLevel;
+```
+
+**返回值：** `"owner"`、`"trusted"`、`"untrusted"`、`"web"`、`"skill"`、`"memory"` 之一。
+
+---
+
+## 类型
+
+### CheckResult
+
+```typescript
+interface CheckResult {
+  decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL";
+  reason?: string;
+  approvalId?: string;
+  layers: {
+    capability: { allowed: boolean; reason?: string };
+    taint: { level: TaintLevel; allowed: boolean; reason?: string };
+    rules: { decision: string; reason?: string } | null;
+    llm: {
+      decision: string;
+      confidence: number;
+      reasoning?: string;
+    } | null;
+  };
+  degraded: boolean;
+  timing: {
+    capability_ms: number;
+    taint_ms: number;
+    normalize_ms: number;
+    rules_ms: number;
+    llm_ms: number | null;
+    total_ms: number;
+  };
+}
+```
+
+### EgressScanResult
+
+```typescript
+interface EgressScanResult {
+  clean: boolean;
+  findings: EgressFinding[];
+}
+
+interface EgressFinding {
+  type:
+    | "api_key"
+    | "pem_block"
+    | "private_key"
+    | "password"
+    | "high_entropy"
+    | "pii"
+    | "credential_pattern";
+  confidence: number;
+  location: { start: number; end: number };
+  redacted: string;
+}
+```
+
+### TaintLevel
+
+```typescript
+type TaintLevel =
+  | "owner"     // 来自已认证的所有者
+  | "trusted"   // 来自白名单联系人
+  | "untrusted" // 来自未知/未验证的人
+  | "web"       // 来自网络请求、浏览器、邮件
+  | "skill"     // 由技能生成
+  | "memory";   // 从持久化内存加载
+```
+
+### ExecutionContext
+
+```typescript
+interface ExecutionContext {
+  sessionId: string;
+  taint?: TaintLevel;
+  caller?: string;
+  skillId?: string;
+  channelId?: string;
+}
+```
+
+## 另请参阅
+
+- [集成模式](/docs/sdk/patterns) — 为您的框架选择合适的模式
+- [能力](/docs/concepts/capabilities) — 15 种基础能力
+- [污点级别](/docs/concepts/taint-levels) — 污点追踪的工作原理
+- [安全管道](/docs/concepts/security-pipeline) — 三层管道

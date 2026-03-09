@@ -1,0 +1,132 @@
+---
+title: Rules
+description: ベースラインセキュリティルールとケイパビリティテンプレート。
+icon: Gear
+---
+
+`@securitylayerai/rules` はデータパッケージです — YAML のルール定義とケイパビリティテンプレートに薄い TypeScript ローダーが付いています。core へのランタイム依存はありません。CLI や他のパッケージは core の `parseRulesYaml()` を使用してランタイムに YAML を消費します。
+
+## 内容
+
+### ベースラインルール (`rules/baseline.yaml`)
+
+core の組み込みルールを補完する 14 の決定論的ルール。組み込みルールがカバーしないパターンを扱います:
+
+| カテゴリ | ルール ID | 判定 | 検出対象 |
+|---|---|---|---|
+| 破壊的 | `destructive-chmod-recursive-777` | DENY | `chmod -R 777 /`（ルートに対する再帰的なワールドライタブル設定） |
+| 破壊的 | `destructive-chown-recursive` | DENY | システムパス（`/usr`、`/etc`、`/var` など）に対する `chown -R` |
+| 認証情報 | `cred-gnupg` | DENY | `~/.gnupg/**`（GnuPG キーリング）へのアクセス |
+| 認証情報 | `cred-pem-files` | DENY | `.pem` / `.key` ファイルに対する `cat`、`cp`、`scp` など |
+| 認証情報 | `cred-kube-config` | DENY | `~/.kube/config` へのアクセス |
+| 認証情報 | `cred-docker-config` | DENY | `~/.docker/config.json` へのアクセス |
+| データ流出 | `exfil-base64-to-curl` | DENY | `base64 \| curl` パイプパターン |
+| データ流出 | `exfil-tar-to-curl` | DENY | `tar \| curl` パイプパターン（アーカイブからネットワークへ） |
+| RCE | `rce-python-pipe` | DENY | `curl \| python` パイプパターン |
+| RCE | `rce-eval-command` | REQUIRE_APPROVAL | `eval` の使用（任意のコードが実行される可能性） |
+| RCE | `rce-netcat-listener` | DENY | `nc -l`（リバースシェルの可能性） |
+| Git | `dangerous-git-force-push` | DENY | main/master への `git push --force` |
+| パッケージ | `dangerous-npm-publish` | REQUIRE_APPROVAL | `npm publish` |
+| コンテナ | `dangerous-docker-privileged` | DENY | `docker run --privileged` |
+
+### セッションテンプレート (`capabilities/sessions.yaml`)
+
+事前設定されたセッションケイパビリティセット:
+
+| テンプレート | ケイパビリティ | デフォルトテイント |
+|---|---|---|
+| `main` | 全 15 ケイパビリティ | `owner` |
+| `group` | `channel.send`, `file.read`, `memory.read.trusted`, `web_fetch` | `trusted` |
+| `dm-unknown` | `channel.send` のみ | `untrusted` |
+
+### チャネルデフォルト (`capabilities/channels.yaml`)
+
+チャネルごとのケイパビリティ上限:
+
+| チャネル | 最大ケイパビリティ |
+|---|---|
+| `owner-terminal` | ALL |
+| `whatsapp` | `channel.send`, `file.read`, `memory.read.trusted` |
+| `telegram` | `channel.send`, `file.read`, `memory.read.trusted`, `web_fetch` |
+| `slack` | `channel.send`, `file.read`, `web_fetch` |
+| `discord` | `channel.send`, `file.read` |
+| `email` | `channel.send` |
+| `webchat` | `channel.send`, `web_fetch` |
+
+### スキルデフォルト (`capabilities/skills-defaults.yaml`)
+
+一般的なスキルケイパビリティプロファイル:
+
+| プロファイル | ケイパビリティ |
+|---|---|
+| `read-only` | `file.read`, `web_fetch` |
+| `file-editor` | `file.read`, `file.write` |
+| `web-only` | `web_fetch` |
+| `full-access` | 昇格権限を除くすべてのケイパビリティ |
+
+## TypeScript API
+
+```typescript
+import {
+  getPackMetadata,
+  loadBaselineRules,
+  loadSessionTemplates,
+  loadChannelDefaults,
+  loadSkillDefaults,
+} from "@securitylayerai/rules";
+
+// パックメタデータ
+const meta = getPackMetadata();
+// { name: "@securitylayerai/rules", version: "0.0.1", type: "rule-pack", ruleCount: 14 }
+
+// ベースラインルールを YAML 文字列として読み込み
+const rulesYaml = await loadBaselineRules();
+
+// パース済みケイパビリティテンプレートを読み込み
+const sessions = await loadSessionTemplates();
+const channels = await loadChannelDefaults();
+const skills = await loadSkillDefaults();
+```
+
+## パッケージ構造
+
+```
+packages/rules/
+├── src/
+│   ├── index.ts          # ローダー関数
+│   └── types.ts          # RulePackMetadata、テンプレート型
+├── rules/
+│   └── baseline.yaml     # 14 のセキュリティルール
+├── capabilities/
+│   ├── sessions.yaml     # セッションテンプレート
+│   ├── channels.yaml     # チャネルデフォルト
+│   └── skills-defaults.yaml  # スキルプロファイル
+└── test/
+    └── loader.test.ts    # YAML 読み込み + 正規表現精度テスト
+```
+
+## カスタムルールの作成
+
+ベースラインルールは出発点です。同じ YAML フォーマットを使用して独自のルールを追加できます:
+
+```yaml
+version: 1
+rules:
+  - id: my-custom-rule
+    description: 本番データベースへのアクセスをブロック
+    match:
+      type: pattern
+      value: "\\bpsql\\s+.*production"
+    decision: DENY
+    reason: "本番データベースへの直接アクセス"
+```
+
+ルールマッチタイプ:
+- `pattern` — コマンド文字列全体に対する正規表現マッチ
+- `path` — ファイルパスに対する glob マッチ
+- `pipe_pair` — パイプ構造のマッチ（`from` → `to`）
+
+## 関連項目
+
+- [rules コマンド](/docs/commands/rules) — CLI でのルール管理
+- [セキュリティパイプライン](/docs/concepts/security-pipeline) — レイヤー 3 におけるルールの位置づけ

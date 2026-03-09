@@ -1,0 +1,111 @@
+---
+title: SDK
+description: エージェントアプリケーションに Security Layer を統合するためのネイティブ TypeScript SDK。
+icon: Package
+---
+
+<Callout type="info" title="プレビュー">
+  SDK は現在活発に開発中です。ここに記載されている API サーフェスは計画中の設計を反映しています。パッケージをインストールして、機能のリリースをフォローできます。
+</Callout>
+
+## SDK を使う理由
+
+CLI 統合（フック、シェルシム）はコード変更なしで機能しますが、境界レベルでの動作です。SDK は完全なコンテキストを持つ**インプロセスセキュリティ**を提供します:
+
+| | Shell Shim | Hooks | SDK |
+|---|---|---|---|
+| exec のインターセプト | Yes | Yes | Yes |
+| ファイル書き込みのインターセプト | No | Yes | Yes |
+| Web フェッチのインターセプト | No | Yes | Yes |
+| 完全なセッションコンテキスト | No | 部分的 | **Yes** |
+| テイントトラッキング精度 | 粗い | 中程度 | **操作単位** |
+| バイパスリスク | PATH 操作 | なし | **なし（インプロセス）** |
+| 任意のフレームワークで動作 | Yes（シェルのみ） | Claude Code のみ | **任意のフレームワーク** |
+| 統合の手間 | ゼロ | コマンド 1 つ | コード変更 |
+
+SDK は、エージェントアプリケーションを構築していて構造的なセキュリティ保証が必要な場合 — コマンドラインインターセプションだけでなく — に最適な選択肢です。
+
+## インストール
+
+<Tabs items={["npm", "yarn", "pnpm", "bun"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @securitylayerai/sdk
+    ```
+  </Tab>
+</Tabs>
+
+## クイック例
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// アクションを実行前にチェック
+const result = await sl.check("exec", { command: "rm -rf /tmp/output" });
+
+if (result.decision === "DENY") {
+  console.error(`ブロック: ${result.reason}`);
+} else if (result.decision === "REQUIRE_APPROVAL") {
+  const approved = await sl.waitForApproval(result.approvalId);
+  if (!approved) console.error("承認が拒否されました");
+}
+```
+
+## 統合パターン
+
+SDK はエージェントフレームワークの構造に応じて 3 つのパターンをサポートします:
+
+<Cards>
+  <Card
+    title="ダイレクトチェック"
+    description="各ツール実行前に sl.check() を呼び出します。"
+    href="/docs/sdk/patterns#direct-check"
+    icon={<Code weight="duotone" />}
+  />
+  <Card
+    title="ミドルウェアラッパー"
+    description="withSecurityLayer() でツールエグゼキューターを透過的にラップします。"
+    href="/docs/sdk/patterns#middleware-wrapper"
+    icon={<Wrench weight="duotone" />}
+  />
+  <Card
+    title="イベントベース"
+    description="beforeToolUse / afterToolUse ライフサイクルイベントにフックします。"
+    href="/docs/sdk/patterns#event-based"
+    icon={<Lightning weight="duotone" />}
+  />
+</Cards>
+
+## 次のステップ
+
+<Cards>
+  <Card
+    title="はじめに"
+    description="セットアップ、設定、最初のチェック。"
+    href="/docs/sdk/getting-started"
+    icon={<Lightning weight="duotone" />}
+  />
+  <Card
+    title="API リファレンス"
+    description="SDK の全メソッドと型の完全なリファレンス。"
+    href="/docs/sdk/api-reference"
+    icon={<Code weight="duotone" />}
+  />
+</Cards>
