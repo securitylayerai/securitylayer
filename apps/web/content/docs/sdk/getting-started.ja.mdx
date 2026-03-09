@@ -86,7 +86,7 @@ async function runTool(tool: string, params: Record<string, unknown>) {
 
 ## 判定を理解する
 
-すべてのチェックは、3 つのセキュリティレイヤーすべての判定を含む `CheckResult` を返します:
+すべてのチェックは、3 つの security layers すべての判定を含む `CheckResult` を返します:
 
 ```typescript
 const result = await sl.check("exec", { command: "git push --force" });

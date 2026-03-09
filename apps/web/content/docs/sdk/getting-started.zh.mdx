@@ -86,7 +86,7 @@ async function runTool(tool: string, params: Record<string, unknown>) {
 
 ## 理解决策
 
-每次检查都会返回一个 `CheckResult`，包含来自所有三个安全层的决策：
+每次检查都会返回一个 `CheckResult`，包含来自所有三个 security layers 的决策：
 
 ```typescript
 const result = await sl.check("exec", { command: "git push --force" });

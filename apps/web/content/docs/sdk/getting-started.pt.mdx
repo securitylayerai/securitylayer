@@ -86,7 +86,7 @@ async function runTool(tool: string, params: Record<string, unknown>) {
 
 ## Entendendo as decisões
 
-Toda verificação retorna um `CheckResult` com a decisão das três camadas de segurança:
+Toda verificação retorna um `CheckResult` com a decisão das três security layers:
 
 ```typescript
 const result = await sl.check("exec", { command: "git push --force" });

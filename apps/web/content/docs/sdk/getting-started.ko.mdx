@@ -86,7 +86,7 @@ async function runTool(tool: string, params: Record<string, unknown>) {
 
 ## 결정 이해하기
 
-모든 검사는 3개 보안 레이어의 결정이 포함된 `CheckResult`를 반환합니다:
+모든 검사는 3개 security layers의 결정이 포함된 `CheckResult`를 반환합니다:
 
 ```typescript
 const result = await sl.check("exec", { command: "git push --force" });
