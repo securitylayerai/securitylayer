@@ -1,0 +1,96 @@
+---
+title: SDK
+description: Native TypeScript SDK for integrating Security Layer into agentic applications.
+icon: Package
+---
+
+<Callout type="info" title="Preview">
+  The SDK is in active development. The API surface documented here reflects the planned design. Install the package today to follow along as features land.
+</Callout>
+
+## Why use the SDK?
+
+The CLI integrations (hooks, shell shim) work without code changes — but they operate at the boundary. The SDK gives you **in-process security** with full context:
+
+| | Shell Shim | Hooks | SDK |
+|---|---|---|---|
+| Intercepts exec | Yes | Yes | Yes |
+| Intercepts file writes | No | Yes | Yes |
+| Intercepts web fetch | No | Yes | Yes |
+| Full session context | No | Partial | **Yes** |
+| Taint tracking precision | Coarse | Moderate | **Per-operation** |
+| Bypass risk | PATH manipulation | None | **None (in-process)** |
+| Works with any framework | Yes (shell only) | Claude Code only | **Any framework** |
+| Integration effort | Zero | One command | Code changes |
+
+The SDK is the right choice when you're building an agentic application and want structural security guarantees — not just command-line interception.
+
+## Installation
+
+```bash
+bun add @securitylayerai/sdk
+```
+
+```bash
+npm install @securitylayerai/sdk
+```
+
+## Quick example
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// Check an action before executing it
+const result = await sl.check("exec", { command: "rm -rf /tmp/output" });
+
+if (result.decision === "DENY") {
+  console.error(`Blocked: ${result.reason}`);
+} else if (result.decision === "REQUIRE_APPROVAL") {
+  const approved = await sl.waitForApproval(result.approvalId);
+  if (!approved) console.error("Approval denied");
+}
+```
+
+## Integration patterns
+
+The SDK supports three patterns depending on how your agent framework is structured:
+
+<Cards>
+  <Card
+    title="Direct check"
+    description="Call sl.check() before each tool execution."
+    href="/docs/sdk/patterns#direct-check"
+    icon={<Code weight="duotone" />}
+  />
+  <Card
+    title="Middleware wrapper"
+    description="Wrap tool executors transparently with withSecurityLayer()."
+    href="/docs/sdk/patterns#middleware-wrapper"
+    icon={<Wrench weight="duotone" />}
+  />
+  <Card
+    title="Event-based"
+    description="Hook into beforeToolUse / afterToolUse lifecycle events."
+    href="/docs/sdk/patterns#event-based"
+    icon={<Lightning weight="duotone" />}
+  />
+</Cards>
+
+## Next steps
+
+<Cards>
+  <Card
+    title="Getting started"
+    description="Setup, configuration, and your first check."
+    href="/docs/sdk/getting-started"
+    icon={<Lightning weight="duotone" />}
+  />
+  <Card
+    title="API reference"
+    description="Full reference for all SDK methods and types."
+    href="/docs/sdk/api-reference"
+    icon={<Code weight="duotone" />}
+  />
+</Cards>

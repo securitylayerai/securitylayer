@@ -4,13 +4,17 @@ import {
   BookOpen,
   Brain,
   Code,
+  Cube,
   Fingerprint,
   Folder,
   Gear,
+  GitBranch,
+  Globe,
   Key,
   Lightning,
   ListChecks,
   Lock,
+  Package,
   Plug,
   Rocket,
   Shield,
@@ -19,6 +23,7 @@ import {
   Stack,
   Terminal,
   TreeStructure,
+  Wrench,
 } from "@phosphor-icons/react";
 import { createFileRoute, notFound, useParams } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
@@ -144,13 +149,17 @@ const clientLoader = browserCollections.docs.createClientLoader({
               BookOpen,
               Brain,
               Code,
+              Cube,
               Fingerprint,
               Folder,
               Gear,
+              GitBranch,
+              Globe,
               Key,
               Lightning,
               ListChecks,
               Lock,
+              Package,
               Plug,
               Rocket,
               Shield,
@@ -159,6 +168,7 @@ const clientLoader = browserCollections.docs.createClientLoader({
               Stack,
               Terminal,
               TreeStructure,
+              Wrench,
             }}
           />
         </DocsBody>

