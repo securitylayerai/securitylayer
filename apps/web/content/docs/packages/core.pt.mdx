@@ -1,10 +1,10 @@
 ---
 title: Core
-description: O motor de segurança — capabilities, taint, regras, pipeline e normalização.
+description: O security engine — capabilities, taint, rules, pipeline e normalization.
 icon: Shield
 ---
 
-`@securitylayerai/core` é o pacote fundamental. Ele implementa o pipeline de segurança de 3 camadas e todas as primitivas de segurança centrais. Todos os outros pacotes dependem do core (direta ou indiretamente).
+`@securitylayerai/core` é o pacote fundamental. Ele implementa o security pipeline de 3 camadas e todas as primitivas de segurança centrais. Todos os outros pacotes dependem do core (direta ou indiretamente).
 
 ## Módulos
 
@@ -45,7 +45,7 @@ tracker.getEffectiveTaint(); // "web"
 
 Níveis de taint (do menos ao mais restritivo): `owner` → `trusted` → `untrusted` → `web` → `skill` → `memory`.
 
-### Motor de regras (`rules/`)
+### Rules engine (`rules/`)
 
 Correspondência determinística de padrões contra comandos perigosos conhecidos, caminhos de credenciais e estruturas de exfiltração. Zero latência, zero ambiguidade.
 
@@ -57,7 +57,7 @@ const result = evaluateRules(normalizedAction, rules);
 // result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
 ```
 
-Tipos de regra:
+Tipos de rule:
 - **binary** — Correspondência por nome do binário do comando
 - **path** — Correspondência por glob de caminho de arquivo
 - **pattern** — Correspondência por padrão regex
@@ -65,7 +65,7 @@ Tipos de regra:
 
 ### Pipeline (`pipeline/`)
 
-Orquestra o fluxo completo de avaliação: capability gate → verificação de taint → normalizar → regras + LLM (paralelo) → mesclar decisões.
+Orquestra o fluxo completo de avaliação: capability gate → verificação de taint → normalize → rules + LLM (paralelo) → mesclar decisões.
 
 ```typescript
 import { createPipeline } from "@securitylayerai/core";
@@ -76,7 +76,7 @@ const result = await pipeline.evaluate(action, context);
 
 O pipeline sempre escolhe o resultado **mais restritivo** de todas as camadas. Se qualquer camada disser DENY, a ação é negada.
 
-### Normalização (`normalize/`)
+### Normalization (`normalize/`)
 
 Resolve caminhos, decodifica encodings, separa cadeias de comandos e detecta estruturas de pipe antes da avaliação. Derrota ofuscação e truques de encoding.
 
@@ -88,7 +88,7 @@ Normaliza:
 
 ### Análise semântica (`semantic/`)
 
-LLM judge que executa em paralelo com o motor de regras. Faz uma pergunta: "Esta ação estruturalmente permitida é anômala neste momento?" O judge captura ameaças sutis dependentes de contexto que as regras não conseguem expressar.
+LLM judge que executa em paralelo com o rules engine. Faz uma pergunta: "Esta ação estruturalmente permitida é anômala neste momento?" O judge captura ameaças sutis dependentes de contexto que as rules não conseguem expressar.
 
 ### Escaneamento de saída (`egress/`)
 
@@ -114,9 +114,9 @@ packages/core/
 │   ├── index.ts          # Barrel exports
 │   ├── capabilities/     # Capability gate
 │   ├── taint/            # Rastreador de taint
-│   ├── rules/            # Motor de regras + parser
+│   ├── rules/            # Rules engine + parser
 │   ├── pipeline/         # Pipeline de avaliação
-│   ├── normalize/        # Normalização de ações
+│   ├── normalize/        # Normalization de ações
 │   ├── semantic/         # LLM judge
 │   ├── egress/           # Escaneador de saída
 │   ├── sandbox/          # Sandboxing de exec
@@ -131,6 +131,6 @@ packages/core/
 
 ## Veja também
 
-- [Pipeline de segurança](/docs/concepts/security-pipeline) — Como as 3 camadas trabalham juntas
+- [Security pipeline](/docs/concepts/security-pipeline) — Como as 3 camadas trabalham juntas
 - [Capabilities](/docs/concepts/capabilities) — As 15 capabilities base
-- [Níveis de taint](/docs/concepts/taint-levels) — Regras de propagação de taint
+- [Níveis de taint](/docs/concepts/taint-levels) — Rules de propagação de taint

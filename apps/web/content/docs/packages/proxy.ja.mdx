@@ -4,7 +4,7 @@ description: クライアントとエージェントゲートウェイ間の Web
 icon: Globe
 ---
 
-`@securitylayerai/proxy` は、クライアントとエージェントゲートウェイの間に位置する WebSocket プロキシです。すべてのフレームをインターセプトし、アダプターを通じてセキュリティパイプラインで処理し、評価結果に基づいてブロックまたは許可します。
+`@securitylayerai/proxy` は、クライアントとエージェントゲートウェイの間に位置する WebSocket プロキシです。すべてのフレームをインターセプトし、アダプターを通じて security pipeline で処理し、評価結果に基づいてブロックまたは許可します。
 
 ## アーキテクチャ
 
@@ -57,7 +57,7 @@ const upstream = createUpstreamConnection({
 
 ### インターセプター
 
-アダプターを使用して、解析されたフレームをセキュリティパイプラインにルーティングします。
+アダプターを使用して、解析されたフレームを security pipeline にルーティングします。
 
 ```typescript
 import { createInterceptor } from "@securitylayerai/proxy";
@@ -147,7 +147,7 @@ interface ProxyConfig {
   listenHost: string;        // デフォルト: "127.0.0.1"
   upstreamUrl: string;       // エージェントゲートウェイ URL
   adapter: AgentAdapter;     // @securitylayerai/adapters から
-  evaluateAction: EvaluateActionFn;  // セキュリティパイプライン
+  evaluateAction: EvaluateActionFn;  // security pipeline
   gatewayLock?: GatewayLockConfig;
 }
 ```
@@ -173,5 +173,5 @@ packages/proxy/
 ## 関連項目
 
 - [Adapters](/docs/packages/adapters) — 異なるエージェントプロトコルのフレーム解析
-- [Core](/docs/packages/core) — プロキシが呼び出すセキュリティパイプライン
-- [セキュリティパイプライン](/docs/concepts/security-pipeline) — 評価の仕組み
+- [Core](/docs/packages/core) — プロキシが呼び出す security pipeline
+- [Security Pipeline](/docs/concepts/security-pipeline) — 評価の仕組み

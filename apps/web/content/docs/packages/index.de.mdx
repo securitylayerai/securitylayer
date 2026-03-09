@@ -17,7 +17,7 @@ Security Layer ist ein Bun-Monorepo mit fünf Paketen. Jedes Paket hat eine einz
 │  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
 │  │    proxy      │  │     sdk      │  │   rules    │ │
 │  │  WebSocket    │  │  In-Process  │  │   YAML     │ │
-│  │  Gateway      │  │  Prüfungen  │  │  Regelpaket│ │
+│  │  Gateway      │  │  Prüfungen  │  │  Rule-Paket│ │
 │  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
 │         │                 │                │         │
 │  ┌──────┴───────┐         │                │         │
@@ -28,8 +28,8 @@ Security Layer ist ein Bun-Monorepo mit fünf Paketen. Jedes Paket hat eine einz
 │         │                 │                │         │
 │  ┌──────┴─────────────────┴────────────────┴───────┐ │
 │  │                    core                          │ │
-│  │  Fähigkeiten, Taint, Regel-Engine, Pipeline,    │ │
-│  │  Normalisierung, Egress-Scanning, LLM-Richter   │ │
+│  │  Capabilities, Taint, rules engine, Pipeline,    │ │
+│  │  Normalization, Egress-Scanning, LLM judge       │ │
 │  └──────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────┘
 ```
@@ -38,8 +38,8 @@ Security Layer ist ein Bun-Monorepo mit fünf Paketen. Jedes Paket hat eine einz
 
 | Paket | npm | Beschreibung |
 |---|---|---|
-| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | Sicherheits-Engine — Fähigkeiten, Taint, Regeln, Pipeline, Normalisierung |
-| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | Basis-Regeln und Fähigkeitsvorlagen (YAML) |
+| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | Security engine — capabilities, Taint, rules, Pipeline, normalization |
+| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | Baseline rules und capability templates (YAML) |
 | [`@securitylayerai/adapters`](/docs/packages/adapters) | `@securitylayerai/adapters` | Agentenprotokoll-Adapter (OpenClaw, generisch) |
 | [`@securitylayerai/proxy`](/docs/packages/proxy) | `@securitylayerai/proxy` | WebSocket-Sicherheitsproxy zwischen Clients und Agent-Gateway |
 | [`@securitylayerai/sdk`](/docs/sdk) | `@securitylayerai/sdk` | TypeScript-SDK für In-Process-Sicherheitsprüfungen |
@@ -66,7 +66,7 @@ Zentrale Einschränkungen:
 - **rules** ist rein datenbasiert — YAML-Dateien mit einem schlanken Loader, keine Laufzeitabhängigkeit von core
 - **adapters** ist eigenständig — definiert das Interface und Implementierungen für Agentenprotokolle
 - **proxy** hängt von adapters für das Frame-Parsing ab
-- **sdk** hängt von core für die Sicherheitspipeline ab
+- **sdk** hängt von core für die security pipeline ab
 
 ## Entwicklung
 
@@ -87,13 +87,13 @@ bun run typecheck
 <Cards>
   <Card
     title="Core"
-    description="Sicherheits-Engine, Pipeline, Fähigkeiten, Taint-Tracking."
+    description="Security engine, Pipeline, capabilities, Taint-Tracking."
     href="/docs/packages/core"
     icon={<Shield weight="duotone" />}
   />
   <Card
     title="Rules"
-    description="Basis-Regeln und Fähigkeitsvorlagen."
+    description="Baseline rules und capability templates."
     href="/docs/packages/rules"
     icon={<Gear weight="duotone" />}
   />

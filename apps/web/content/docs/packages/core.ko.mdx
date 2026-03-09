@@ -1,6 +1,6 @@
 ---
 title: Core
-description: 보안 엔진 — capability, taint, 규칙, 파이프라인 및 정규화.
+description: security engine — capability, taint, rules, 파이프라인 및 normalization.
 icon: Shield
 ---
 
@@ -45,7 +45,7 @@ tracker.getEffectiveTaint(); // "web"
 
 Taint 레벨 (최소에서 최대 제한 순): `owner` → `trusted` → `untrusted` → `web` → `skill` → `memory`.
 
-### 규칙 엔진 (`rules/`)
+### Rules engine (`rules/`)
 
 알려진 위험 명령, 자격 증명 경로, 유출 구조에 대한 결정적 패턴 매칭입니다. 지연 시간 제로, 모호성 제로.
 
@@ -57,7 +57,7 @@ const result = evaluateRules(normalizedAction, rules);
 // result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
 ```
 
-규칙 유형:
+Rule 유형:
 - **binary** — 명령 바이너리 이름으로 매칭
 - **path** — 파일 경로 glob으로 매칭
 - **pattern** — 정규식 패턴으로 매칭
@@ -65,7 +65,7 @@ const result = evaluateRules(normalizedAction, rules);
 
 ### 파이프라인 (`pipeline/`)
 
-전체 평가 흐름을 조율합니다: capability 게이트 → taint 검사 → 정규화 → 규칙 + LLM (병렬) → 결정 병합.
+전체 평가 흐름을 조율합니다: capability 게이트 → taint 검사 → normalization → rules + LLM (병렬) → 결정 병합.
 
 ```typescript
 import { createPipeline } from "@securitylayerai/core";
@@ -76,11 +76,11 @@ const result = await pipeline.evaluate(action, context);
 
 파이프라인은 항상 모든 레이어에서 **가장 제한적인** 결과를 취합니다. 어떤 레이어든 DENY라고 하면 동작이 거부됩니다.
 
-### 정규화 (`normalize/`)
+### Normalization (`normalize/`)
 
 평가 전에 경로 해석, 인코딩 디코딩, 명령 체인 분리, 파이프 구조 감지를 수행합니다. 난독화 및 인코딩 트릭을 무력화합니다.
 
-정규화 대상:
+Normalization 대상:
 - `~/../../etc/passwd` → `/etc/passwd`
 - `$HOME/.ssh/id_rsa` → `/home/user/.ssh/id_rsa`
 - 명령 체인: `ls; rm -rf /` → `["ls", "rm -rf /"]`
@@ -88,7 +88,7 @@ const result = await pipeline.evaluate(action, context);
 
 ### 의미 분석 (`semantic/`)
 
-규칙 엔진과 병렬로 실행되는 LLM 심판입니다. 하나의 질문만 합니다: "이 구조적으로 허용된 동작이 지금 비정상적인가?" 심판은 규칙으로 표현할 수 없는 미묘한 컨텍스트 의존적 위협을 포착합니다.
+Rules engine과 병렬로 실행되는 LLM 심판입니다. 하나의 질문만 합니다: "이 구조적으로 허용된 동작이 지금 비정상적인가?" 심판은 rules로 표현할 수 없는 미묘한 컨텍스트 의존적 위협을 포착합니다.
 
 ### 송신 스캔 (`egress/`)
 
@@ -114,9 +114,9 @@ packages/core/
 │   ├── index.ts          # 배럴 내보내기
 │   ├── capabilities/     # Capability 게이트
 │   ├── taint/            # Taint 추적기
-│   ├── rules/            # 규칙 엔진 + 파서
+│   ├── rules/            # Rules engine + 파서
 │   ├── pipeline/         # 평가 파이프라인
-│   ├── normalize/        # 동작 정규화
+│   ├── normalize/        # 동작 normalization
 │   ├── semantic/         # LLM 심판
 │   ├── egress/           # 송신 스캐너
 │   ├── sandbox/          # 실행 샌드박싱
@@ -133,4 +133,4 @@ packages/core/
 
 - [보안 파이프라인](/docs/concepts/security-pipeline) — 3개 레이어의 협동 방식
 - [Capability](/docs/concepts/capabilities) — 15가지 기본 capability
-- [Taint 레벨](/docs/concepts/taint-levels) — taint 전파 규칙
+- [Taint 레벨](/docs/concepts/taint-levels) — taint 전파 rules

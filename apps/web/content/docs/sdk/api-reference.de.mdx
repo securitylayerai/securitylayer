@@ -46,7 +46,7 @@ const result = await sl.check(
 
 | Parameter | Typ | Beschreibung |
 |---|---|---|
-| `tool` | `string` | Die verwendete Fähigkeit: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"`, etc. |
+| `tool` | `string` | Die verwendete capability: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"`, etc. |
 | `params` | `object` | Tool-spezifische Parameter (z. B. `{ command: "ls -la" }` für exec) |
 | `context` | `ExecutionContext` | Optionaler Session-Kontext für die Prüfung |
 
@@ -197,6 +197,6 @@ interface ExecutionContext {
 ## Siehe auch
 
 - [Integrationsmuster](/docs/sdk/patterns) — Wähle das richtige Muster für dein Framework
-- [Fähigkeiten](/docs/concepts/capabilities) — Die 15 Basisfähigkeiten
+- [Capabilities](/docs/concepts/capabilities) — Die 15 base capabilities
 - [Taint-Levels](/docs/concepts/taint-levels) — Wie Taint-Tracking funktioniert
-- [Sicherheitspipeline](/docs/concepts/security-pipeline) — Die 3-Schichten-Pipeline
+- [Security pipeline](/docs/concepts/security-pipeline) — Die 3-Schichten-Pipeline

@@ -46,7 +46,7 @@ const result = await sl.check(
 
 | パラメータ | 型 | 説明 |
 |---|---|---|
-| `tool` | `string` | 使用するケイパビリティ: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"` など |
+| `tool` | `string` | 使用する capability: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"` など |
 | `params` | `object` | ツール固有のパラメータ（例: exec の場合 `{ command: "ls -la" }`） |
 | `context` | `ExecutionContext` | チェック用のオプショナルなセッションコンテキスト |
 
@@ -74,7 +74,7 @@ const approved = await sl.waitForApproval(
 
 ### `ingestContent()`
 
-外部コンテンツがセッションに入った際にテイントトラッカーを更新します。
+外部コンテンツがセッションに入った際に taint トラッカーを更新します。
 
 ```typescript
 sl.ingestContent(
@@ -92,7 +92,7 @@ sl.ingestContent(
 | `metadata.path` | `string?` | ファイルパス（ファイルソースの場合） |
 | `metadata.url` | `string?` | URL（Web ソースの場合） |
 
-この呼び出しはソースに基づいてセッションのテイントレベルを上昇させます。Web コンテンツは `WEB_CONTENT` に、信頼されていないプロジェクトのファイルは `UNTRUSTED_HUMAN` に上昇します。
+この呼び出しはソースに基づいてセッションの taint level を上昇させます。Web コンテンツは `WEB_CONTENT` に、信頼されていないプロジェクトのファイルは `UNTRUSTED_HUMAN` に上昇します。
 
 ### `scanEgress()`
 
@@ -106,7 +106,7 @@ const result = sl.scanEgress(content: string): EgressScanResult;
 
 ### `getSessionTaint()`
 
-現在のセッションのテイントレベルを取得します。
+現在のセッションの taint level を取得します。
 
 ```typescript
 const taint = sl.getSessionTaint(): TaintLevel;
@@ -197,6 +197,6 @@ interface ExecutionContext {
 ## 関連項目
 
 - [統合パターン](/docs/sdk/patterns) — フレームワークに適したパターンを選択する
-- [ケイパビリティ](/docs/concepts/capabilities) — 15 の基本ケイパビリティ
-- [テイントレベル](/docs/concepts/taint-levels) — テイントトラッキングの仕組み
-- [セキュリティパイプライン](/docs/concepts/security-pipeline) — 3 層パイプライン
+- [Capabilities](/docs/concepts/capabilities) — 15 の基本 capabilities
+- [Taint Levels](/docs/concepts/taint-levels) — taint tracking の仕組み
+- [Security Pipeline](/docs/concepts/security-pipeline) — 3 層パイプライン

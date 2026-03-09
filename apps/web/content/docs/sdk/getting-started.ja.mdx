@@ -102,9 +102,9 @@ console.log(result.timing.total_ms);   // 12
 console.log(result.degraded);          // false（LLM が利用可能だった）
 ```
 
-## テイントの追跡
+## Taint の追跡
 
-エージェントが外部コンテンツを読み取った際、テイントトラッカーを更新します:
+エージェントが外部コンテンツを読み取った際、taint トラッカーを更新します:
 
 ```typescript
 // Web ページを読み取った後
@@ -121,7 +121,7 @@ sl.ingestContent(fileContent, {
   path: "/tmp/downloaded-project/config.js",
 });
 
-// 以降のチェックでは上昇したテイントが反映される
+// 以降のチェックでは上昇した taint が反映される
 const taint = sl.getSessionTaint(); // "web"（"owner" から上昇）
 ```
 

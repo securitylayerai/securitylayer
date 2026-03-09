@@ -17,7 +17,7 @@ Security Layer は 5 つのパッケージを持つ Bun モノレポです。各
 │  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
 │  │    proxy      │  │     sdk      │  │   rules    │ │
 │  │  WebSocket    │  │ インプロセス   │  │   YAML     │ │
-│  │  ゲートウェイ   │  │  チェック    │  │ ルールパック │ │
+│  │  ゲートウェイ   │  │  チェック    │  │ rule パック │ │
 │  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
 │         │                 │                │         │
 │  ┌──────┴───────┐         │                │         │
@@ -28,8 +28,8 @@ Security Layer は 5 つのパッケージを持つ Bun モノレポです。各
 │         │                 │                │         │
 │  ┌──────┴─────────────────┴────────────────┴───────┐ │
 │  │                    core                          │ │
-│  │  ケイパビリティ、テイント、ルールエンジン、パイプライン、│ │
-│  │  正規化、Egress スキャニング、LLM ジャッジ          │ │
+│  │  capabilities、taint、rules engine、パイプライン、│ │
+│  │  normalization、Egress スキャニング、LLM judge          │ │
 │  └──────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────┘
 ```
@@ -38,8 +38,8 @@ Security Layer は 5 つのパッケージを持つ Bun モノレポです。各
 
 | パッケージ | npm | 説明 |
 |---|---|---|
-| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | セキュリティエンジン — ケイパビリティ、テイント、ルール、パイプライン、正規化 |
-| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | ベースラインルールとケイパビリティテンプレート（YAML） |
+| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | security engine — capabilities、taint、rules、パイプライン、normalization |
+| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | ベースライン rules と capability テンプレート（YAML） |
 | [`@securitylayerai/adapters`](/docs/packages/adapters) | `@securitylayerai/adapters` | エージェントプロトコルアダプター（OpenClaw、汎用） |
 | [`@securitylayerai/proxy`](/docs/packages/proxy) | `@securitylayerai/proxy` | クライアントとエージェントゲートウェイ間の WebSocket セキュリティプロキシ |
 | [`@securitylayerai/sdk`](/docs/sdk) | `@securitylayerai/sdk` | インプロセスセキュリティチェック用の TypeScript SDK |
@@ -66,7 +66,7 @@ securitylayer (CLI)
 - **rules** はデータのみ — YAML ファイルと薄いローダーで、ランタイムに core への依存なし
 - **adapters** はスタンドアロン — エージェントプロトコルのインターフェースと実装を定義
 - **proxy** はフレーム解析のために adapters に依存
-- **sdk** はセキュリティパイプラインのために core に依存
+- **sdk** は security pipeline のために core に依存
 
 ## 開発
 
@@ -87,13 +87,13 @@ bun run typecheck
 <Cards>
   <Card
     title="Core"
-    description="セキュリティエンジン、パイプライン、ケイパビリティ、テイントトラッキング。"
+    description="security engine、パイプライン、capabilities、taint tracking。"
     href="/docs/packages/core"
     icon={<Shield weight="duotone" />}
   />
   <Card
     title="Rules"
-    description="ベースラインルールとケイパビリティテンプレート。"
+    description="ベースライン rules と capability テンプレート。"
     href="/docs/packages/rules"
     icon={<Gear weight="duotone" />}
   />

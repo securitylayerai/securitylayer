@@ -1,18 +1,18 @@
 ---
 title: Rules
-description: Reglas de seguridad base y plantillas de capacidades.
+description: Baseline rules de seguridad y capability templates.
 icon: Gear
 ---
 
-`@securitylayerai/rules` es un paquete de datos -- definiciones de reglas en YAML y plantillas de capacidades con un loader ligero en TypeScript. No tiene dependencia de runtime con core. El CLI y otros paquetes consumen el YAML en tiempo de ejecucin usando `parseRulesYaml()` de core.
+`@securitylayerai/rules` es un paquete de datos -- definiciones de rules en YAML y capability templates con un loader ligero en TypeScript. No tiene dependencia de runtime con core. El CLI y otros paquetes consumen el YAML en tiempo de ejecucin usando `parseRulesYaml()` de core.
 
 ## Contenido
 
-### Reglas base (`rules/baseline.yaml`)
+### Baseline rules (`rules/baseline.yaml`)
 
-14 reglas deterministas que complementan las reglas integradas de core. Cubren patrones que las reglas integradas no contemplan:
+14 rules deterministas que complementan las rules integradas de core. Cubren patrones que las rules integradas no contemplan:
 
-| Categora | ID de regla | Decisin | Qu detecta |
+| Categora | ID de rule | Decisin | Qu detecta |
 |---|---|---|---|
 | Destructivo | `destructive-chmod-recursive-777` | DENY | `chmod -R 777 /` (escritura mundial recursiva en root) |
 | Destructivo | `destructive-chown-recursive` | DENY | `chown -R` en rutas del sistema (`/usr`, `/etc`, `/var`, etc.) |
@@ -31,19 +31,19 @@ icon: Gear
 
 ### Plantillas de sesin (`capabilities/sessions.yaml`)
 
-Conjuntos de capacidades de sesin preconfigurados:
+Conjuntos de capabilities de sesin preconfigurados:
 
-| Plantilla | Capacidades | Taint por defecto |
+| Plantilla | Capabilities | Taint por defecto |
 |---|---|---|
-| `main` | Las 15 capacidades | `owner` |
+| `main` | Las 15 capabilities | `owner` |
 | `group` | `channel.send`, `file.read`, `memory.read.trusted`, `web_fetch` | `trusted` |
 | `dm-unknown` | Solo `channel.send` | `untrusted` |
 
 ### Valores por defecto de canal (`capabilities/channels.yaml`)
 
-Lmites de capacidades por canal:
+Lmites de capabilities por canal:
 
-| Canal | Capacidades mximas |
+| Canal | Capabilities mximas |
 |---|---|
 | `owner-terminal` | TODAS |
 | `whatsapp` | `channel.send`, `file.read`, `memory.read.trusted` |
@@ -55,14 +55,14 @@ Lmites de capacidades por canal:
 
 ### Valores por defecto de skills (`capabilities/skills-defaults.yaml`)
 
-Perfiles comunes de capacidades para skills:
+Perfiles comunes de capabilities para skills:
 
-| Perfil | Capacidades |
+| Perfil | Capabilities |
 |---|---|
 | `read-only` | `file.read`, `web_fetch` |
 | `file-editor` | `file.read`, `file.write` |
 | `web-only` | `web_fetch` |
-| `full-access` | Todas las capacidades no elevadas |
+| `full-access` | Todas las capabilities no elevadas |
 
 ## API de TypeScript
 
@@ -79,10 +79,10 @@ import {
 const meta = getPackMetadata();
 // { name: "@securitylayerai/rules", version: "0.0.1", type: "rule-pack", ruleCount: 14 }
 
-// Cargar reglas base como cadena YAML sin procesar
+// Cargar baseline rules como cadena YAML sin procesar
 const rulesYaml = await loadBaselineRules();
 
-// Cargar plantillas de capacidades parseadas
+// Cargar capability templates parseadas
 const sessions = await loadSessionTemplates();
 const channels = await loadChannelDefaults();
 const skills = await loadSkillDefaults();
@@ -96,7 +96,7 @@ packages/rules/
 │   ├── index.ts          # Funciones del loader
 │   └── types.ts          # RulePackMetadata, tipos de plantillas
 ├── rules/
-│   └── baseline.yaml     # 14 reglas de seguridad
+│   └── baseline.yaml     # 14 security rules
 ├── capabilities/
 │   ├── sessions.yaml     # Plantillas de sesin
 │   ├── channels.yaml     # Valores por defecto de canal
@@ -105,9 +105,9 @@ packages/rules/
     └── loader.test.ts    # Tests de carga YAML + precisin de regex
 ```
 
-## Escribir reglas personalizadas
+## Escribir rules personalizadas
 
-Las reglas base son un punto de partida. Puedes agregar tus propias reglas usando el mismo formato YAML:
+Las baseline rules son un punto de partida. Puedes agregar tus propias rules usando el mismo formato YAML:
 
 ```yaml
 version: 1
@@ -121,12 +121,12 @@ rules:
     reason: "Direct access to production database"
 ```
 
-Tipos de coincidencia de reglas:
+Tipos de coincidencia de rules:
 - `pattern` -- Coincidencia regex contra la cadena completa del comando
 - `path` -- Coincidencia glob contra rutas de archivos
 - `pipe_pair` -- Coincidencia de estructuras de comandos encadenados (`from`  `to`)
 
 ## Ver tambin
 
-- [Comando rules](/docs/commands/rules) -- Gestin de reglas desde el CLI
-- [Pipeline de seguridad](/docs/concepts/security-pipeline) -- Cmo encajan las reglas en la Capa 3
+- [Comando rules](/docs/commands/rules) -- Gestin de rules desde el CLI
+- [Security pipeline](/docs/concepts/security-pipeline) -- Cmo encajan las rules en la Capa 3

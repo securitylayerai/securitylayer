@@ -79,7 +79,7 @@ agentFramework.on("beforeToolUse", async (event) => {
   }
 });
 
-// 実行後: テイントトラッキングを更新
+// 実行後: taint tracking を更新
 agentFramework.on("afterToolUse", (event) => {
   if (event.tool === "file.read" || event.tool === "web_fetch") {
     sl.ingestContent(event.output, {
@@ -99,7 +99,7 @@ agentFramework.on("afterToolUse", (event) => {
 |---|---|---|---|
 | コード変更 | 中程度 | 最小 | 最小 |
 | 制御 | 完全 | 透過的 | 分離 |
-| テイントトラッキング | 手動 | 自動 | 手動 |
+| Taint tracking | 手動 | 自動 | 手動 |
 | 適したケース | カスタムフレームワーク | 既存コードベース | プラグインアーキテクチャ |
 | 承認フロー | 明示的 | 組み込み | 手動 |
 
@@ -120,7 +120,7 @@ async function handleDangerousOperation() {
   // カスタム処理...
 }
 
-// テイントトラッキングにはイベントベース
+// taint tracking にはイベントベース
 framework.on("afterToolUse", (event) => {
   sl.ingestContent(event.output, { source: "file", path: event.params.path });
 });
@@ -130,4 +130,4 @@ framework.on("afterToolUse", (event) => {
 
 - [はじめに](/docs/sdk/getting-started) — インストールと基本セットアップ
 - [API リファレンス](/docs/sdk/api-reference) — メソッドの完全なドキュメント
-- [セキュリティパイプライン](/docs/concepts/security-pipeline) — 3 層パイプラインの仕組み
+- [Security Pipeline](/docs/concepts/security-pipeline) — 3 層パイプラインの仕組み

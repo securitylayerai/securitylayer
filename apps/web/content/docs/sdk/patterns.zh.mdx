@@ -79,7 +79,7 @@ agentFramework.on("beforeToolUse", async (event) => {
   }
 });
 
-// 执行后：更新污点追踪
+// 执行后：更新 taint tracking
 agentFramework.on("afterToolUse", (event) => {
   if (event.tool === "file.read" || event.tool === "web_fetch") {
     sl.ingestContent(event.output, {
@@ -99,7 +99,7 @@ agentFramework.on("afterToolUse", (event) => {
 |---|---|---|---|
 | 代码修改量 | 中等 | 最小 | 最小 |
 | 控制程度 | 完全 | 透明 | 解耦 |
-| 污点追踪 | 手动 | 自动 | 手动 |
+| Taint tracking | 手动 | 自动 | 手动 |
 | 最适合 | 自定义框架 | 现有代码库 | 插件架构 |
 | 审批流程 | 显式 | 内置 | 手动 |
 
@@ -120,7 +120,7 @@ async function handleDangerousOperation() {
   // 自定义处理...
 }
 
-// 污点追踪使用基于事件
+// taint tracking 使用基于事件
 framework.on("afterToolUse", (event) => {
   sl.ingestContent(event.output, { source: "file", path: event.params.path });
 });
@@ -130,4 +130,4 @@ framework.on("afterToolUse", (event) => {
 
 - [快速开始](/docs/sdk/getting-started) — 安装和基本设置
 - [API 参考](/docs/sdk/api-reference) — 完整的方法文档
-- [安全管道](/docs/concepts/security-pipeline) — 三层管道的工作原理
+- [Security pipeline](/docs/concepts/security-pipeline) — 三层 pipeline 的工作原理

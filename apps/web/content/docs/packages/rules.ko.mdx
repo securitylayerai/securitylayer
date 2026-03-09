@@ -1,18 +1,18 @@
 ---
 title: Rules
-description: 기본 보안 규칙 및 capability 템플릿.
+description: 기본 보안 rules 및 capability 템플릿.
 icon: Gear
 ---
 
-`@securitylayerai/rules`는 데이터 패키지입니다 — YAML 규칙 정의와 capability 템플릿을 얇은 TypeScript 로더와 함께 제공합니다. core에 대한 런타임 의존성이 없습니다. CLI 및 기타 패키지는 core의 `parseRulesYaml()`을 사용하여 런타임에 YAML을 소비합니다.
+`@securitylayerai/rules`는 데이터 패키지입니다 — YAML rule 정의와 capability 템플릿을 얇은 TypeScript 로더와 함께 제공합니다. core에 대한 런타임 의존성이 없습니다. CLI 및 기타 패키지는 core의 `parseRulesYaml()`을 사용하여 런타임에 YAML을 소비합니다.
 
 ## 내용
 
-### 기본 규칙 (`rules/baseline.yaml`)
+### 기본 rules (`rules/baseline.yaml`)
 
-core의 내장 규칙을 보완하는 14개의 결정적 규칙입니다. 내장 규칙이 다루지 않는 패턴을 처리합니다:
+core의 내장 rules를 보완하는 14개의 결정적 rules입니다. 내장 rules가 다루지 않는 패턴을 처리합니다:
 
-| 카테고리 | 규칙 ID | 결정 | 감지 대상 |
+| 카테고리 | Rule ID | 결정 | 감지 대상 |
 |---|---|---|---|
 | 파괴적 | `destructive-chmod-recursive-777` | DENY | `chmod -R 777 /` (루트에 대한 재귀적 전체 쓰기 권한) |
 | 파괴적 | `destructive-chown-recursive` | DENY | 시스템 경로(`/usr`, `/etc`, `/var` 등)에 대한 `chown -R` |
@@ -79,7 +79,7 @@ import {
 const meta = getPackMetadata();
 // { name: "@securitylayerai/rules", version: "0.0.1", type: "rule-pack", ruleCount: 14 }
 
-// 기본 규칙을 원시 YAML 문자열로 로드
+// 기본 rules를 원시 YAML 문자열로 로드
 const rulesYaml = await loadBaselineRules();
 
 // 파싱된 capability 템플릿 로드
@@ -96,7 +96,7 @@ packages/rules/
 │   ├── index.ts          # 로더 함수
 │   └── types.ts          # RulePackMetadata, 템플릿 타입
 ├── rules/
-│   └── baseline.yaml     # 14개 보안 규칙
+│   └── baseline.yaml     # 14개 보안 rules
 ├── capabilities/
 │   ├── sessions.yaml     # 세션 템플릿
 │   ├── channels.yaml     # 채널 기본값
@@ -105,9 +105,9 @@ packages/rules/
     └── loader.test.ts    # YAML 로딩 + 정규식 정확도 테스트
 ```
 
-## 커스텀 규칙 작성
+## 커스텀 rule 작성
 
-기본 규칙은 시작점입니다. 동일한 YAML 형식으로 자체 규칙을 추가할 수 있습니다:
+기본 rules는 시작점입니다. 동일한 YAML 형식으로 자체 rules를 추가할 수 있습니다:
 
 ```yaml
 version: 1
@@ -121,12 +121,12 @@ rules:
     reason: "Direct access to production database"
 ```
 
-규칙 매칭 유형:
+Rule 매칭 유형:
 - `pattern` — 전체 명령 문자열에 대한 정규식 매칭
 - `path` — 파일 경로에 대한 glob 매칭
 - `pipe_pair` — 파이프 명령 구조 매칭 (`from` → `to`)
 
 ## 참고
 
-- [rules 명령어](/docs/commands/rules) — CLI 규칙 관리
-- [보안 파이프라인](/docs/concepts/security-pipeline) — 규칙이 레이어 3에서 작동하는 방식
+- [rules 명령어](/docs/commands/rules) — CLI rules 관리
+- [보안 파이프라인](/docs/concepts/security-pipeline) — rules가 레이어 3에서 작동하는 방식

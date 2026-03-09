@@ -46,7 +46,7 @@ const result = await sl.check(
 
 | Parmetro | Tipo | Descripcin |
 |---|---|---|
-| `tool` | `string` | La capacidad que se est usando: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"`, etc. |
+| `tool` | `string` | La capability que se est usando: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"`, etc. |
 | `params` | `object` | Parmetros especficos de la herramienta (ej., `{ command: "ls -la" }` para exec) |
 | `context` | `ExecutionContext` | Contexto de sesin opcional para la verificacin |
 
@@ -197,6 +197,6 @@ interface ExecutionContext {
 ## Ver tambin
 
 - [Patrones de integracin](/docs/sdk/patterns) -- Elige el patrn adecuado para tu framework
-- [Capacidades](/docs/concepts/capabilities) -- Las 15 capacidades base
+- [Capabilities](/docs/concepts/capabilities) -- Las 15 capabilities base
 - [Niveles de taint](/docs/concepts/taint-levels) -- Cmo funciona el seguimiento de taint
-- [Pipeline de seguridad](/docs/concepts/security-pipeline) -- El pipeline de 3 capas
+- [Security pipeline](/docs/concepts/security-pipeline) -- El pipeline de 3 capas

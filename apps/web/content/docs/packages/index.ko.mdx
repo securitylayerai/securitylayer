@@ -17,7 +17,7 @@ Security Layer는 5개의 패키지로 구성된 Bun 모노레포입니다. 각 
 │  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
 │  │    proxy      │  │     sdk      │  │   rules    │ │
 │  │  WebSocket    │  │  프로세스 내  │  │   YAML     │ │
-│  │  게이트웨이    │  │  검사        │  │  규칙 팩    │ │
+│  │  게이트웨이    │  │  검사        │  │  rule 팩    │ │
 │  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
 │         │                 │                │         │
 │  ┌──────┴───────┐         │                │         │
@@ -28,8 +28,8 @@ Security Layer는 5개의 패키지로 구성된 Bun 모노레포입니다. 각 
 │         │                 │                │         │
 │  ┌──────┴─────────────────┴────────────────┴───────┐ │
 │  │                    core                          │ │
-│  │  Capability, taint, 규칙 엔진, 파이프라인,       │ │
-│  │  정규화, 송신 스캔, LLM 심판                      │ │
+│  │  Capability, taint, rules engine, 파이프라인,      │ │
+│  │  normalization, 송신 스캔, LLM 심판               │ │
 │  └──────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────┘
 ```
@@ -38,8 +38,8 @@ Security Layer는 5개의 패키지로 구성된 Bun 모노레포입니다. 각 
 
 | 패키지 | npm | 설명 |
 |---|---|---|
-| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | 보안 엔진 — capability, taint, 규칙, 파이프라인, 정규화 |
-| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | 기본 규칙 및 capability 템플릿 (YAML) |
+| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | security engine — capability, taint, rules, 파이프라인, normalization |
+| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | 기본 rules 및 capability 템플릿 (YAML) |
 | [`@securitylayerai/adapters`](/docs/packages/adapters) | `@securitylayerai/adapters` | 에이전트 프로토콜 어댑터 (OpenClaw, generic) |
 | [`@securitylayerai/proxy`](/docs/packages/proxy) | `@securitylayerai/proxy` | 클라이언트와 에이전트 게이트웨이 간 WebSocket 보안 프록시 |
 | [`@securitylayerai/sdk`](/docs/sdk) | `@securitylayerai/sdk` | 프로세스 내 보안 검사를 위한 TypeScript SDK |
@@ -87,13 +87,13 @@ bun run typecheck
 <Cards>
   <Card
     title="Core"
-    description="보안 엔진, 파이프라인, capability, taint 추적."
+    description="security engine, 파이프라인, capability, taint 추적."
     href="/docs/packages/core"
     icon={<Shield weight="duotone" />}
   />
   <Card
     title="Rules"
-    description="기본 규칙 및 capability 템플릿."
+    description="기본 rules 및 capability 템플릿."
     href="/docs/packages/rules"
     icon={<Gear weight="duotone" />}
   />

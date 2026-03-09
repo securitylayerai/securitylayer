@@ -102,9 +102,9 @@ console.log(result.timing.total_ms);   // 12
 console.log(result.degraded);          // false（LLM 可用）
 ```
 
-## 追踪污点
+## 追踪 taint
 
-当您的代理读取外部内容时，需要更新污点追踪器：
+当您的代理读取外部内容时，需要更新 taint tracker：
 
 ```typescript
 // 读取网页后
@@ -121,7 +121,7 @@ sl.ingestContent(fileContent, {
   path: "/tmp/downloaded-project/config.js",
 });
 
-// 现在后续检查将反映提升后的污点
+// 现在后续检查将反映提升后的 taint
 const taint = sl.getSessionTaint(); // "web"（从 "owner" 提升）
 ```
 

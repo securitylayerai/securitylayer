@@ -4,7 +4,7 @@ description: Proxy de seguridad WebSocket entre clientes y gateway de agentes.
 icon: Globe
 ---
 
-`@securitylayerai/proxy` es un proxy WebSocket que se ubica entre los clientes y el gateway de agentes. Intercepta cada frame, lo ejecuta a travs del pipeline de seguridad mediante un adaptador, y bloquea o permite segn el resultado de la evaluacin.
+`@securitylayerai/proxy` es un proxy WebSocket que se ubica entre los clientes y el gateway de agentes. Intercepta cada frame, lo ejecuta a travs del security pipeline mediante un adaptador, y bloquea o permite segn el resultado de la evaluacin.
 
 ## Arquitectura
 
@@ -57,7 +57,7 @@ const upstream = createUpstreamConnection({
 
 ### Interceptor
 
-Enruta los frames parseados a travs del pipeline de seguridad usando el adaptador.
+Enruta los frames parseados a travs del security pipeline usando el adaptador.
 
 ```typescript
 import { createInterceptor } from "@securitylayerai/proxy";
@@ -82,7 +82,7 @@ Tres estrategias de bloqueo:
 |---|---|
 | `validation_token` | El proxy incluye un token secreto; el gateway rechaza conexiones sin l |
 | `unix_socket` | El gateway escucha en un socket Unix solo accesible para el proxy |
-| `firewall` | Las reglas de firewall restringen el puerto del gateway a localhost |
+| `firewall` | Las rules de firewall restringen el puerto del gateway a localhost |
 
 ```typescript
 import { createGatewayLock } from "@securitylayerai/proxy";
@@ -147,7 +147,7 @@ interface ProxyConfig {
   listenHost: string;        // Por defecto: "127.0.0.1"
   upstreamUrl: string;       // URL del gateway de agentes
   adapter: AgentAdapter;     // De @securitylayerai/adapters
-  evaluateAction: EvaluateActionFn;  // Pipeline de seguridad
+  evaluateAction: EvaluateActionFn;  // Security pipeline
   gatewayLock?: GatewayLockConfig;
 }
 ```
@@ -173,5 +173,5 @@ packages/proxy/
 ## Ver tambin
 
 - [Adapters](/docs/packages/adapters) -- Parsing de frames para diferentes protocolos de agentes
-- [Core](/docs/packages/core) -- El pipeline de seguridad que el proxy invoca
-- [Pipeline de seguridad](/docs/concepts/security-pipeline) -- Cmo funciona la evaluacin
+- [Core](/docs/packages/core) -- El security pipeline que el proxy invoca
+- [Security pipeline](/docs/concepts/security-pipeline) -- Cmo funciona la evaluacin

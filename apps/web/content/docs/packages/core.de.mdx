@@ -1,16 +1,16 @@
 ---
 title: Core
-description: Die Sicherheits-Engine — Fähigkeiten, Taint, Regeln, Pipeline und Normalisierung.
+description: Die security engine — capabilities, Taint, rules, Pipeline und normalization.
 icon: Shield
 ---
 
-`@securitylayerai/core` ist das Fundamentpaket. Es implementiert die 3-Schichten-Sicherheitspipeline und alle grundlegenden Sicherheitsprimitive. Jedes andere Paket hängt von core ab (direkt oder indirekt).
+`@securitylayerai/core` ist das Fundamentpaket. Es implementiert die 3-Schichten-security pipeline und alle grundlegenden Sicherheitsprimitive. Jedes andere Paket hängt von core ab (direkt oder indirekt).
 
 ## Module
 
-### Fähigkeiten (`capabilities/`)
+### Capabilities (`capabilities/`)
 
-Rein synchrones Capability-Gate. Prüft, ob eine Aktion basierend auf der Schnittmenge von Session-, Skill- und Channel-Fähigkeiten strukturell erlaubt ist.
+Rein synchrones Capability-Gate. Prüft, ob eine Aktion basierend auf der Schnittmenge von Session-, Skill- und Channel-capabilities strukturell erlaubt ist.
 
 ```typescript
 import { checkCapability } from "@securitylayerai/core";
@@ -25,11 +25,11 @@ const result = checkCapability(action, {
 // result.reason?: string (falls verweigert)
 ```
 
-Das Capability-Gate ist eine Mengenzugehörigkeitsprüfung — kein I/O, kein LLM, kein Netzwerk. Wenn die Fähigkeit nicht in der Menge ist, ist die Aktion unmöglich.
+Das Capability-Gate ist eine Mengenzugehörigkeitsprüfung — kein I/O, kein LLM, kein Netzwerk. Wenn die capability nicht in der Menge ist, ist die Aktion unmöglich.
 
 ### Taint-Tracking (`taint/`)
 
-Verfolgt die Datenherkunft durch die Session. Wenn nicht vertrauenswürdige Inhalte eintreten (Web-Abruf, unbekannte DM, E-Mail), steigt das Taint-Level der Session. Höherer Taint schränkt ein, welche Fähigkeiten verfügbar sind.
+Verfolgt die Datenherkunft durch die Session. Wenn nicht vertrauenswürdige Inhalte eintreten (Web-Abruf, unbekannte DM, E-Mail), steigt das Taint-Level der Session. Höherer Taint schränkt ein, welche capabilities verfügbar sind.
 
 ```typescript
 import { createTaintTracker } from "@securitylayerai/core";
@@ -45,7 +45,7 @@ tracker.getEffectiveTaint(); // "web"
 
 Taint-Levels (am wenigsten bis am stärksten einschränkend): `owner` → `trusted` → `untrusted` → `web` → `skill` → `memory`.
 
-### Regel-Engine (`rules/`)
+### Rules engine (`rules/`)
 
 Deterministischer Musterabgleich gegen bekannte schädliche Befehle, Credential-Pfade und Exfiltrations-Strukturen. Null Latenz, null Mehrdeutigkeit.
 
@@ -57,7 +57,7 @@ const result = evaluateRules(normalizedAction, rules);
 // result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
 ```
 
-Regeltypen:
+Rule-Typen:
 - **binary** — Abgleich nach Befehlsname der ausführbaren Datei
 - **path** — Abgleich nach Dateipfad-Glob
 - **pattern** — Abgleich nach Regex-Muster
@@ -65,7 +65,7 @@ Regeltypen:
 
 ### Pipeline (`pipeline/`)
 
-Orchestriert den vollständigen Auswertungsfluss: Capability-Gate → Taint-Prüfung → Normalisierung → Regeln + LLM (parallel) → Entscheidungen zusammenführen.
+Orchestriert den vollständigen Auswertungsfluss: Capability-Gate → Taint-Prüfung → normalization → rules + LLM (parallel) → Entscheidungen zusammenführen.
 
 ```typescript
 import { createPipeline } from "@securitylayerai/core";
@@ -76,11 +76,11 @@ const result = await pipeline.evaluate(action, context);
 
 Die Pipeline nimmt immer das **restriktivste** Ergebnis aller Schichten. Wenn eine Schicht DENY sagt, wird die Aktion verweigert.
 
-### Normalisierung (`normalize/`)
+### Normalization (`normalize/`)
 
 Löst Pfade auf, dekodiert Kodierungen, teilt Befehlsketten und erkennt Pipe-Strukturen vor der Auswertung. Verhindert Verschleierungs- und Kodierungstricks.
 
-Normalisiert:
+Normalize:
 - `~/../../etc/passwd` → `/etc/passwd`
 - `$HOME/.ssh/id_rsa` → `/home/user/.ssh/id_rsa`
 - Befehlsketten: `ls; rm -rf /` → `["ls", "rm -rf /"]`
@@ -88,7 +88,7 @@ Normalisiert:
 
 ### Semantische Analyse (`semantic/`)
 
-LLM-Richter, der parallel zur Regel-Engine läuft. Stellt eine Frage: „Ist diese strukturell erlaubte Aktion gerade anomal?" Der Richter erkennt subtile, kontextabhängige Bedrohungen, die Regeln nicht ausdrücken können.
+LLM judge, der parallel zur rules engine läuft. Stellt eine Frage: „Ist diese strukturell erlaubte Aktion gerade anomal?" Der LLM judge erkennt subtile, kontextabhängige Bedrohungen, die rules nicht ausdrücken können.
 
 ### Egress-Scanning (`egress/`)
 
@@ -114,23 +114,23 @@ packages/core/
 │   ├── index.ts          # Barrel-Exports
 │   ├── capabilities/     # Capability-Gate
 │   ├── taint/            # Taint-Tracker
-│   ├── rules/            # Regel-Engine + Parser
+│   ├── rules/            # Rules engine + Parser
 │   ├── pipeline/         # Auswertungspipeline
-│   ├── normalize/        # Aktionsnormalisierung
-│   ├── semantic/         # LLM-Richter
+│   ├── normalize/        # Aktions-normalization
+│   ├── semantic/         # LLM judge
 │   ├── egress/           # Egress-Scanner
 │   ├── sandbox/          # Exec-Sandboxing
 │   ├── events/           # Event-Bus
 │   ├── config/           # Konfigurations-Loader
 │   ├── approval/         # Genehmigungsablauf
 │   ├── memory/           # Speicherzonen-Zugriff
-│   ├── skills/           # Skill-Fähigkeitsdeklarationen
+│   ├── skills/           # Skill-Capability-Deklarationen
 │   └── utils/            # Logger, Hilfsfunktionen
 └── test/                 # Vitest-Tests
 ```
 
 ## Siehe auch
 
-- [Sicherheitspipeline](/docs/concepts/security-pipeline) — Wie die 3 Schichten zusammenwirken
-- [Fähigkeiten](/docs/concepts/capabilities) — Die 15 Basisfähigkeiten
-- [Taint-Levels](/docs/concepts/taint-levels) — Taint-Ausbreitungsregeln
+- [Security pipeline](/docs/concepts/security-pipeline) — Wie die 3 Schichten zusammenwirken
+- [Capabilities](/docs/concepts/capabilities) — Die 15 base capabilities
+- [Taint-Levels](/docs/concepts/taint-levels) — Taint-Ausbreitungs-rules

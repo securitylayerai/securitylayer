@@ -1,16 +1,16 @@
 ---
 title: Core
-description: セキュリティエンジン — ケイパビリティ、テイント、ルール、パイプライン、正規化。
+description: security engine — capabilities、taint、rules、パイプライン、normalization。
 icon: Shield
 ---
 
-`@securitylayerai/core` は基盤となるパッケージです。3 層セキュリティパイプラインとすべてのコアセキュリティプリミティブを実装しています。他のすべてのパッケージは core に（直接的または間接的に）依存しています。
+`@securitylayerai/core` は基盤となるパッケージです。3 層 security pipeline とすべてのコアセキュリティプリミティブを実装しています。他のすべてのパッケージは core に（直接的または間接的に）依存しています。
 
 ## モジュール
 
-### ケイパビリティ (`capabilities/`)
+### Capabilities (`capabilities/`)
 
-純粋な同期ケイパビリティゲート。セッション、スキル、チャネルのケイパビリティの共通部分に基づいて、アクションが構造的に許可されているかどうかをチェックします。
+純粋な同期 capability gate。セッション、スキル、チャネルの capabilities の共通部分に基づいて、アクションが構造的に許可されているかどうかをチェックします。
 
 ```typescript
 import { checkCapability } from "@securitylayerai/core";
@@ -25,27 +25,27 @@ const result = checkCapability(action, {
 // result.reason?: string（拒否された場合）
 ```
 
-ケイパビリティゲートはセットメンバーシップチェックです — I/O なし、LLM なし、ネットワークなし。ケイパビリティがセットに含まれていなければ、アクションは不可能です。
+Capability gate はセットメンバーシップチェックです — I/O なし、LLM なし、ネットワークなし。capability がセットに含まれていなければ、アクションは不可能です。
 
-### テイントトラッキング (`taint/`)
+### Taint Tracking (`taint/`)
 
-セッション内のデータの出所を追跡します。信頼されていないコンテンツ（Web フェッチ、不明な DM、メール）が入ると、セッションのテイントレベルが上昇します。テイントが高いほど利用可能なケイパビリティが制限されます。
+セッション内のデータの出所を追跡します。信頼されていないコンテンツ（Web フェッチ、不明な DM、メール）が入ると、セッションの taint level が上昇します。taint が高いほど利用可能な capabilities が制限されます。
 
 ```typescript
 import { createTaintTracker } from "@securitylayerai/core";
 
 const tracker = createTaintTracker("owner");
 
-// Web コンテンツによりテイントが上昇
+// Web コンテンツにより taint が上昇
 tracker.ingest({ source: "web", url: "https://example.com" });
 tracker.getEffectiveTaint(); // "web"
 
-// 以降の exec チェックでは上昇したテイントが適用される
+// 以降の exec チェックでは上昇した taint が適用される
 ```
 
-テイントレベル（制限の弱い順）: `owner` → `trusted` → `untrusted` → `web` → `skill` → `memory`。
+Taint level（制限の弱い順）: `owner` → `trusted` → `untrusted` → `web` → `skill` → `memory`。
 
-### ルールエンジン (`rules/`)
+### Rules Engine (`rules/`)
 
 既知の危険コマンド、認証情報パス、データ流出パターンに対する決定論的パターンマッチング。ゼロレイテンシー、ゼロアンビギュイティ。
 
@@ -57,7 +57,7 @@ const result = evaluateRules(normalizedAction, rules);
 // result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
 ```
 
-ルールタイプ:
+Rule タイプ:
 - **binary** — コマンドバイナリ名によるマッチ
 - **path** — ファイルパスの glob によるマッチ
 - **pattern** — 正規表現パターンによるマッチ
@@ -65,7 +65,7 @@ const result = evaluateRules(normalizedAction, rules);
 
 ### パイプライン (`pipeline/`)
 
-完全な評価フローをオーケストレーション: ケイパビリティゲート → テイントチェック → 正規化 → ルール + LLM（並列）→ 判定のマージ。
+完全な評価フローをオーケストレーション: capability gate → taint check → normalization → rules + LLM（並列）→ 判定のマージ。
 
 ```typescript
 import { createPipeline } from "@securitylayerai/core";
@@ -76,11 +76,11 @@ const result = await pipeline.evaluate(action, context);
 
 パイプラインは常にすべてのレイヤーから**最も制限的な**結果を採用します。いずれかのレイヤーが DENY と判定すれば、アクションは拒否されます。
 
-### 正規化 (`normalize/`)
+### Normalization (`normalize/`)
 
 評価前にパスの解決、エンコーディングのデコード、コマンドチェーンの分割、パイプ構造の検出を行います。難読化やエンコーディングのトリックを無効にします。
 
-正規化の対象:
+Normalization の対象:
 - `~/../../etc/passwd` → `/etc/passwd`
 - `$HOME/.ssh/id_rsa` → `/home/user/.ssh/id_rsa`
 - コマンドチェーン: `ls; rm -rf /` → `["ls", "rm -rf /"]`
@@ -88,7 +88,7 @@ const result = await pipeline.evaluate(action, context);
 
 ### セマンティック分析 (`semantic/`)
 
-ルールエンジンと並列で実行される LLM ジャッジ。「この構造的に許可されたアクションは、現在のコンテキストで異常ですか？」という 1 つの問いを発します。ジャッジはルールでは表現できない微妙なコンテキスト依存の脅威を捕捉します。
+rules engine と並列で実行される LLM judge。「この構造的に許可されたアクションは、現在のコンテキストで異常ですか？」という 1 つの問いを発します。judge は rules では表現できない微妙なコンテキスト依存の脅威を捕捉します。
 
 ### Egress スキャニング (`egress/`)
 
@@ -100,7 +100,7 @@ const result = await pipeline.evaluate(action, context);
 
 ### イベント (`events/`)
 
-監査ログとオブザーバビリティのためのイベントバス。すべてのセキュリティ判定、テイント変更、承認フローが構造化イベントを発行します。
+監査ログとオブザーバビリティのためのイベントバス。すべてのセキュリティ判定、taint 変更、承認フローが構造化イベントを発行します。
 
 ### 設定 (`config/`)
 
@@ -112,25 +112,25 @@ const result = await pipeline.evaluate(action, context);
 packages/core/
 ├── src/
 │   ├── index.ts          # バレルエクスポート
-│   ├── capabilities/     # ケイパビリティゲート
-│   ├── taint/            # テイントトラッカー
-│   ├── rules/            # ルールエンジン + パーサー
+│   ├── capabilities/     # capability gate
+│   ├── taint/            # taint トラッカー
+│   ├── rules/            # rules engine + パーサー
 │   ├── pipeline/         # 評価パイプライン
-│   ├── normalize/        # アクション正規化
-│   ├── semantic/         # LLM ジャッジ
+│   ├── normalize/        # アクション normalization
+│   ├── semantic/         # LLM judge
 │   ├── egress/           # Egress スキャナー
 │   ├── sandbox/          # Exec サンドボックス
 │   ├── events/           # イベントバス
 │   ├── config/           # 設定ローダー
 │   ├── approval/         # 承認フロー
 │   ├── memory/           # メモリゾーンアクセス
-│   ├── skills/           # スキルケイパビリティ宣言
+│   ├── skills/           # スキル capability 宣言
 │   └── utils/            # ロガー、ヘルパー
 └── test/                 # Vitest テスト
 ```
 
 ## 関連項目
 
-- [セキュリティパイプライン](/docs/concepts/security-pipeline) — 3 つのレイヤーの連携
-- [ケイパビリティ](/docs/concepts/capabilities) — 15 の基本ケイパビリティ
-- [テイントレベル](/docs/concepts/taint-levels) — テイント伝播ルール
+- [Security Pipeline](/docs/concepts/security-pipeline) — 3 つのレイヤーの連携
+- [Capabilities](/docs/concepts/capabilities) — 15 の基本 capabilities
+- [Taint Levels](/docs/concepts/taint-levels) — taint 伝播の rules

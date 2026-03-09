@@ -1,18 +1,18 @@
 ---
 title: Rules
-description: Basis-Sicherheitsregeln und Fähigkeitsvorlagen.
+description: Baseline rules und capability templates.
 icon: Gear
 ---
 
-`@securitylayerai/rules` ist ein Datenpaket — YAML-Regeldefinitionen und Fähigkeitsvorlagen mit einem schlanken TypeScript-Loader. Es hat keine Laufzeitabhängigkeit von core. Die CLI und andere Pakete konsumieren das YAML zur Laufzeit über `parseRulesYaml()` von core.
+`@securitylayerai/rules` ist ein Datenpaket — YAML-Rule-Definitionen und capability templates mit einem schlanken TypeScript-Loader. Es hat keine Laufzeitabhängigkeit von core. Die CLI und andere Pakete konsumieren das YAML zur Laufzeit über `parseRulesYaml()` von core.
 
 ## Inhalte
 
-### Basis-Regeln (`rules/baseline.yaml`)
+### Baseline rules (`rules/baseline.yaml`)
 
-14 deterministische Regeln, die die eingebauten Regeln von core ergänzen. Diese decken Muster ab, die die eingebauten Regeln nicht abfangen:
+14 deterministische rules, die die eingebauten rules von core ergänzen. Diese decken Muster ab, die die eingebauten rules nicht abfangen:
 
-| Kategorie | Regel-ID | Entscheidung | Was erkannt wird |
+| Kategorie | Rule-ID | Entscheidung | Was erkannt wird |
 |---|---|---|---|
 | Destruktiv | `destructive-chmod-recursive-777` | DENY | `chmod -R 777 /` (rekursiv weltbeschreibbar auf Root) |
 | Destruktiv | `destructive-chown-recursive` | DENY | `chown -R` auf Systempfaden (`/usr`, `/etc`, `/var`, etc.) |
@@ -31,19 +31,19 @@ icon: Gear
 
 ### Session-Vorlagen (`capabilities/sessions.yaml`)
 
-Vorkonfigurierte Session-Fähigkeitssets:
+Vorkonfigurierte Session-Capability-Sets:
 
-| Vorlage | Fähigkeiten | Standard-Taint |
+| Vorlage | Capabilities | Standard-Taint |
 |---|---|---|
-| `main` | Alle 15 Fähigkeiten | `owner` |
+| `main` | Alle 15 capabilities | `owner` |
 | `group` | `channel.send`, `file.read`, `memory.read.trusted`, `web_fetch` | `trusted` |
 | `dm-unknown` | Nur `channel.send` | `untrusted` |
 
 ### Channel-Standards (`capabilities/channels.yaml`)
 
-Fähigkeitslimits pro Channel:
+Capability-Limits pro Channel:
 
-| Channel | Maximale Fähigkeiten |
+| Channel | Maximale capabilities |
 |---|---|
 | `owner-terminal` | ALLE |
 | `whatsapp` | `channel.send`, `file.read`, `memory.read.trusted` |
@@ -55,14 +55,14 @@ Fähigkeitslimits pro Channel:
 
 ### Skill-Standards (`capabilities/skills-defaults.yaml`)
 
-Gängige Skill-Fähigkeitsprofile:
+Gängige Skill-Capability-Profile:
 
-| Profil | Fähigkeiten |
+| Profil | Capabilities |
 |---|---|
 | `read-only` | `file.read`, `web_fetch` |
 | `file-editor` | `file.read`, `file.write` |
 | `web-only` | `web_fetch` |
-| `full-access` | Alle nicht-erhöhten Fähigkeiten |
+| `full-access` | Alle nicht-erhöhten capabilities |
 
 ## TypeScript-API
 
@@ -79,10 +79,10 @@ import {
 const meta = getPackMetadata();
 // { name: "@securitylayerai/rules", version: "0.0.1", type: "rule-pack", ruleCount: 14 }
 
-// Basis-Regeln als rohen YAML-String laden
+// Baseline rules als rohen YAML-String laden
 const rulesYaml = await loadBaselineRules();
 
-// Geparste Fähigkeitsvorlagen laden
+// Geparste capability templates laden
 const sessions = await loadSessionTemplates();
 const channels = await loadChannelDefaults();
 const skills = await loadSkillDefaults();
@@ -96,7 +96,7 @@ packages/rules/
 │   ├── index.ts          # Loader-Funktionen
 │   └── types.ts          # RulePackMetadata, Vorlagentypen
 ├── rules/
-│   └── baseline.yaml     # 14 Sicherheitsregeln
+│   └── baseline.yaml     # 14 Sicherheits-rules
 ├── capabilities/
 │   ├── sessions.yaml     # Session-Vorlagen
 │   ├── channels.yaml     # Channel-Standards
@@ -105,9 +105,9 @@ packages/rules/
     └── loader.test.ts    # YAML-Lade- + Regex-Genauigkeitstests
 ```
 
-## Eigene Regeln schreiben
+## Eigene rules schreiben
 
-Die Basis-Regeln sind ein Ausgangspunkt. Du kannst eigene Regeln im selben YAML-Format hinzufügen:
+Die baseline rules sind ein Ausgangspunkt. Du kannst eigene rules im selben YAML-Format hinzufügen:
 
 ```yaml
 version: 1
@@ -121,12 +121,12 @@ rules:
     reason: "Direkter Zugriff auf Produktionsdatenbank"
 ```
 
-Regel-Abgleichtypen:
+Rule-Abgleichtypen:
 - `pattern` — Regex-Abgleich gegen den gesamten Befehlsstring
 - `path` — Glob-Abgleich gegen Dateipfade
 - `pipe_pair` — Abgleich von Pipe-Befehlsstrukturen (`from` → `to`)
 
 ## Siehe auch
 
-- [rules-Befehl](/docs/commands/rules) — CLI-Regelverwaltung
-- [Sicherheitspipeline](/docs/concepts/security-pipeline) — Wie Regeln in Schicht 3 eingebunden sind
+- [rules-Befehl](/docs/commands/rules) — CLI-Rule-Verwaltung
+- [Security pipeline](/docs/concepts/security-pipeline) — Wie rules in Schicht 3 eingebunden sind

@@ -4,7 +4,7 @@ description: Proxy de segurança WebSocket entre clientes e gateway do agente.
 icon: Globe
 ---
 
-`@securitylayerai/proxy` é um proxy WebSocket que fica entre os clientes e o gateway do agente. Ele intercepta cada frame, passa pelo pipeline de segurança via um adaptador, e bloqueia ou permite com base no resultado da avaliação.
+`@securitylayerai/proxy` é um proxy WebSocket que fica entre os clientes e o gateway do agente. Ele intercepta cada frame, passa pelo security pipeline via um adaptador, e bloqueia ou permite com base no resultado da avaliação.
 
 ## Arquitetura
 
@@ -57,7 +57,7 @@ const upstream = createUpstreamConnection({
 
 ### Interceptor
 
-Roteia frames parseados pelo pipeline de segurança usando o adaptador.
+Roteia frames parseados pelo security pipeline usando o adaptador.
 
 ```typescript
 import { createInterceptor } from "@securitylayerai/proxy";
@@ -147,7 +147,7 @@ interface ProxyConfig {
   listenHost: string;        // Padrão: "127.0.0.1"
   upstreamUrl: string;       // URL do gateway do agente
   adapter: AgentAdapter;     // De @securitylayerai/adapters
-  evaluateAction: EvaluateActionFn;  // Pipeline de segurança
+  evaluateAction: EvaluateActionFn;  // Security pipeline
   gatewayLock?: GatewayLockConfig;
 }
 ```
@@ -173,5 +173,5 @@ packages/proxy/
 ## Veja também
 
 - [Adapters](/docs/packages/adapters) — Parsing de frames para diferentes protocolos de agente
-- [Core](/docs/packages/core) — O pipeline de segurança que o proxy invoca
-- [Pipeline de segurança](/docs/concepts/security-pipeline) — Como a avaliação funciona
+- [Core](/docs/packages/core) — O security pipeline que o proxy invoca
+- [Security pipeline](/docs/concepts/security-pipeline) — Como a avaliação funciona

@@ -28,8 +28,8 @@ Security Layer es un monorepo de Bun con cinco paquetes. Cada paquete tiene una 
 │         │                 │                │         │
 │  ┌──────┴─────────────────┴────────────────┴───────┐ │
 │  │                    core                          │ │
-│  │  Capacidades, taint, motor de reglas, pipeline,  │ │
-│  │  normalizacin, escaneo de egreso, LLM judge     │ │
+│  │  Capabilities, taint, rules engine, pipeline,     │ │
+│  │  normalization, escaneo de egreso, LLM judge     │ │
 │  └──────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────┘
 ```
@@ -38,8 +38,8 @@ Security Layer es un monorepo de Bun con cinco paquetes. Cada paquete tiene una 
 
 | Paquete | npm | Descripcin |
 |---|---|---|
-| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | Motor de seguridad -- capacidades, taint, reglas, pipeline, normalizacin |
-| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | Reglas base y plantillas de capacidades (YAML) |
+| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | Security engine -- capabilities, taint, rules, pipeline, normalization |
+| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | Baseline rules y capability templates (YAML) |
 | [`@securitylayerai/adapters`](/docs/packages/adapters) | `@securitylayerai/adapters` | Adaptadores de protocolos de agentes (OpenClaw, genrico) |
 | [`@securitylayerai/proxy`](/docs/packages/proxy) | `@securitylayerai/proxy` | Proxy de seguridad WebSocket entre clientes y gateway de agentes |
 | [`@securitylayerai/sdk`](/docs/sdk) | `@securitylayerai/sdk` | SDK de TypeScript para verificaciones de seguridad en proceso |
@@ -66,7 +66,7 @@ Restricciones clave:
 - **rules** es solo datos -- archivos YAML con un loader ligero, sin dependencia de core en tiempo de ejecucin
 - **adapters** es independiente -- define la interfaz e implementaciones para protocolos de agentes
 - **proxy** depende de adapters para el parsing de frames
-- **sdk** depende de core para el pipeline de seguridad
+- **sdk** depende de core para el security pipeline
 
 ## Desarrollo
 
@@ -87,13 +87,13 @@ bun run typecheck
 <Cards>
   <Card
     title="Core"
-    description="Motor de seguridad, pipeline, capacidades, seguimiento de taint."
+    description="Security engine, pipeline, capabilities, seguimiento de taint."
     href="/docs/packages/core"
     icon={<Shield weight="duotone" />}
   />
   <Card
     title="Rules"
-    description="Reglas base y plantillas de capacidades."
+    description="Baseline rules y capability templates."
     href="/docs/packages/rules"
     icon={<Gear weight="duotone" />}
   />

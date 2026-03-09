@@ -4,7 +4,7 @@ description: 客户端与代理网关之间的 WebSocket 安全代理。
 icon: Globe
 ---
 
-`@securitylayerai/proxy` 是一个 WebSocket 代理，位于客户端和代理网关之间。它拦截每一帧数据，通过适配器将其送入安全管道，并根据评估结果进行阻止或放行。
+`@securitylayerai/proxy` 是一个 WebSocket 代理，位于客户端和代理网关之间。它拦截每一帧数据，通过适配器将其送入 security pipeline，并根据评估结果进行阻止或放行。
 
 ## 架构
 
@@ -57,7 +57,7 @@ const upstream = createUpstreamConnection({
 
 ### 拦截器
 
-使用适配器将解析后的帧路由通过安全管道。
+使用适配器将解析后的帧路由通过 security pipeline。
 
 ```typescript
 import { createInterceptor } from "@securitylayerai/proxy";
@@ -147,7 +147,7 @@ interface ProxyConfig {
   listenHost: string;        // 默认: "127.0.0.1"
   upstreamUrl: string;       // 代理网关 URL
   adapter: AgentAdapter;     // 来自 @securitylayerai/adapters
-  evaluateAction: EvaluateActionFn;  // 安全管道
+  evaluateAction: EvaluateActionFn;  // Security pipeline
   gatewayLock?: GatewayLockConfig;
 }
 ```
@@ -173,5 +173,5 @@ packages/proxy/
 ## 另请参阅
 
 - [Adapters](/docs/packages/adapters) — 不同代理协议的帧解析
-- [Core](/docs/packages/core) — 代理调用的安全管道
-- [安全管道](/docs/concepts/security-pipeline) — 评估的工作原理
+- [Core](/docs/packages/core) — 代理调用的 security pipeline
+- [Security pipeline](/docs/concepts/security-pipeline) — 评估的工作原理

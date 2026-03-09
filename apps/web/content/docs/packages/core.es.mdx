@@ -1,16 +1,16 @@
 ---
 title: Core
-description: El motor de seguridad -- capacidades, taint, reglas, pipeline y normalizacin.
+description: El security engine -- capabilities, taint, rules, pipeline y normalization.
 icon: Shield
 ---
 
-`@securitylayerai/core` es el paquete base. Implementa el pipeline de seguridad de 3 capas y todas las primitivas de seguridad fundamentales. Todos los dems paquetes dependen de core (directa o indirectamente).
+`@securitylayerai/core` es el paquete base. Implementa el security pipeline de 3 capas y todas las primitivas de seguridad fundamentales. Todos los dems paquetes dependen de core (directa o indirectamente).
 
 ## Mdulos
 
-### Capacidades (`capabilities/`)
+### Capabilities (`capabilities/`)
 
-Gate de capacidades puramente sncrono. Verifica si una accin est estructuralmente permitida basndose en la interseccin de capacidades de sesin, skill y canal.
+Gate de capabilities puramente sncrono. Verifica si una accin est estructuralmente permitida basndose en la interseccin de capabilities de sesin, skill y canal.
 
 ```typescript
 import { checkCapability } from "@securitylayerai/core";
@@ -25,11 +25,11 @@ const result = checkCapability(action, {
 // result.reason?: string (si fue denegado)
 ```
 
-El capability gate es una verificacin de pertenencia al conjunto -- sin I/O, sin LLM, sin red. Si la capacidad no est en el conjunto, la accin es imposible.
+El capability gate es una verificacin de pertenencia al conjunto -- sin I/O, sin LLM, sin red. Si la capability no est en el conjunto, la accin es imposible.
 
 ### Seguimiento de taint (`taint/`)
 
-Rastrea la procedencia de los datos a lo largo de la sesin. Cuando contenido no confiable ingresa (web fetch, DM desconocido, email), el nivel de taint de la sesin se eleva. Un taint ms alto restringe las capacidades disponibles.
+Rastrea la procedencia de los datos a lo largo de la sesin. Cuando contenido no confiable ingresa (web fetch, DM desconocido, email), el nivel de taint de la sesin se eleva. Un taint ms alto restringe las capabilities disponibles.
 
 ```typescript
 import { createTaintTracker } from "@securitylayerai/core";
@@ -45,19 +45,19 @@ tracker.getEffectiveTaint(); // "web"
 
 Niveles de taint (de menor a mayor restriccin): `owner`  `trusted`  `untrusted`  `web`  `skill`  `memory`.
 
-### Motor de reglas (`rules/`)
+### Rules engine (`rules/`)
 
 Coincidencia de patrones determinista contra comandos conocidos como peligrosos, rutas de credenciales y estructuras de exfiltracin. Cero latencia, cero ambigedad.
 
 ```typescript
 import { parseRulesYaml, evaluateRules } from "@securitylayerai/core";
 
-const rules = parseRulesYaml(yamlContent);
-const result = evaluateRules(normalizedAction, rules);
+const ruleSet = parseRulesYaml(yamlContent);
+const result = evaluateRules(normalizedAction, ruleSet);
 // result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
 ```
 
-Tipos de reglas:
+Tipos de rules:
 - **binary** -- Coincidencia por nombre del binario del comando
 - **path** -- Coincidencia por glob de ruta de archivo
 - **pattern** -- Coincidencia por patrn regex
@@ -65,7 +65,7 @@ Tipos de reglas:
 
 ### Pipeline (`pipeline/`)
 
-Orquesta el flujo completo de evaluacin: capability gate  verificacin de taint  normalizar  reglas + LLM (en paralelo)  fusionar decisiones.
+Orquesta el flujo completo de evaluacin: capability gate  verificacin de taint  normalize  rules + LLM (en paralelo)  fusionar decisiones.
 
 ```typescript
 import { createPipeline } from "@securitylayerai/core";
@@ -76,11 +76,11 @@ const result = await pipeline.evaluate(action, context);
 
 El pipeline siempre toma el resultado **ms restrictivo** de todas las capas. Si alguna capa dice DENY, la accin se deniega.
 
-### Normalizacin (`normalize/`)
+### Normalization (`normalize/`)
 
 Resuelve rutas, decodifica encodings, divide cadenas de comandos y detecta estructuras de pipes antes de la evaluacin. Derrota la ofuscacin y los trucos de codificacin.
 
-Normaliza:
+Normalize:
 - `~/../../etc/passwd`  `/etc/passwd`
 - `$HOME/.ssh/id_rsa`  `/home/user/.ssh/id_rsa`
 - Cadenas de comandos: `ls; rm -rf /`  `["ls", "rm -rf /"]`
@@ -88,7 +88,7 @@ Normaliza:
 
 ### Anlisis semntico (`semantic/`)
 
-LLM judge que se ejecuta en paralelo con el motor de reglas. Hace una sola pregunta: "Es esta accin estructuralmente permitida anmala en este momento?" El judge detecta amenazas sutiles dependientes del contexto que las reglas no pueden expresar.
+LLM judge que se ejecuta en paralelo con el rules engine. Hace una sola pregunta: "Es esta accin estructuralmente permitida anmala en este momento?" El judge detecta amenazas sutiles dependientes del contexto que las rules no pueden expresar.
 
 ### Escaneo de egreso (`egress/`)
 
@@ -114,9 +114,9 @@ packages/core/
 │   ├── index.ts          # Exportaciones barrel
 │   ├── capabilities/     # Capability gate
 │   ├── taint/            # Rastreador de taint
-│   ├── rules/            # Motor de reglas + parser
+│   ├── rules/            # Rules engine + parser
 │   ├── pipeline/         # Pipeline de evaluacin
-│   ├── normalize/        # Normalizacin de acciones
+│   ├── normalize/        # Normalization de acciones
 │   ├── semantic/         # LLM judge
 │   ├── egress/           # Escner de egreso
 │   ├── sandbox/          # Sandboxing de exec
@@ -124,13 +124,13 @@ packages/core/
 │   ├── config/           # Cargador de configuracin
 │   ├── approval/         # Flujo de aprobacin
 │   ├── memory/           # Acceso a zonas de memoria
-│   ├── skills/           # Declaraciones de capacidades de skills
+│   ├── skills/           # Declaraciones de capabilities de skills
 │   └── utils/            # Logger, helpers
 └── test/                 # Tests de Vitest
 ```
 
 ## Ver tambin
 
-- [Pipeline de seguridad](/docs/concepts/security-pipeline) -- Cmo funcionan las 3 capas juntas
-- [Capacidades](/docs/concepts/capabilities) -- Las 15 capacidades base
-- [Niveles de taint](/docs/concepts/taint-levels) -- Reglas de propagacin de taint
+- [Security pipeline](/docs/concepts/security-pipeline) -- Cmo funcionan las 3 capas juntas
+- [Capabilities](/docs/concepts/capabilities) -- Las 15 capabilities base
+- [Niveles de taint](/docs/concepts/taint-levels) -- Rules de propagacin de taint

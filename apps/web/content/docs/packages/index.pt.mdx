@@ -29,7 +29,7 @@ O Security Layer é um monorepo Bun com cinco pacotes. Cada pacote tem uma respo
 │  ┌──────┴─────────────────┴────────────────┴───────┐ │
 │  │                    core                          │ │
 │  │  Capabilities, taint, rules engine, pipeline,   │ │
-│  │  normalização, escaneamento de saída, LLM judge  │ │
+│  │  normalization, escaneamento de saída, LLM judge  │ │
 │  └──────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────┘
 ```
@@ -38,8 +38,8 @@ O Security Layer é um monorepo Bun com cinco pacotes. Cada pacote tem uma respo
 
 | Pacote | npm | Descrição |
 |---|---|---|
-| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | Motor de segurança — capabilities, taint, regras, pipeline, normalização |
-| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | Regras base e templates de capabilities (YAML) |
+| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | Security engine — capabilities, taint, rules, pipeline, normalization |
+| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | Rules base e templates de capabilities (YAML) |
 | [`@securitylayerai/adapters`](/docs/packages/adapters) | `@securitylayerai/adapters` | Adaptadores de protocolo de agente (OpenClaw, genérico) |
 | [`@securitylayerai/proxy`](/docs/packages/proxy) | `@securitylayerai/proxy` | Proxy de segurança WebSocket entre clientes e gateway do agente |
 | [`@securitylayerai/sdk`](/docs/sdk) | `@securitylayerai/sdk` | SDK TypeScript para verificações de segurança in-process |
@@ -66,7 +66,7 @@ Restrições principais:
 - **rules** contém apenas dados — arquivos YAML com um loader fino, sem dependência do core em tempo de execução
 - **adapters** é standalone — define a interface e implementações para protocolos de agente
 - **proxy** depende de adapters para parsing de frames
-- **sdk** depende de core para o pipeline de segurança
+- **sdk** depende de core para o security pipeline
 
 ## Desenvolvimento
 
@@ -87,13 +87,13 @@ bun run typecheck
 <Cards>
   <Card
     title="Core"
-    description="Motor de segurança, pipeline, capabilities, rastreamento de taint."
+    description="Security engine, pipeline, capabilities, rastreamento de taint."
     href="/docs/packages/core"
     icon={<Shield weight="duotone" />}
   />
   <Card
     title="Rules"
-    description="Regras base e templates de capabilities."
+    description="Rules base e templates de capabilities."
     href="/docs/packages/rules"
     icon={<Gear weight="duotone" />}
   />
