@@ -9,8 +9,11 @@
   },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "typecheck": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "yaml": "^2"
   },
   "devDependencies": {
     "bun-types": "latest",

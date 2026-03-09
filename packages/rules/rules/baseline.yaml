@@ -1,2 +1,127 @@
 version: 1
-rules: []
+rules:
+  # Destructive operations (complementing core's 12 builtin rules)
+  - id: destructive-chmod-recursive-777
+    description: Prevent recursive chmod 777 on root
+    match:
+      type: pattern
+      value: "\\bchmod\\s+(-R|--recursive)\\s+777\\s+/|\\bchmod\\s+777\\s+(-R|--recursive)\\s+/"
+    decision: DENY
+    reason: "Recursive chmod 777 on root filesystem"
+
+  - id: destructive-chown-recursive
+    description: Prevent recursive chown on system paths
+    match:
+      type: pattern
+      value: "\\bchown\\s+(-R|--recursive)\\s+\\S+\\s+/(usr|etc|var|bin|sbin|lib|boot|sys|proc)"
+    decision: DENY
+    reason: "Recursive chown on system path"
+
+  # Credential paths (complementing core's ssh, aws, dotenv builtins)
+  - id: cred-gnupg
+    description: Prevent access to GnuPG keyring
+    match:
+      type: path
+      value: "~/.gnupg/**"
+    decision: DENY
+    reason: "Access to GnuPG keyring directory"
+
+  - id: cred-pem-files
+    description: Prevent access to PEM/key files
+    match:
+      type: pattern
+      value: "\\b(cat|less|more|head|tail|bat|cp|mv|scp)\\s+.*\\.(pem|key)\\b"
+    decision: DENY
+    reason: "Access to PEM/key file (likely contains private key)"
+
+  - id: cred-kube-config
+    description: Prevent access to Kubernetes config
+    match:
+      type: path
+      value: "~/.kube/config"
+    decision: DENY
+    reason: "Access to Kubernetes configuration (contains cluster credentials)"
+
+  - id: cred-docker-config
+    description: Prevent access to Docker config
+    match:
+      type: path
+      value: "~/.docker/config.json"
+    decision: DENY
+    reason: "Access to Docker configuration (may contain registry credentials)"
+
+  # Exfiltration structures (complementing core's pipe-to-curl and pipe-pair builtins)
+  - id: exfil-base64-to-curl
+    description: Prevent base64 encoding piped to curl
+    match:
+      type: pipe_pair
+      value: ""
+      from: ["base64"]
+      to: ["curl", "wget", "nc", "ncat"]
+    decision: DENY
+    reason: "Base64-encoded data piped to network tool (potential exfiltration)"
+
+  - id: exfil-tar-to-curl
+    description: Prevent tar archive piped to curl
+    match:
+      type: pipe_pair
+      value: ""
+      from: ["tar", "zip", "gzip"]
+      to: ["curl", "wget", "nc", "ncat"]
+    decision: DENY
+    reason: "Archive piped to network tool (potential exfiltration)"
+
+  # RCE patterns (complementing core's curl|sh and wget|bash builtins)
+  - id: rce-python-pipe
+    description: Prevent piping remote content to Python
+    match:
+      type: pipe_pair
+      value: ""
+      from: ["curl", "wget"]
+      to: ["python", "python3"]
+    decision: DENY
+    reason: "Remote code execution via download piped to Python"
+
+  - id: rce-eval-command
+    description: Prevent eval usage with dynamic content
+    match:
+      type: pattern
+      value: "\\beval\\s+"
+    decision: REQUIRE_APPROVAL
+    reason: "eval usage detected — may execute arbitrary code"
+
+  # Dangerous git operations
+  - id: dangerous-git-force-push
+    description: Prevent force push to main/master
+    match:
+      type: pattern
+      value: "\\bgit\\s+push\\s+.*--force.*\\s+(main|master)\\b|\\bgit\\s+push\\s+-f\\s+.*\\s+(main|master)\\b"
+    decision: DENY
+    reason: "Force push to main/master branch"
+
+  # Dangerous package operations
+  - id: dangerous-npm-publish
+    description: Require approval for npm publish
+    match:
+      type: pattern
+      value: "\\bnpm\\s+publish\\b"
+    decision: REQUIRE_APPROVAL
+    reason: "npm publish requires approval"
+
+  # Dangerous container operations
+  - id: dangerous-docker-privileged
+    description: Prevent privileged Docker containers
+    match:
+      type: pattern
+      value: "\\bdocker\\s+run\\s+.*--privileged"
+    decision: DENY
+    reason: "Privileged Docker container gives full host access"
+
+  # Reverse shell detection
+  - id: rce-netcat-listener
+    description: Prevent netcat listener (potential reverse shell)
+    match:
+      type: pattern
+      value: "\\b(nc|ncat|netcat)\\s+.*-l"
+    decision: DENY
+    reason: "Netcat listener detected (potential reverse shell)"

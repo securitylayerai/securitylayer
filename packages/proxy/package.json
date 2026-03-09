@@ -6,11 +6,11 @@
   "types": "src/index.ts",
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@securitylayerai/core": "workspace:*"
+    "@securitylayerai/adapters": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",
