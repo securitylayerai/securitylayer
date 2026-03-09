@@ -1,5 +1,12 @@
 import type { AgentAdapter } from "./interface";
-import type { Action, InboundEvent, OutboundAction, SessionInfo, ToolCall } from "./types";
+import {
+  type Action,
+  FrameParseError,
+  type InboundEvent,
+  type OutboundAction,
+  type SessionInfo,
+  type ToolCall,
+} from "./types";
 
 interface GenericFrame {
   type: string;
@@ -28,14 +35,19 @@ const TOOL_TO_CAPABILITY: Record<string, string> = {
 };
 
 function parseFrame(raw: Buffer): GenericFrame {
-  return JSON.parse(raw.toString("utf-8")) as GenericFrame;
+  const text = raw.toString("utf-8");
+  try {
+    return JSON.parse(text) as GenericFrame;
+  } catch {
+    throw new FrameParseError("Failed to parse generic frame: invalid JSON", text);
+  }
 }
 
 function toolToCapability(tool: string): string {
   return TOOL_TO_CAPABILITY[tool] ?? tool;
 }
 
-interface GenericAdapterConfig {
+export interface GenericAdapterConfig {
   sessions?: Map<string, SessionInfo>;
   toolCapabilityMap?: Record<string, string>;
 }
@@ -64,10 +76,11 @@ export function createGenericAdapter(config?: GenericAdapterConfig): AgentAdapte
         tool: tc.name,
         params: tc.input,
         requiredCapability: capMap[tc.name] ?? toolToCapability(tc.name),
+        toolCallId: tc.id,
       }));
     },
 
-    injectDenyResponse(action: Action, reason: string): Buffer {
+    injectDenyResponse(action: Action, reason: string, _toolCallId?: string): Buffer {
       const response = {
         type: "error",
         error: {

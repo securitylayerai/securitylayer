@@ -78,6 +78,7 @@ export function createInterceptor(
           denyResponse = adapter.injectDenyResponse(
             { tool: action.tool, params: action.params },
             `Action denied by security policy`,
+            action.toolCallId,
           );
           break; // DENY is absolute
         }

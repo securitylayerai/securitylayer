@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createGenericAdapter } from "../src/generic";
-import type { SessionInfo } from "../src/types";
+import { FrameParseError, type SessionInfo } from "../src/types";
 
 function toBuffer(obj: unknown): Buffer {
   return Buffer.from(JSON.stringify(obj));
@@ -122,6 +122,48 @@ describe("createGenericAdapter", () => {
     it("returns empty when no tool calls", () => {
       const frame = toBuffer({ message: "hello" });
       expect(adapter.extractToolCalls(frame)).toHaveLength(0);
+    });
+  });
+
+  describe("error handling", () => {
+    it("throws FrameParseError on malformed JSON", () => {
+      expect(() => adapter.parseInboundFrame(Buffer.from("not json"))).toThrow(FrameParseError);
+    });
+
+    it("throws FrameParseError on empty buffer", () => {
+      expect(() => adapter.parseInboundFrame(Buffer.alloc(0))).toThrow(FrameParseError);
+    });
+
+    it("includes raw data in FrameParseError", () => {
+      try {
+        adapter.parseInboundFrame(Buffer.from("{broken"));
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(FrameParseError);
+        expect((err as FrameParseError).rawData).toBe("{broken");
+      }
+    });
+  });
+
+  describe("edge cases", () => {
+    it("uses entire frame as data when data field is missing", () => {
+      const frame = toBuffer({ type: "message", sessionId: "s1", message: "hello" });
+      const event = adapter.parseInboundFrame(frame);
+      expect((event.data as Record<string, unknown>).message).toBe("hello");
+    });
+
+    it("handles non-array toolCalls gracefully", () => {
+      const frame = toBuffer({ toolCalls: "invalid" });
+      const actions = adapter.parseOutboundFrame(frame);
+      expect(actions).toHaveLength(0);
+    });
+
+    it("includes toolCallId in parsed outbound actions", () => {
+      const frame = toBuffer({
+        toolCalls: [{ id: "tc_456", name: "exec", input: {} }],
+      });
+      const actions = adapter.parseOutboundFrame(frame);
+      expect(actions[0].toolCallId).toBe("tc_456");
     });
   });
 

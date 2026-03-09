@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createOpenClawAdapter } from "../src/openclaw";
-import type { SessionInfo } from "../src/types";
+import { FrameParseError, type SessionInfo } from "../src/types";
 
 function toBuffer(obj: unknown): Buffer {
   return Buffer.from(JSON.stringify(obj));
@@ -174,8 +174,9 @@ describe("createOpenClawAdapter", () => {
   describe("injectDenyResponse", () => {
     it("creates a valid deny response buffer", () => {
       const buf = adapter.injectDenyResponse(
-        { tool: "exec", params: { id: "tc_1", command: "rm -rf /" } },
+        { tool: "exec", params: { command: "rm -rf /" } },
         "Destructive command blocked",
+        "tc_1",
       );
       const parsed = JSON.parse(buf.toString());
       expect(parsed.type).toBe("res:agent");
@@ -184,7 +185,17 @@ describe("createOpenClawAdapter", () => {
       expect(parsed.data.content[0].tool_use_id).toBe("tc_1");
     });
 
-    it("uses 'denied' as fallback tool_use_id", () => {
+    it("uses provided toolCallId in deny response", () => {
+      const buf = adapter.injectDenyResponse(
+        { tool: "exec", params: {} },
+        "blocked",
+        "tc_explicit",
+      );
+      const parsed = JSON.parse(buf.toString());
+      expect(parsed.data.content[0].tool_use_id).toBe("tc_explicit");
+    });
+
+    it("falls back to 'denied' when toolCallId is not provided", () => {
       const buf = adapter.injectDenyResponse({ tool: "exec", params: {} }, "blocked");
       const parsed = JSON.parse(buf.toString());
       expect(parsed.data.content[0].tool_use_id).toBe("denied");
@@ -237,6 +248,79 @@ describe("createOpenClawAdapter", () => {
     it("returns empty for non-agent frames", () => {
       const frame = toBuffer({ type: "event:chat", data: {} });
       expect(adapter.extractToolCalls(frame)).toHaveLength(0);
+    });
+  });
+
+  describe("error handling", () => {
+    it("throws FrameParseError on malformed JSON", () => {
+      expect(() => adapter.parseInboundFrame(Buffer.from("not json"))).toThrow(FrameParseError);
+    });
+
+    it("throws FrameParseError on empty buffer", () => {
+      expect(() => adapter.parseInboundFrame(Buffer.alloc(0))).toThrow(FrameParseError);
+    });
+
+    it("includes raw data in FrameParseError", () => {
+      try {
+        adapter.parseInboundFrame(Buffer.from("bad data"));
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(FrameParseError);
+        expect((err as FrameParseError).rawData).toBe("bad data");
+      }
+    });
+  });
+
+  describe("capability mapping edge cases", () => {
+    it("maps browser.navigate to browser capability", () => {
+      const frame = toBuffer({
+        type: "res:agent",
+        data: {
+          content: [
+            {
+              type: "tool_use",
+              id: "1",
+              name: "browser.navigate",
+              input: { url: "https://example.com" },
+            },
+          ],
+        },
+      });
+      const actions = adapter.parseOutboundFrame(frame);
+      expect(actions[0].requiredCapability).toBe("browser");
+    });
+
+    it("maps node.run to node.invoke capability", () => {
+      const frame = toBuffer({
+        type: "res:agent",
+        data: {
+          content: [{ type: "tool_use", id: "1", name: "node.run", input: {} }],
+        },
+      });
+      const actions = adapter.parseOutboundFrame(frame);
+      expect(actions[0].requiredCapability).toBe("node.invoke");
+    });
+
+    it("returns raw tool name for unknown tools", () => {
+      const frame = toBuffer({
+        type: "res:agent",
+        data: {
+          content: [{ type: "tool_use", id: "1", name: "custom_unknown", input: {} }],
+        },
+      });
+      const actions = adapter.parseOutboundFrame(frame);
+      expect(actions[0].requiredCapability).toBe("custom_unknown");
+    });
+
+    it("includes toolCallId in parsed outbound actions", () => {
+      const frame = toBuffer({
+        type: "res:agent",
+        data: {
+          content: [{ type: "tool_use", id: "tc_123", name: "exec", input: {} }],
+        },
+      });
+      const actions = adapter.parseOutboundFrame(frame);
+      expect(actions[0].toolCallId).toBe("tc_123");
     });
   });
 

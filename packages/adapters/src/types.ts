@@ -18,6 +18,17 @@ export interface OutboundAction {
   tool: string;
   params: Record<string, unknown>;
   requiredCapability: string;
+  toolCallId?: string;
+}
+
+export class FrameParseError extends Error {
+  constructor(
+    message: string,
+    public readonly rawData: string,
+  ) {
+    super(message);
+    this.name = "FrameParseError";
+  }
 }
 
 export interface SessionInfo {

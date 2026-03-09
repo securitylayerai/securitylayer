@@ -13,7 +13,7 @@ export interface AgentAdapter {
   parseOutboundFrame(raw: Buffer): OutboundAction[];
 
   /** Create a deny response frame that the agent understands */
-  injectDenyResponse(action: Action, reason: string): Buffer;
+  injectDenyResponse(action: Action, reason: string, toolCallId?: string): Buffer;
 
   /** Get metadata about a session (channel, trust level, active skill) */
   getSessionMetadata(sessionId: string): SessionInfo;

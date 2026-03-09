@@ -1,12 +1,13 @@
 import type { AgentAdapter } from "./interface";
-import type {
-  Action,
-  InboundEvent,
-  InboundEventType,
-  OpenClawFrame,
-  OutboundAction,
-  SessionInfo,
-  ToolCall,
+import {
+  type Action,
+  FrameParseError,
+  type InboundEvent,
+  type InboundEventType,
+  type OpenClawFrame,
+  type OutboundAction,
+  type SessionInfo,
+  type ToolCall,
 } from "./types";
 
 const TOOL_TO_CAPABILITY: Record<string, string> = {
@@ -43,7 +44,11 @@ const FRAME_TYPE_TO_EVENT: Record<string, InboundEventType> = {
 
 function parseFrame(raw: Buffer): OpenClawFrame {
   const text = raw.toString("utf-8");
-  return JSON.parse(text) as OpenClawFrame;
+  try {
+    return JSON.parse(text) as OpenClawFrame;
+  } catch {
+    throw new FrameParseError("Failed to parse OpenClaw frame: invalid JSON", text);
+  }
 }
 
 function toolToCapability(tool: string): string {
@@ -73,7 +78,7 @@ function extractToolUseBlocks(content: unknown): ToolUseBlock[] {
   );
 }
 
-interface OpenClawAdapterConfig {
+export interface OpenClawAdapterConfig {
   sessions?: Map<string, SessionInfo>;
 }
 
@@ -111,6 +116,7 @@ export function createOpenClawAdapter(config?: OpenClawAdapterConfig): AgentAdap
           tool: tc.name,
           params: tc.input,
           requiredCapability: toolToCapability(tc.name),
+          toolCallId: tc.id,
         }));
       }
 
@@ -128,14 +134,14 @@ export function createOpenClawAdapter(config?: OpenClawAdapterConfig): AgentAdap
       return [];
     },
 
-    injectDenyResponse(action: Action, reason: string): Buffer {
+    injectDenyResponse(action: Action, reason: string, toolCallId?: string): Buffer {
       const response = {
         type: "res:agent",
         data: {
           content: [
             {
               type: "tool_result",
-              tool_use_id: (action.params.id as string) ?? "denied",
+              tool_use_id: toolCallId ?? "denied",
               content: `[SecurityLayer] Action denied: ${reason}`,
               is_error: true,
             },
