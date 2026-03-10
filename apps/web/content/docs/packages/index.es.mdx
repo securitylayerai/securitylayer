@@ -8,30 +8,22 @@ Security Layer es un monorepo de Bun con seis paquetes. Cada paquete tiene una r
 
 ## Arquitectura
 
-```
-┌──────────────────────────────────────────────────────┐
-│                   securitylayer (CLI)                 │
-│          Comandos de usuario, setup, hooks            │
-├──────────────────────────────────────────────────────┤
-│                                                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
-│  │    proxy      │  │     sdk      │  │   rules    │ │
-│  │  WebSocket    │  │  En proceso  │  │   YAML     │ │
-│  │  gateway      │  │  checks     │  │  rule pack │ │
-│  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
-│         │                 │                │         │
-│  ┌──────┴───────┐         │                │         │
-│  │   adapters    │         │                │         │
-│  │  Parsing de   │         │                │         │
-│  │  frames       │         │                │         │
-│  └──────┬───────┘         │                │         │
-│         │                 │                │         │
-│  ┌──────┴─────────────────┴────────────────┴───────┐ │
-│  │                    core                          │ │
-│  │  Capabilities, taint, rules engine, pipeline,     │ │
-│  │  normalization, escaneo de egreso, LLM judge     │ │
-│  └──────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    CLI["securitylayer (CLI)"]
+    proxy["proxy<br/>WebSocket gateway"]
+    sdk["sdk<br/>Verificaciones en proceso"]
+    rules["rules<br/>YAML rule pack"]
+    adapters["adapters<br/>Parsing de frames"]
+    core["core<br/>Capabilities, taint, rules engine, pipeline,<br/>normalization, escaneo de egreso, LLM judge"]
+
+    CLI --> proxy
+    CLI --> sdk
+    CLI --> rules
+    proxy --> adapters
+    adapters --> core
+    sdk --> core
+    rules --> core
 ```
 
 ## Resumen de paquetes
@@ -47,18 +39,13 @@ Security Layer es un monorepo de Bun con seis paquetes. Cada paquete tiene una r
 
 ## Grafo de dependencias
 
-```
-securitylayer (CLI)
-├── @securitylayerai/core
-├── @securitylayerai/rules
-└── @securitylayerai/proxy
-    └── @securitylayerai/adapters
-
-@securitylayerai/sdk
-└── @securitylayerai/core
-
-@securitylayerai/rules
-└── (independiente -- solo YAML, sin dependencias de cdigo)
+```mermaid
+graph TD
+    CLI["securitylayer (CLI)"] --> core["@securitylayerai/core"]
+    CLI --> rules["@securitylayerai/rules"]
+    CLI --> proxy["@securitylayerai/proxy"]
+    proxy --> adapters["@securitylayerai/adapters"]
+    sdk["@securitylayerai/sdk"] --> core
 ```
 
 Restricciones clave:
