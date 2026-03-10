@@ -1,0 +1,116 @@
+---
+title: SDK
+description: SDK de TypeScript para verificaciones de seguridad en proceso en aplicaciones agentivas.
+icon: Package
+---
+
+`@securitylayerai/sdk` envuelve `@securitylayerai/core` en una API limpia y de alto nivel para integrar Security Layer directamente en el codigo de tu aplicacion. Mientras el CLI y el proxy operan en los limites del sistema, el SDK te da seguridad en proceso con contexto completo.
+
+## Exportaciones principales
+
+### createSecurityLayer()
+
+El punto de entrada principal. Crea una instancia de `SecurityLayer` que evalua acciones a traves del security pipeline completo.
+
+```typescript
+import { createSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer({
+  configDir: "~/.securitylayer",
+  sessionId: "my-session",
+});
+
+const result = await sl.check("exec", { command: "ls -la" });
+console.log(result.decision); // "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+
+sl.destroy();
+```
+
+Soporta inyeccion de dependencias para testing -- pasa un `config` o `eventBus` pre-cargado para omitir I/O de archivos.
+
+### withSecurityLayer()
+
+Middleware wrapper que agrega verificaciones de seguridad a cualquier funcion de forma transparente.
+
+```typescript
+import { createSecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer();
+
+const safeExec = withSecurityLayer(sl, exec, "exec");
+const safeWrite = withSecurityLayer(sl, writeFile, "file.write");
+
+// Same API as the originals — security checks happen automatically
+await safeExec("echo hello");
+await safeWrite("/tmp/out.txt", data);
+```
+
+Lanza `SecurityLayerError` en DENY. Espera aprobacion en REQUIRE_APPROVAL.
+
+### Clases de error
+
+Errores tipados para cada modo de fallo:
+
+| Error | Descripcion |
+|---|---|
+| `SecurityLayerError` | Clase base de error; tambien lanzado por middleware en DENY |
+| `ConfigError` | Los archivos de configuracion no se pueden cargar o parsear |
+| `InitializationError` | El pipeline fallo al inicializarse |
+| `CheckError` | La evaluacion de la accion fallo inesperadamente |
+| `ApprovalTimeoutError` | La solicitud de aprobacion expiro |
+
+## Interfaz de SecurityLayer
+
+El objeto retornado por `createSecurityLayer()` proporciona:
+
+| Metodo | Descripcion |
+|---|---|
+| `check(tool, params, context?)` | Evalua una accion a traves del security pipeline |
+| `waitForApproval(id, options?)` | Bloquea hasta que se otorgue la aprobacion o expire |
+| `ingestContent(content, metadata)` | Actualiza el taint tracking con contenido externo |
+| `scanEgress(content)` | Escanea contenido saliente en busca de secretos filtrados |
+| `getSessionTaint()` | Obtiene el taint level efectivo de la sesion actual |
+| `on(type, handler)` | Se suscribe a eventos de seguridad |
+| `destroy()` | Limpia recursos y manejadores de eventos |
+
+## Arquitectura
+
+El SDK depende unicamente de `@securitylayerai/core` y construye el security pipeline internamente:
+
+```
+@securitylayerai/sdk
+├── createSecurityLayer() ─→ loads config, builds pipeline deps
+│   ├── CapabilityStore ─→ from core's buildCapabilityStore()
+│   ├── TaintTracker ─→ from core's createTaintTracker()
+│   ├── LLM Judge ─→ from core's createDefaultLLMJudge() or createNoOpJudge()
+│   ├── ApprovalManager ─→ from core's createApprovalManager()
+│   └── EventBus ─→ from core's createEventBus()
+├── withSecurityLayer() ─→ middleware wrapper over check()
+└── Error classes ─→ SecurityLayerError, ConfigError, etc.
+```
+
+## Estructura del paquete
+
+```
+packages/sdk/
+├── src/
+│   ├── index.ts          # Barrel exports
+│   ├── types.ts          # SDK types + core re-exports
+│   ├── errors.ts         # Error classes
+│   ├── session.ts        # Session state factory
+│   ├── client.ts         # createSecurityLayer()
+│   └── middleware.ts     # withSecurityLayer()
+└── test/
+    ├── helpers.ts        # Test fixtures
+    ├── errors.test.ts
+    ├── session.test.ts
+    ├── client.test.ts
+    ├── middleware.test.ts
+    └── integration.test.ts
+```
+
+## Ver tambien
+
+- [Documentacion del SDK](/docs/sdk) -- Guia completa del SDK con primeros pasos, patrones y referencia de API
+- [Core](/docs/packages/core) -- El security engine que el SDK envuelve
+- [Security pipeline](/docs/concepts/security-pipeline) -- Como funciona el pipeline de 3 capas

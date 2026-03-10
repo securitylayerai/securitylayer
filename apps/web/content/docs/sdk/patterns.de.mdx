@@ -4,10 +4,6 @@ description: Drei Wege zur SDK-Integration — Direktprüfung, Middleware-Wrappe
 icon: GitBranch
 ---
 
-<Callout type="info" title="Vorschau">
-  Das SDK befindet sich in aktiver Entwicklung. Die hier gezeigten APIs spiegeln das geplante Design wider und können sich vor dem stabilen Release noch ändern.
-</Callout>
-
 Das SDK unterstützt drei Integrationsmuster. Wähle basierend darauf, wie dein Agent-Framework die Tool-Ausführung handhabt.
 
 ## Direktprüfung
@@ -15,24 +11,20 @@ Das SDK unterstützt drei Integrationsmuster. Wähle basierend darauf, wie dein 
 Rufe `sl.check()` vor jeder Tool-Ausführung auf. Am besten geeignet für Frameworks, bei denen du die Tool-Dispatch-Schleife kontrollierst.
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer();
+const sl = await createSecurityLayer();
 
 async function executeTool(tool: string, params: Record<string, unknown>) {
-  const result = await sl.check(tool, params, {
-    sessionId: currentSession.id,
-    taint: sl.getSessionTaint(),
-    caller: "my-agent-framework",
-  });
+  const result = await sl.check(tool, params);
 
   if (result.decision === "DENY") {
     throw new ToolBlockedError(result.reason);
   }
 
   if (result.decision === "REQUIRE_APPROVAL") {
-    const approved = await sl.waitForApproval(result.approvalId);
-    if (!approved) throw new ToolBlockedError("Genehmigung verweigert");
+    const approved = await sl.waitForApproval(result.approvalId as string);
+    if (!approved) throw new ToolBlockedError("Approval denied");
   }
 
   return actualToolExecution(tool, params);
@@ -46,17 +38,25 @@ async function executeTool(tool: string, params: Record<string, unknown>) {
 Umhülle bestehende Tool-Executors mit `withSecurityLayer()`. Der Wrapper fängt Aufrufe transparent ab — keine Änderungen am aufrufenden Code.
 
 ```typescript
-import { SecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer();
+const sl = await createSecurityLayer();
 
-// Beliebigen Tool-Executor umhüllen
+// Wrap any tool executor
 const protectedExec = withSecurityLayer(sl, originalExecFunction, "exec");
 const protectedWrite = withSecurityLayer(sl, originalWriteFunction, "file.write");
 
-// Verwendung — identische API, Sicherheitsprüfungen erfolgen transparent
+// Usage — identical API, security checks happen transparently
 await protectedExec("git push origin main");
 await protectedWrite("/tmp/output.txt", content);
+```
+
+Du kannst eine eigene Parameterextraktion angeben, wenn die Standard-Extraktion nicht passt:
+
+```typescript
+const protectedFetch = withSecurityLayer(sl, fetchFn, "web_fetch", {
+  extractParams: (url: unknown) => ({ url }),
+});
 ```
 
 **Wann verwenden:** Du willst Sicherheit zu einer bestehenden Codebase mit minimalen Änderungen hinzufügen. Umhülle die Tool-Executors einmal und der Rest des Codes bleibt unverändert.
@@ -66,11 +66,11 @@ await protectedWrite("/tmp/output.txt", content);
 Hänge dich in die Lifecycle-Events deines Frameworks ein. Am besten geeignet für Frameworks, die `beforeToolUse` / `afterToolUse`-Events emittieren.
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer();
+const sl = await createSecurityLayer();
 
-// Vor der Ausführung: prüfen und ggf. blockieren
+// Pre-execution: check and potentially block
 agentFramework.on("beforeToolUse", async (event) => {
   const result = await sl.check(event.tool, event.params);
   if (result.decision !== "ALLOW") {
@@ -79,7 +79,7 @@ agentFramework.on("beforeToolUse", async (event) => {
   }
 });
 
-// Nach der Ausführung: Taint-Tracking aktualisieren
+// Post-execution: update taint tracking
 agentFramework.on("afterToolUse", (event) => {
   if (event.tool === "file.read" || event.tool === "web_fetch") {
     sl.ingestContent(event.output, {
@@ -108,22 +108,27 @@ agentFramework.on("afterToolUse", (event) => {
 Du kannst Muster in derselben Anwendung kombinieren:
 
 ```typescript
-// Middleware für Standard-Tools
+const sl = await createSecurityLayer();
+
+// Middleware for standard tools
 const protectedExec = withSecurityLayer(sl, exec, "exec");
 const protectedWrite = withSecurityLayer(sl, writeFile, "file.write");
 
-// Direktprüfung für eigene Logik
+// Direct check for custom logic
 async function handleDangerousOperation() {
-  const result = await sl.check("exec.elevated", {
+  const result = await sl.check("exec", {
     command: "sudo systemctl restart nginx",
   });
-  // Eigene Behandlung...
+  // Custom handling...
 }
 
-// Event-basiert für Taint-Tracking
+// Event-based for taint tracking
 framework.on("afterToolUse", (event) => {
   sl.ingestContent(event.output, { source: "file", path: event.params.path });
 });
+
+// Always clean up
+process.on("exit", () => sl.destroy());
 ```
 
 ## Siehe auch

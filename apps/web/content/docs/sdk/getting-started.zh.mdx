@@ -1,12 +1,8 @@
 ---
-title: 快速开始
-description: 安装 SDK 并运行第一次安全检查。
+title: 快速入门
+description: 安装 SDK 并运行你的第一次安全检查。
 icon: Rocket
 ---
-
-<Callout type="info" title="预览">
-  SDK 正在积极开发中。此处展示的 API 反映了计划中的设计，在稳定版本发布前可能会有所变化。
-</Callout>
 
 ## 前置条件
 
@@ -41,105 +37,165 @@ icon: Rocket
 ## 基本设置
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-// 使用默认配置初始化（读取 ~/.securitylayer/）
-const sl = new SecurityLayer();
+// Initialize with default config (reads ~/.securitylayer/)
+const sl = await createSecurityLayer();
 
-// 或使用显式配置
-const sl = new SecurityLayer({
+// Or with explicit configuration
+const sl = await createSecurityLayer({
   configDir: "/path/to/.securitylayer",
-  caller: "my-agent",
   sessionId: "session-123",
 });
 ```
 
-## 第一次检查
+## 你的第一次检查
 
-您的代理执行的每个工具调用都应在执行前通过 `sl.check()` 进行检查：
+Agent 执行的每一次工具调用都应在执行前通过 `sl.check()`：
 
 ```typescript
 async function runTool(tool: string, params: Record<string, unknown>) {
-  const result = await sl.check(tool, params, {
-    sessionId: "current-session",
-    taint: sl.getSessionTaint(),
-    caller: "my-agent",
-  });
+  const result = await sl.check(tool, params);
 
   switch (result.decision) {
     case "ALLOW":
-      // 安全，可以执行
+      // Safe to execute
       return executeToolCall(tool, params);
 
     case "DENY":
-      // 结构性阻止 — 不得执行
+      // Structurally blocked — do not execute
       throw new Error(`Security Layer: ${result.reason}`);
 
     case "REQUIRE_APPROVAL":
-      // 需要人工审批后才能继续
-      const approved = await sl.waitForApproval(result.approvalId);
-      if (!approved) throw new Error("审批被拒绝或超时");
+      // Needs human approval before proceeding
+      const approved = await sl.waitForApproval(result.approvalId as string);
+      if (!approved) throw new Error("Approval denied or timed out");
       return executeToolCall(tool, params);
   }
 }
 ```
 
-## 理解决策
+你也可以为特定检查覆盖 session ID：
 
-每次检查都会返回一个 `CheckResult`，包含来自所有三个 security layers 的决策：
+```typescript
+const result = await sl.check("exec", { command: "ls" }, {
+  sessionId: "different-session",
+});
+```
+
+## 理解决策结果
+
+每次检查返回一个 `CheckResult`，包含决策结果和详细的层级结果：
 
 ```typescript
 const result = await sl.check("exec", { command: "git push --force" });
 
-// 哪个层阻止了它？
-console.log(result.layers.capability); // { allowed: true }
-console.log(result.layers.taint);      // { level: "owner", allowed: true }
-console.log(result.layers.rules);      // { decision: "DENY", reason: "Force push" }
-console.log(result.layers.llm);        // { decision: "NORMAL", confidence: 0.9 }
+// The overall decision
+console.log(result.decision); // "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+console.log(result.reason);   // Human-readable explanation
 
-// 性能
-console.log(result.timing.total_ms);   // 12
-console.log(result.degraded);          // false（LLM 可用）
+// Which layer blocked it?
+console.log(result.layers.capability); // { allowed: true }
+console.log(result.layers.rules);     // { decision: "DENY", reason: "Force push" }
+console.log(result.layers.llm);       // { decision: "NORMAL", confidence: 0.9 }
+
+// Performance
+console.log(result.timing.total);     // 12 (ms)
+console.log(result.degraded);         // false (all layers executed)
 ```
 
 ## 追踪 taint
 
-当您的代理读取外部内容时，需要更新 taint tracker：
+当你的 Agent 读取外部内容时，需要更新 taint 追踪器：
 
 ```typescript
-// 读取网页后
+// After reading a web page
 const webContent = await fetch("https://example.com").then(r => r.text());
 sl.ingestContent(webContent, {
   source: "web",
   url: "https://example.com",
 });
 
-// 读取不受信任项目中的文件后
+// After reading an untrusted file
 const fileContent = await readFile("/tmp/downloaded-project/config.js", "utf-8");
 sl.ingestContent(fileContent, {
   source: "file",
   path: "/tmp/downloaded-project/config.js",
 });
 
-// 现在后续检查将反映提升后的 taint
-const taint = sl.getSessionTaint(); // "web"（从 "owner" 提升）
+// After receiving skill output
+sl.ingestContent(skillOutput, { source: "skill", path: "summarize" });
+
+// After loading from memory
+sl.ingestContent(memoryData, { source: "memory" });
+
+// Check the current taint level
+const taint = sl.getSessionTaint(); // "web" (elevated from "owner")
 ```
+
+Taint 只会升级——一旦会话接触到 web 内容，它在剩余会话期间将保持 `web` taint 或更高的 taint level。
 
 ## 扫描出站内容
 
-在您的代理向外部发送数据前，扫描是否存在泄露的密钥：
+在你的 Agent 对外发送数据之前，扫描是否有泄露的密钥：
 
 ```typescript
 const message = agent.generateResponse();
 
 const scan = sl.scanEgress(message);
 if (!scan.clean) {
-  console.error("检测到密钥:", scan.findings.map(f => f.type));
-  // 不要发送消息 — 其中包含敏感数据
+  console.error("Secrets detected:", scan.findings.map(f => f.type));
+  // Don't send the message — it contains sensitive data
+}
+```
+
+## 监听事件
+
+订阅安全事件，用于日志记录、监控或自定义逻辑：
+
+```typescript
+// Listen for security decisions
+const unsub = sl.on("action.evaluated", (event) => {
+  console.log(`${event.action}: ${event.decision}`);
+});
+
+// Later, unsubscribe
+unsub();
+```
+
+## 清理
+
+使用完毕后，务必调用 `destroy()` 释放资源：
+
+```typescript
+sl.destroy();
+```
+
+这会处理所有待处理的审批请求并清除事件处理器。
+
+## 错误处理
+
+SDK 抛出类型化的错误，你可以捕获它们：
+
+```typescript
+import {
+  createSecurityLayer,
+  ConfigError,
+  InitializationError,
+} from "@securitylayerai/sdk";
+
+try {
+  const sl = await createSecurityLayer({ configDir: "/bad/path" });
+} catch (err) {
+  if (err instanceof ConfigError) {
+    console.error("Config problem:", err.message, err.configPath);
+  } else if (err instanceof InitializationError) {
+    console.error("Pipeline init failed:", err.message, err.cause);
+  }
 }
 ```
 
 ## 下一步
 
-- [集成模式](/docs/sdk/patterns) — 为您的框架选择合适的模式
+- [集成模式](/docs/sdk/patterns) — 为你的框架选择合适的模式
 - [API 参考](/docs/sdk/api-reference) — 完整的方法和类型文档

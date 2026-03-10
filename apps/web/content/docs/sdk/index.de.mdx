@@ -4,13 +4,9 @@ description: Natives TypeScript-SDK zur Integration von Security Layer in agenti
 icon: Package
 ---
 
-<Callout type="info" title="Vorschau">
-  Das SDK befindet sich in aktiver Entwicklung. Die hier dokumentierte API-Oberfläche spiegelt das geplante Design wider. Installiere das Paket schon heute, um die Entwicklung neuer Features mitzuverfolgen.
-</Callout>
-
 ## Warum das SDK verwenden?
 
-Die CLI-Integrationen (Hooks, Shell-Shim) funktionieren ohne Code-Änderungen — operieren aber an der Grenze. Das SDK bietet **In-Process-Sicherheit** mit vollem Kontext:
+Die CLI-Integrationen (Hooks, Shell-Shim) funktionieren ohne Code-Änderungen — operieren aber an der Grenze. Das SDK bietet dir **In-Process-Sicherheit** mit vollem Kontext:
 
 | | Shell-Shim | Hooks | SDK |
 |---|---|---|---|
@@ -53,19 +49,22 @@ Das SDK ist die richtige Wahl, wenn du eine agentische Anwendung baust und struk
 ## Schnellbeispiel
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer();
+const sl = await createSecurityLayer();
 
-// Prüfe eine Aktion vor der Ausführung
+// Check an action before executing it
 const result = await sl.check("exec", { command: "rm -rf /tmp/output" });
 
 if (result.decision === "DENY") {
-  console.error(`Blockiert: ${result.reason}`);
+  console.error(`Blocked: ${result.reason}`);
 } else if (result.decision === "REQUIRE_APPROVAL") {
-  const approved = await sl.waitForApproval(result.approvalId);
-  if (!approved) console.error("Genehmigung verweigert");
+  const approved = await sl.waitForApproval(result.approvalId as string);
+  if (!approved) console.error("Approval denied");
 }
+
+// Clean up when done
+sl.destroy();
 ```
 
 ## Integrationsmuster

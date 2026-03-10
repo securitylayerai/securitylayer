@@ -4,10 +4,6 @@ description: Installiere das SDK und führe deine erste Sicherheitsprüfung durc
 icon: Rocket
 ---
 
-<Callout type="info" title="Vorschau">
-  Das SDK befindet sich in aktiver Entwicklung. Die hier gezeigten APIs spiegeln das geplante Design wider und können sich vor dem stabilen Release noch ändern.
-</Callout>
-
 ## Voraussetzungen
 
 - Security Layer CLI installiert und initialisiert (`sl init`)
@@ -41,15 +37,14 @@ icon: Rocket
 ## Grundlegende Einrichtung
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-// Initialisierung mit Standardkonfiguration (liest ~/.securitylayer/)
-const sl = new SecurityLayer();
+// Initialize with default config (reads ~/.securitylayer/)
+const sl = await createSecurityLayer();
 
-// Oder mit expliziter Konfiguration
-const sl = new SecurityLayer({
+// Or with explicit configuration
+const sl = await createSecurityLayer({
   configDir: "/path/to/.securitylayer",
-  caller: "my-agent",
   sessionId: "session-123",
 });
 ```
@@ -60,46 +55,53 @@ Jeder Tool-Aufruf deines Agenten sollte vor der Ausführung durch `sl.check()` l
 
 ```typescript
 async function runTool(tool: string, params: Record<string, unknown>) {
-  const result = await sl.check(tool, params, {
-    sessionId: "current-session",
-    taint: sl.getSessionTaint(),
-    caller: "my-agent",
-  });
+  const result = await sl.check(tool, params);
 
   switch (result.decision) {
     case "ALLOW":
-      // Sicher zur Ausführung
+      // Safe to execute
       return executeToolCall(tool, params);
 
     case "DENY":
-      // Strukturell blockiert — nicht ausführen
+      // Structurally blocked — do not execute
       throw new Error(`Security Layer: ${result.reason}`);
 
     case "REQUIRE_APPROVAL":
-      // Benötigt menschliche Genehmigung vor der Weiterarbeit
-      const approved = await sl.waitForApproval(result.approvalId);
-      if (!approved) throw new Error("Genehmigung verweigert oder Zeitüberschreitung");
+      // Needs human approval before proceeding
+      const approved = await sl.waitForApproval(result.approvalId as string);
+      if (!approved) throw new Error("Approval denied or timed out");
       return executeToolCall(tool, params);
   }
 }
 ```
 
+Du kannst auch die Session-ID für eine bestimmte Prüfung überschreiben:
+
+```typescript
+const result = await sl.check("exec", { command: "ls" }, {
+  sessionId: "different-session",
+});
+```
+
 ## Entscheidungen verstehen
 
-Jede Prüfung gibt ein `CheckResult` mit der Entscheidung aller drei Security Layers zurück:
+Jede Prüfung gibt ein `CheckResult` mit der Entscheidung und detaillierten Layer-Ergebnissen zurück:
 
 ```typescript
 const result = await sl.check("exec", { command: "git push --force" });
 
-// Welche Schicht hat blockiert?
-console.log(result.layers.capability); // { allowed: true }
-console.log(result.layers.taint);      // { level: "owner", allowed: true }
-console.log(result.layers.rules);      // { decision: "DENY", reason: "Force push" }
-console.log(result.layers.llm);        // { decision: "NORMAL", confidence: 0.9 }
+// The overall decision
+console.log(result.decision); // "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+console.log(result.reason);   // Human-readable explanation
 
-// Leistung
-console.log(result.timing.total_ms);   // 12
-console.log(result.degraded);          // false (LLM war verfügbar)
+// Which layer blocked it?
+console.log(result.layers.capability); // { allowed: true }
+console.log(result.layers.rules);     // { decision: "DENY", reason: "Force push" }
+console.log(result.layers.llm);       // { decision: "NORMAL", confidence: 0.9 }
+
+// Performance
+console.log(result.timing.total);     // 12 (ms)
+console.log(result.degraded);         // false (all layers executed)
 ```
 
 ## Taint verfolgen
@@ -107,23 +109,31 @@ console.log(result.degraded);          // false (LLM war verfügbar)
 Wenn dein Agent externe Inhalte liest, aktualisiere den Taint-Tracker:
 
 ```typescript
-// Nach dem Lesen einer Webseite
+// After reading a web page
 const webContent = await fetch("https://example.com").then(r => r.text());
 sl.ingestContent(webContent, {
   source: "web",
   url: "https://example.com",
 });
 
-// Nach dem Lesen einer Datei aus einem nicht vertrauenswürdigen Projekt
+// After reading an untrusted file
 const fileContent = await readFile("/tmp/downloaded-project/config.js", "utf-8");
 sl.ingestContent(fileContent, {
   source: "file",
   path: "/tmp/downloaded-project/config.js",
 });
 
-// Nachfolgende Prüfungen spiegeln jetzt den erhöhten Taint wider
-const taint = sl.getSessionTaint(); // "web" (erhöht von "owner")
+// After receiving skill output
+sl.ingestContent(skillOutput, { source: "skill", path: "summarize" });
+
+// After loading from memory
+sl.ingestContent(memoryData, { source: "memory" });
+
+// Check the current taint level
+const taint = sl.getSessionTaint(); // "web" (elevated from "owner")
 ```
+
+Taint eskaliert nur aufwärts — sobald eine Session Web-Inhalte gesehen hat, bleibt sie für den Rest der Session auf `web`-Taint oder höher.
 
 ## Ausgehende Inhalte scannen
 
@@ -134,8 +144,54 @@ const message = agent.generateResponse();
 
 const scan = sl.scanEgress(message);
 if (!scan.clean) {
-  console.error("Geheimnisse erkannt:", scan.findings.map(f => f.type));
-  // Nachricht nicht senden — sie enthält sensible Daten
+  console.error("Secrets detected:", scan.findings.map(f => f.type));
+  // Don't send the message — it contains sensitive data
+}
+```
+
+## Auf Events lauschen
+
+Abonniere Sicherheitsereignisse für Logging, Monitoring oder eigene Logik:
+
+```typescript
+// Listen for security decisions
+const unsub = sl.on("action.evaluated", (event) => {
+  console.log(`${event.action}: ${event.decision}`);
+});
+
+// Later, unsubscribe
+unsub();
+```
+
+## Aufräumen
+
+Rufe immer `destroy()` auf, wenn du fertig bist, um Ressourcen freizugeben:
+
+```typescript
+sl.destroy();
+```
+
+Dies löst alle ausstehenden Genehmigungsanfragen auf und entfernt Event-Handler.
+
+## Fehlerbehandlung
+
+Das SDK wirft typisierte Fehler, die du abfangen kannst:
+
+```typescript
+import {
+  createSecurityLayer,
+  ConfigError,
+  InitializationError,
+} from "@securitylayerai/sdk";
+
+try {
+  const sl = await createSecurityLayer({ configDir: "/bad/path" });
+} catch (err) {
+  if (err instanceof ConfigError) {
+    console.error("Config problem:", err.message, err.configPath);
+  } else if (err instanceof InitializationError) {
+    console.error("Pipeline init failed:", err.message, err.cause);
+  }
 }
 ```
 

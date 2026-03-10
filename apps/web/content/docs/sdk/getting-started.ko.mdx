@@ -4,10 +4,6 @@ description: SDK를 설치하고 첫 번째 보안 검사를 실행합니다.
 icon: Rocket
 ---
 
-<Callout type="info" title="Preview">
-  SDK는 현재 활발하게 개발 중입니다. 여기에 표시된 API는 계획된 설계를 반영하며 안정 릴리스 전에 변경될 수 있습니다.
-</Callout>
-
 ## 사전 요구 사항
 
 - Security Layer CLI가 설치되고 초기화되어 있어야 합니다 (`sl init`)
@@ -41,15 +37,14 @@ icon: Rocket
 ## 기본 설정
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-// 기본 설정으로 초기화합니다 (~/.securitylayer/ 를 읽습니다)
-const sl = new SecurityLayer();
+// 기본 설정으로 초기화합니다 (~/.securitylayer/를 읽습니다)
+const sl = await createSecurityLayer();
 
 // 또는 명시적 설정으로 초기화합니다
-const sl = new SecurityLayer({
+const sl = await createSecurityLayer({
   configDir: "/path/to/.securitylayer",
-  caller: "my-agent",
   sessionId: "session-123",
 });
 ```
@@ -60,11 +55,7 @@ const sl = new SecurityLayer({
 
 ```typescript
 async function runTool(tool: string, params: Record<string, unknown>) {
-  const result = await sl.check(tool, params, {
-    sessionId: "current-session",
-    taint: sl.getSessionTaint(),
-    caller: "my-agent",
-  });
+  const result = await sl.check(tool, params);
 
   switch (result.decision) {
     case "ALLOW":
@@ -77,32 +68,43 @@ async function runTool(tool: string, params: Record<string, unknown>) {
 
     case "REQUIRE_APPROVAL":
       // 진행하기 전에 사람의 승인이 필요합니다
-      const approved = await sl.waitForApproval(result.approvalId);
-      if (!approved) throw new Error("승인이 거부되었거나 시간이 초과되었습니다");
+      const approved = await sl.waitForApproval(result.approvalId as string);
+      if (!approved) throw new Error("Approval denied or timed out");
       return executeToolCall(tool, params);
   }
 }
 ```
 
+특정 검사에 대해 세션 ID를 오버라이드할 수도 있습니다:
+
+```typescript
+const result = await sl.check("exec", { command: "ls" }, {
+  sessionId: "different-session",
+});
+```
+
 ## 결정 이해하기
 
-모든 검사는 3개 security layers의 결정이 포함된 `CheckResult`를 반환합니다:
+모든 검사는 결정과 상세한 레이어 결과가 포함된 `CheckResult`를 반환합니다:
 
 ```typescript
 const result = await sl.check("exec", { command: "git push --force" });
 
+// 전체 결정
+console.log(result.decision); // "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+console.log(result.reason);   // Human-readable explanation
+
 // 어떤 레이어가 차단했는지 확인합니다
 console.log(result.layers.capability); // { allowed: true }
-console.log(result.layers.taint);      // { level: "owner", allowed: true }
-console.log(result.layers.rules);      // { decision: "DENY", reason: "Force push" }
-console.log(result.layers.llm);        // { decision: "NORMAL", confidence: 0.9 }
+console.log(result.layers.rules);     // { decision: "DENY", reason: "Force push" }
+console.log(result.layers.llm);       // { decision: "NORMAL", confidence: 0.9 }
 
 // 성능
-console.log(result.timing.total_ms);   // 12
-console.log(result.degraded);          // false (LLM을 사용할 수 있었음)
+console.log(result.timing.total);     // 12 (ms)
+console.log(result.degraded);         // false (all layers executed)
 ```
 
-## Taint 추적
+## Taint tracking
 
 에이전트가 외부 콘텐츠를 읽을 때 taint 추적기를 업데이트합니다:
 
@@ -114,16 +116,24 @@ sl.ingestContent(webContent, {
   url: "https://example.com",
 });
 
-// 신뢰할 수 없는 프로젝트의 파일을 읽은 후
+// 신뢰할 수 없는 파일을 읽은 후
 const fileContent = await readFile("/tmp/downloaded-project/config.js", "utf-8");
 sl.ingestContent(fileContent, {
   source: "file",
   path: "/tmp/downloaded-project/config.js",
 });
 
-// 이후 검사에 상승된 taint가 반영됩니다
-const taint = sl.getSessionTaint(); // "web" ("owner"에서 상승됨)
+// 스킬 출력을 받은 후
+sl.ingestContent(skillOutput, { source: "skill", path: "summarize" });
+
+// 메모리에서 로드한 후
+sl.ingestContent(memoryData, { source: "memory" });
+
+// 현재 taint level 확인
+const taint = sl.getSessionTaint(); // "web" (elevated from "owner")
 ```
+
+Taint는 상승만 합니다 — 세션이 웹 콘텐츠를 접하면 세션이 끝날 때까지 `web` taint 이상으로 유지됩니다.
 
 ## 발신 콘텐츠 스캔
 
@@ -134,8 +144,54 @@ const message = agent.generateResponse();
 
 const scan = sl.scanEgress(message);
 if (!scan.clean) {
-  console.error("비밀 감지:", scan.findings.map(f => f.type));
-  // 메시지를 전송하지 마세요 — 민감한 데이터가 포함되어 있습니다
+  console.error("Secrets detected:", scan.findings.map(f => f.type));
+  // Don't send the message — it contains sensitive data
+}
+```
+
+## 이벤트 수신
+
+로깅, 모니터링 또는 커스텀 로직을 위해 보안 이벤트를 구독합니다:
+
+```typescript
+// 보안 결정을 수신합니다
+const unsub = sl.on("action.evaluated", (event) => {
+  console.log(`${event.action}: ${event.decision}`);
+});
+
+// 나중에 구독 해제합니다
+unsub();
+```
+
+## 정리
+
+완료 후에는 항상 `destroy()`를 호출하여 리소스를 해제합니다:
+
+```typescript
+sl.destroy();
+```
+
+이 메서드는 대기 중인 승인 요청을 해결하고 이벤트 핸들러를 정리합니다.
+
+## 에러 처리
+
+SDK는 타입이 지정된 에러를 던지므로 catch할 수 있습니다:
+
+```typescript
+import {
+  createSecurityLayer,
+  ConfigError,
+  InitializationError,
+} from "@securitylayerai/sdk";
+
+try {
+  const sl = await createSecurityLayer({ configDir: "/bad/path" });
+} catch (err) {
+  if (err instanceof ConfigError) {
+    console.error("Config problem:", err.message, err.configPath);
+  } else if (err instanceof InitializationError) {
+    console.error("Pipeline init failed:", err.message, err.cause);
+  }
 }
 ```
 

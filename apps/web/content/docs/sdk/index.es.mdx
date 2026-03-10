@@ -4,28 +4,24 @@ description: SDK nativo de TypeScript para integrar Security Layer en aplicacion
 icon: Package
 ---
 
-<Callout type="info" title="Vista previa">
-  El SDK est en desarrollo activo. La superficie de API documentada aqu refleja el diseo planificado. Instala el paquete hoy para seguir el progreso a medida que se implementan las funcionalidades.
-</Callout>
+## Por que usar el SDK?
 
-## Por qu usar el SDK?
-
-Las integraciones del CLI (hooks, shell shim) funcionan sin cambios de cdigo -- pero operan en el borde. El SDK te da **seguridad en proceso** con contexto completo:
+Las integraciones del CLI (hooks, shell shim) funcionan sin cambios de codigo -- pero operan en el borde. El SDK te da **seguridad en proceso** con contexto completo:
 
 | | Shell Shim | Hooks | SDK |
 |---|---|---|---|
-| Intercepta exec | S | S | S |
-| Intercepta escrituras de archivos | No | S | S |
-| Intercepta web fetch | No | S | S |
-| Contexto completo de sesin | No | Parcial | **S** |
-| Precisin de seguimiento de taint | Gruesa | Moderada | **Por operacin** |
-| Riesgo de bypass | Manipulacin de PATH | Ninguno | **Ninguno (en proceso)** |
-| Funciona con cualquier framework | S (solo shell) | Solo Claude Code | **Cualquier framework** |
-| Esfuerzo de integracin | Cero | Un comando | Cambios de cdigo |
+| Intercepta exec | Si | Si | Si |
+| Intercepta escrituras de archivos | No | Si | Si |
+| Intercepta web fetch | No | Si | Si |
+| Contexto completo de sesion | No | Parcial | **Si** |
+| Precision de taint tracking | Gruesa | Moderada | **Por operacion** |
+| Riesgo de bypass | Manipulacion de PATH | Ninguno | **Ninguno (en proceso)** |
+| Funciona con cualquier framework | Si (solo shell) | Solo Claude Code | **Cualquier framework** |
+| Esfuerzo de integracion | Cero | Un comando | Cambios de codigo |
 
-El SDK es la opcin correcta cuando ests construyendo una aplicacin agentiva y quieres garantas de seguridad estructural -- no solo intercepcin en lnea de comandos.
+El SDK es la opcion correcta cuando estas construyendo una aplicacion agentiva y quieres garantias de seguridad estructural -- no solo intercepcion en linea de comandos.
 
-## Instalacin
+## Instalacion
 
 <Tabs items={["npm", "yarn", "pnpm", "bun"]}>
   <Tab value="npm">
@@ -50,32 +46,35 @@ El SDK es la opcin correcta cuando ests construyendo una aplicacin agentiva y qu
   </Tab>
 </Tabs>
 
-## Ejemplo rpido
+## Ejemplo rapido
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer();
+const sl = await createSecurityLayer();
 
-// Verificar una accin antes de ejecutarla
+// Check an action before executing it
 const result = await sl.check("exec", { command: "rm -rf /tmp/output" });
 
 if (result.decision === "DENY") {
-  console.error(`Bloqueado: ${result.reason}`);
+  console.error(`Blocked: ${result.reason}`);
 } else if (result.decision === "REQUIRE_APPROVAL") {
-  const approved = await sl.waitForApproval(result.approvalId);
-  if (!approved) console.error("Aprobacin denegada");
+  const approved = await sl.waitForApproval(result.approvalId as string);
+  if (!approved) console.error("Approval denied");
 }
+
+// Clean up when done
+sl.destroy();
 ```
 
-## Patrones de integracin
+## Patrones de integracion
 
-El SDK soporta tres patrones dependiendo de cmo est estructurado tu framework de agentes:
+El SDK soporta tres patrones dependiendo de como esta estructurado tu framework de agentes:
 
 <Cards>
   <Card
-    title="Verificacin directa"
-    description="Llama a sl.check() antes de cada ejecucin de herramienta."
+    title="Verificacion directa"
+    description="Llama a sl.check() antes de cada ejecucion de herramienta."
     href="/docs/sdk/patterns#direct-check"
     icon={<Code weight="duotone" />}
   />
@@ -93,18 +92,18 @@ El SDK soporta tres patrones dependiendo de cmo est estructurado tu framework de
   />
 </Cards>
 
-## Prximos pasos
+## Proximos pasos
 
 <Cards>
   <Card
     title="Primeros pasos"
-    description="Configuracin, ajustes y tu primera verificacin."
+    description="Configuracion, ajustes y tu primera verificacion."
     href="/docs/sdk/getting-started"
     icon={<Lightning weight="duotone" />}
   />
   <Card
     title="Referencia de API"
-    description="Referencia completa de todos los mtodos y tipos del SDK."
+    description="Referencia completa de todos los metodos y tipos del SDK."
     href="/docs/sdk/api-reference"
     icon={<Code weight="duotone" />}
   />

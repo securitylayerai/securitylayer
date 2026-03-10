@@ -4,7 +4,7 @@ description: Monorepo-Paketarchitektur und wie die einzelnen Pakete zusammenwirk
 icon: Cube
 ---
 
-Security Layer ist ein Bun-Monorepo mit fünf Paketen. Jedes Paket hat eine einzige Verantwortung und klar definierte Grenzen.
+Security Layer ist ein Bun-Monorepo mit sechs Paketen. Jedes Paket hat eine einzige Verantwortung und klar definierte Grenzen.
 
 ## Architektur
 
@@ -108,5 +108,11 @@ bun run typecheck
     description="WebSocket-Sicherheitsproxy für Agent-Gateways."
     href="/docs/packages/proxy"
     icon={<Globe weight="duotone" />}
+  />
+  <Card
+    title="SDK"
+    description="TypeScript-SDK für In-Process-Sicherheitsprüfungen."
+    href="/docs/packages/sdk"
+    icon={<Package weight="duotone" />}
   />
 </Cards>

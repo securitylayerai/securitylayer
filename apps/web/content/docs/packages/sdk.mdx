@@ -1,0 +1,116 @@
+---
+title: SDK
+description: TypeScript SDK for in-process security checks in agentic applications.
+icon: Package
+---
+
+`@securitylayerai/sdk` wraps `@securitylayerai/core` into a clean, high-level API for integrating Security Layer directly into your application code. While the CLI and proxy operate at system boundaries, the SDK gives you in-process security with full context.
+
+## Key exports
+
+### createSecurityLayer()
+
+The main entry point. Creates a `SecurityLayer` instance that evaluates actions through the full security pipeline.
+
+```typescript
+import { createSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer({
+  configDir: "~/.securitylayer",
+  sessionId: "my-session",
+});
+
+const result = await sl.check("exec", { command: "ls -la" });
+console.log(result.decision); // "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+
+sl.destroy();
+```
+
+Supports dependency injection for testing — pass a pre-loaded `config` or `eventBus` to skip file I/O.
+
+### withSecurityLayer()
+
+Middleware wrapper that adds security checks to any function transparently.
+
+```typescript
+import { createSecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer();
+
+const safeExec = withSecurityLayer(sl, exec, "exec");
+const safeWrite = withSecurityLayer(sl, writeFile, "file.write");
+
+// Same API as the originals — security checks happen automatically
+await safeExec("echo hello");
+await safeWrite("/tmp/out.txt", data);
+```
+
+Throws `SecurityLayerError` on DENY. Waits for approval on REQUIRE_APPROVAL.
+
+### Error classes
+
+Typed errors for each failure mode:
+
+| Error | Description |
+|---|---|
+| `SecurityLayerError` | Base error class; also thrown by middleware on DENY |
+| `ConfigError` | Config files can't be loaded or parsed |
+| `InitializationError` | Pipeline failed to initialize |
+| `CheckError` | Action evaluation failed unexpectedly |
+| `ApprovalTimeoutError` | Approval request timed out |
+
+## SecurityLayer interface
+
+The object returned by `createSecurityLayer()` provides:
+
+| Method | Description |
+|---|---|
+| `check(tool, params, context?)` | Evaluate an action through the security pipeline |
+| `waitForApproval(id, options?)` | Block until approval is granted or times out |
+| `ingestContent(content, metadata)` | Update taint tracking with external content |
+| `scanEgress(content)` | Scan outbound content for leaked secrets |
+| `getSessionTaint()` | Get the current session's effective taint level |
+| `on(type, handler)` | Subscribe to security events |
+| `destroy()` | Clean up resources and event handlers |
+
+## Architecture
+
+The SDK depends only on `@securitylayerai/core` and builds the security pipeline internally:
+
+```
+@securitylayerai/sdk
+├── createSecurityLayer() ─→ loads config, builds pipeline deps
+│   ├── CapabilityStore ─→ from core's buildCapabilityStore()
+│   ├── TaintTracker ─→ from core's createTaintTracker()
+│   ├── LLM Judge ─→ from core's createDefaultLLMJudge() or createNoOpJudge()
+│   ├── ApprovalManager ─→ from core's createApprovalManager()
+│   └── EventBus ─→ from core's createEventBus()
+├── withSecurityLayer() ─→ middleware wrapper over check()
+└── Error classes ─→ SecurityLayerError, ConfigError, etc.
+```
+
+## Package structure
+
+```
+packages/sdk/
+├── src/
+│   ├── index.ts          # Barrel exports
+│   ├── types.ts          # SDK types + core re-exports
+│   ├── errors.ts         # Error classes
+│   ├── session.ts        # Session state factory
+│   ├── client.ts         # createSecurityLayer()
+│   └── middleware.ts     # withSecurityLayer()
+└── test/
+    ├── helpers.ts        # Test fixtures
+    ├── errors.test.ts
+    ├── session.test.ts
+    ├── client.test.ts
+    ├── middleware.test.ts
+    └── integration.test.ts
+```
+
+## See also
+
+- [SDK documentation](/docs/sdk) — Full SDK guide with getting started, patterns, and API reference
+- [Core](/docs/packages/core) — The security engine the SDK wraps
+- [Security pipeline](/docs/concepts/security-pipeline) — How the 3-layer pipeline works

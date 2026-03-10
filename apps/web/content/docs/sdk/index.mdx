@@ -4,10 +4,6 @@ description: Native TypeScript SDK for integrating Security Layer into agentic a
 icon: Package
 ---
 
-<Callout type="info" title="Preview">
-  The SDK is in active development. The API surface documented here reflects the planned design. Install the package today to follow along as features land.
-</Callout>
-
 ## Why use the SDK?
 
 The CLI integrations (hooks, shell shim) work without code changes — but they operate at the boundary. The SDK gives you **in-process security** with full context:
@@ -53,9 +49,9 @@ The SDK is the right choice when you're building an agentic application and want
 ## Quick example
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer();
+const sl = await createSecurityLayer();
 
 // Check an action before executing it
 const result = await sl.check("exec", { command: "rm -rf /tmp/output" });
@@ -63,9 +59,12 @@ const result = await sl.check("exec", { command: "rm -rf /tmp/output" });
 if (result.decision === "DENY") {
   console.error(`Blocked: ${result.reason}`);
 } else if (result.decision === "REQUIRE_APPROVAL") {
-  const approved = await sl.waitForApproval(result.approvalId);
+  const approved = await sl.waitForApproval(result.approvalId as string);
   if (!approved) console.error("Approval denied");
 }
+
+// Clean up when done
+sl.destroy();
 ```
 
 ## Integration patterns

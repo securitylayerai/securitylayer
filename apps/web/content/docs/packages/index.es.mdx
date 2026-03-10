@@ -4,7 +4,7 @@ description: Arquitectura de paquetes del monorepo y cmo encaja cada paquete.
 icon: Cube
 ---
 
-Security Layer es un monorepo de Bun con cinco paquetes. Cada paquete tiene una responsabilidad nica y lmites bien definidos.
+Security Layer es un monorepo de Bun con seis paquetes. Cada paquete tiene una responsabilidad nica y lmites bien definidos.
 
 ## Arquitectura
 
@@ -108,5 +108,11 @@ bun run typecheck
     description="Proxy de seguridad WebSocket para gateways de agentes."
     href="/docs/packages/proxy"
     icon={<Globe weight="duotone" />}
+  />
+  <Card
+    title="SDK"
+    description="SDK de TypeScript para verificaciones de seguridad en proceso."
+    href="/docs/packages/sdk"
+    icon={<Package weight="duotone" />}
   />
 </Cards>
