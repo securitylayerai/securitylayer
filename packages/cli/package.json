@@ -9,7 +9,7 @@
     "sl": "bin/securitylayer.ts"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target bun",
+    "build": "bun build src/index.ts --outdir dist --target bun --external @securitylayerai/core",
     "test": "vitest run",
     "typecheck": "bunx tsc --noEmit"
   },
