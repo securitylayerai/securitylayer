@@ -134,7 +134,7 @@ export function createOpenClawAdapter(config?: OpenClawAdapterConfig): AgentAdap
       return [];
     },
 
-    injectDenyResponse(action: Action, reason: string, toolCallId?: string): Buffer {
+    injectDenyResponse(_action: Action, reason: string, toolCallId?: string): Buffer {
       const response = {
         type: "res:agent",
         data: {

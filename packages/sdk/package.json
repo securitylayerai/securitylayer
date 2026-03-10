@@ -5,8 +5,8 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target bun",
-    "test": "vitest run --passWithNoTests",
+    "build": "bun build src/index.ts --outdir dist --target bun --external @securitylayerai/core",
+    "test": "vitest run",
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {

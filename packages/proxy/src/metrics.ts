@@ -103,7 +103,7 @@ export function createMetricsCollector(): MetricsCollector {
         lines.push(`securitylayer_approvals_total{outcome="${outcome}"} ${count}`);
       }
 
-      return lines.join("\n") + "\n";
+      return `${lines.join("\n")}\n`;
     },
 
     reset() {
