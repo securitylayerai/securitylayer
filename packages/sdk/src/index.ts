@@ -1,30 +1,30 @@
 // @securitylayerai/sdk — public API
 
 export { createSecurityLayer } from "./client";
-export { withSecurityLayer, type MiddlewareOptions } from "./middleware";
-export { createSessionState, type SessionState } from "./session";
 export {
-  SecurityLayerError,
+  ApprovalTimeoutError,
+  CheckError,
   ConfigError,
   InitializationError,
-  CheckError,
-  ApprovalTimeoutError,
+  SecurityLayerError,
 } from "./errors";
+export { type MiddlewareOptions, withSecurityLayer } from "./middleware";
+export { createSessionState, type SessionState } from "./session";
 export type {
-  SecurityLayerOptions,
-  ExecutionContext,
-  ContentMetadata,
-  CheckResult,
   ApprovalOptions,
-  SecurityLayer,
-  TaintLevel,
+  CheckResult,
+  ContentMetadata,
   EgressFinding,
   EgressScanResult,
-  PipelineDecision,
-  LayerResults,
-  SecurityEvent,
-  SecurityEventType,
-  SecurityEventMap,
-  LoadedConfig,
   EventBus,
+  ExecutionContext,
+  LayerResults,
+  LoadedConfig,
+  PipelineDecision,
+  SecurityEvent,
+  SecurityEventMap,
+  SecurityEventType,
+  SecurityLayer,
+  SecurityLayerOptions,
+  TaintLevel,
 } from "./types";

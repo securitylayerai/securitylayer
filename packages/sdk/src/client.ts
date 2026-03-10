@@ -2,18 +2,18 @@ import { join } from "node:path";
 import {
   buildCapabilityStore,
   createApprovalManager,
+  createDefaultLLMJudge,
   createEventBus,
   createNoOpJudge,
-  createDefaultLLMJudge,
   createTaintTracker,
+  type EventBus,
   evaluateAction,
   loadConfig,
-  scanEgress,
-  TaintLevel,
-  type EventBus,
   type PipelineDeps,
   type SecurityEventMap,
   type SecurityEventType,
+  scanEgress,
+  TaintLevel,
 } from "@securitylayerai/core";
 import { ConfigError, InitializationError } from "./errors";
 import { createSessionState } from "./session";
@@ -26,7 +26,10 @@ import type {
   SecurityLayerOptions,
 } from "./types";
 
-const SOURCE_TO_TAINT: Record<ContentMetadata["source"], typeof TaintLevel[keyof typeof TaintLevel]> = {
+const SOURCE_TO_TAINT: Record<
+  ContentMetadata["source"],
+  (typeof TaintLevel)[keyof typeof TaintLevel]
+> = {
   web: TaintLevel.WEB,
   file: TaintLevel.UNTRUSTED,
   channel: TaintLevel.UNTRUSTED,
@@ -41,7 +44,7 @@ export async function createSecurityLayer(options?: SecurityLayerOptions): Promi
   const session = createSessionState(options?.sessionId);
 
   // Load or use injected config
-  let config;
+  let config: import("@securitylayerai/core").LoadedConfig;
   try {
     if (options?.config) {
       config = options.config;
@@ -158,11 +161,12 @@ export async function createSecurityLayer(options?: SecurityLayerOptions): Promi
         unsub();
 
         if (capturedApprovalId) {
-          checkResult.approvalId = capturedApprovalId;
+          const approvalId = capturedApprovalId;
+          checkResult.approvalId = approvalId;
           pendingApprovals.set(
-            capturedApprovalId,
+            approvalId,
             approvalPromise.then((r) => {
-              pendingApprovals.delete(capturedApprovalId!);
+              pendingApprovals.delete(approvalId);
               return r.outcome === "approved";
             }),
           );

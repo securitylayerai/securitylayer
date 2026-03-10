@@ -9,10 +9,7 @@ const coreDir = path.resolve(__dirname, "../core");
 export default defineConfig({
   plugins: [
     tsconfigPaths({
-      projects: [
-        path.resolve(__dirname, "tsconfig.json"),
-        path.resolve(coreDir, "tsconfig.json"),
-      ],
+      projects: [path.resolve(__dirname, "tsconfig.json"), path.resolve(coreDir, "tsconfig.json")],
     }),
   ],
   test: {

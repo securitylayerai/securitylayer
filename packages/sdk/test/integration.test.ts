@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
 import { createEventBus } from "@securitylayerai/core";
+import { describe, expect, it } from "vitest";
 import { createSecurityLayer } from "@/client";
-import { SecurityLayerError } from "@/errors";
 import { withSecurityLayer } from "@/middleware";
 import { makeTestConfig } from "./helpers";
 
@@ -45,7 +44,7 @@ describe("integration", () => {
     expect(result.approvalId).toBeDefined();
 
     // Wait with short timeout — should return false
-    const approved = await sl.waitForApproval(result.approvalId!, { timeout: 50 });
+    const approved = await sl.waitForApproval(result.approvalId as string, { timeout: 50 });
     expect(approved).toBe(false);
 
     sl.destroy();
@@ -76,8 +75,7 @@ describe("integration", () => {
     const sl = await createSecurityLayer({ config, sessionId: "test", eventBus: bus });
 
     const eventTypes: string[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    bus.onAny((e: any) => eventTypes.push(e.type));
+    bus.onAny((e: Record<string, unknown>) => eventTypes.push(e.type as string));
 
     // check emits action.evaluated
     await sl.check("exec", { command: "echo hello" });

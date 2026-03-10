@@ -1,7 +1,6 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { createEventBus, createNoOpJudge, type LLMJudge } from "@securitylayerai/core";
+import { createEventBus, type LLMJudge } from "@securitylayerai/core";
+import { describe, expect, it } from "vitest";
 import { createSecurityLayer } from "@/client";
-import { ConfigError, InitializationError } from "@/errors";
 import { makeTestConfig } from "./helpers";
 
 describe("createSecurityLayer", () => {
@@ -26,8 +25,7 @@ describe("createSecurityLayer", () => {
       const config = makeTestConfig();
       const bus = createEventBus();
       const events: string[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      bus.onAny((e: any) => events.push(e.type));
+      bus.onAny((e: Record<string, unknown>) => events.push(e.type as string));
 
       const sl = await createSecurityLayer({ config, sessionId: "test", eventBus: bus });
       await sl.check("exec", { command: "echo hello" });
@@ -117,7 +115,7 @@ describe("createSecurityLayer", () => {
     });
 
     it("sets degraded=true when judge throws", async () => {
-      const failingJudge: LLMJudge = {
+      const _failingJudge: LLMJudge = {
         async classify() {
           throw new Error("LLM down");
         },
@@ -266,13 +264,13 @@ describe("createSecurityLayer", () => {
       // We need to emit an approval resolution
       bus.emit({
         type: "approval.resolved",
-        requestId: checkResult.approvalId!,
+        requestId: checkResult.approvalId as string,
         outcome: "approved",
       });
 
       // Unfortunately we can't directly resolve the approval from outside,
       // but we can test the timeout path
-      const result = await sl.waitForApproval(checkResult.approvalId!, { timeout: 100 });
+      const result = await sl.waitForApproval(checkResult.approvalId as string, { timeout: 100 });
       // Will timeout since we can't resolve from outside without access to the manager
       expect(typeof result).toBe("boolean");
       sl.destroy();
@@ -295,7 +293,7 @@ describe("createSecurityLayer", () => {
       const checkResult = await sl.check("cron.create", {});
       expect(checkResult.approvalId).toBeDefined();
 
-      const result = await sl.waitForApproval(checkResult.approvalId!, { timeout: 50 });
+      const result = await sl.waitForApproval(checkResult.approvalId as string, { timeout: 50 });
       expect(result).toBe(false);
       sl.destroy();
     });
@@ -368,7 +366,9 @@ describe("createSecurityLayer", () => {
       const config = makeTestConfig();
       const sl = await createSecurityLayer({ config, sessionId: "test" });
 
-      const result = sl.scanEgress("Here is my key: sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOP");
+      const result = sl.scanEgress(
+        "Here is my key: sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOP",
+      );
       expect(result.clean).toBe(false);
       expect(result.findings.length).toBeGreaterThan(0);
       sl.destroy();
@@ -382,9 +382,8 @@ describe("createSecurityLayer", () => {
       const sl = await createSecurityLayer({ config, sessionId: "test", eventBus: bus });
 
       const events: string[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      sl.on("action.evaluated", (e: any) => {
-        events.push(e.action);
+      sl.on("action.evaluated", (e: Record<string, unknown>) => {
+        events.push(e.action as string);
       });
 
       await sl.check("exec", { command: "echo test" });
@@ -398,9 +397,8 @@ describe("createSecurityLayer", () => {
       const sl = await createSecurityLayer({ config, sessionId: "test", eventBus: bus });
 
       const events: string[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      sl.on("action.evaluated", (e: any) => {
-        events.push(e.action);
+      sl.on("action.evaluated", (e: Record<string, unknown>) => {
+        events.push(e.action as string);
       });
 
       sl.destroy();

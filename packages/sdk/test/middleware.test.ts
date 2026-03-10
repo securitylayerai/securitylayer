@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { createEventBus } from "@securitylayerai/core";
 import { createSecurityLayer } from "@/client";
 import { SecurityLayerError } from "@/errors";
 import { withSecurityLayer } from "@/middleware";
@@ -99,7 +98,7 @@ describe("withSecurityLayer", () => {
     const wrapped = withSecurityLayer(sl, fn, "exec");
 
     // No args — should still work, extracting empty params
-    const result = await (wrapped as Function)();
+    const result = await (wrapped as (...args: never[]) => unknown)();
     expect(result).toBe("ok");
     sl.destroy();
   });
