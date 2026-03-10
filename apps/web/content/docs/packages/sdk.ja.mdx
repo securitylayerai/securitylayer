@@ -1,0 +1,116 @@
+---
+title: SDK
+description: エージェントアプリケーションにおけるインプロセスセキュリティチェックのための TypeScript SDK。
+icon: Package
+---
+
+`@securitylayerai/sdk` は `@securitylayerai/core` をクリーンで高レベルな API にラップし、Security Layer をアプリケーションコードに直接統合するためのパッケージです。CLI やプロキシがシステム境界で動作するのに対し、SDK は完全なコンテキストを持つインプロセスセキュリティを提供します。
+
+## 主要なエクスポート
+
+### createSecurityLayer()
+
+メインエントリーポイントです。完全な security pipeline を通じてアクションを評価する `SecurityLayer` インスタンスを作成します。
+
+```typescript
+import { createSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer({
+  configDir: "~/.securitylayer",
+  sessionId: "my-session",
+});
+
+const result = await sl.check("exec", { command: "ls -la" });
+console.log(result.decision); // "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+
+sl.destroy();
+```
+
+テスト用の依存性注入をサポートしています — プリロードされた `config` や `eventBus` を渡すことでファイル I/O をスキップできます。
+
+### withSecurityLayer()
+
+任意の関数にセキュリティチェックを透過的に追加するミドルウェアラッパーです。
+
+```typescript
+import { createSecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer();
+
+const safeExec = withSecurityLayer(sl, exec, "exec");
+const safeWrite = withSecurityLayer(sl, writeFile, "file.write");
+
+// Same API as the originals — security checks happen automatically
+await safeExec("echo hello");
+await safeWrite("/tmp/out.txt", data);
+```
+
+DENY 時に `SecurityLayerError` をスローします。REQUIRE_APPROVAL 時は承認を待ちます。
+
+### エラークラス
+
+各失敗モードに対応する型付きエラー:
+
+| エラー | 説明 |
+|---|---|
+| `SecurityLayerError` | 基底エラークラス。ミドルウェアでの DENY 時にもスローされます |
+| `ConfigError` | 設定ファイルをロードまたはパースできない場合 |
+| `InitializationError` | Pipeline の初期化に失敗した場合 |
+| `CheckError` | アクション評価が予期せず失敗した場合 |
+| `ApprovalTimeoutError` | 承認リクエストがタイムアウトした場合 |
+
+## SecurityLayer インターフェース
+
+`createSecurityLayer()` が返すオブジェクトは以下のメソッドを提供します:
+
+| メソッド | 説明 |
+|---|---|
+| `check(tool, params, context?)` | Security pipeline を通じてアクションを評価します |
+| `waitForApproval(id, options?)` | 承認されるかタイムアウトするまでブロックします |
+| `ingestContent(content, metadata)` | 外部コンテンツで taint tracking を更新します |
+| `scanEgress(content)` | 送信コンテンツに漏洩した秘密情報がないかスキャンします |
+| `getSessionTaint()` | 現在のセッションの有効な taint level を取得します |
+| `on(type, handler)` | セキュリティイベントをサブスクライブします |
+| `destroy()` | リソースとイベントハンドラーをクリーンアップします |
+
+## アーキテクチャ
+
+SDK は `@securitylayerai/core` のみに依存し、security pipeline を内部的に構築します:
+
+```
+@securitylayerai/sdk
+├── createSecurityLayer() ─→ loads config, builds pipeline deps
+│   ├── CapabilityStore ─→ from core's buildCapabilityStore()
+│   ├── TaintTracker ─→ from core's createTaintTracker()
+│   ├── LLM Judge ─→ from core's createDefaultLLMJudge() or createNoOpJudge()
+│   ├── ApprovalManager ─→ from core's createApprovalManager()
+│   └── EventBus ─→ from core's createEventBus()
+├── withSecurityLayer() ─→ middleware wrapper over check()
+└── Error classes ─→ SecurityLayerError, ConfigError, etc.
+```
+
+## パッケージ構造
+
+```
+packages/sdk/
+├── src/
+│   ├── index.ts          # Barrel exports
+│   ├── types.ts          # SDK types + core re-exports
+│   ├── errors.ts         # Error classes
+│   ├── session.ts        # Session state factory
+│   ├── client.ts         # createSecurityLayer()
+│   └── middleware.ts     # withSecurityLayer()
+└── test/
+    ├── helpers.ts        # Test fixtures
+    ├── errors.test.ts
+    ├── session.test.ts
+    ├── client.test.ts
+    ├── middleware.test.ts
+    └── integration.test.ts
+```
+
+## 関連項目
+
+- [SDK ドキュメント](/docs/sdk) — はじめに、パターン、API リファレンスを含む完全な SDK ガイド
+- [Core](/docs/packages/core) — SDK がラップする security engine
+- [Security Pipeline](/docs/concepts/security-pipeline) — 3 層 pipeline の仕組み

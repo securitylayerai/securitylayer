@@ -1,0 +1,116 @@
+---
+title: SDK
+description: 用于在 AI Agent 应用中进行进程内安全检查的 TypeScript SDK。
+icon: Package
+---
+
+`@securitylayerai/sdk` 将 `@securitylayerai/core` 封装为简洁、高层级的 API，用于将 Security Layer 直接集成到你的应用代码中。CLI 和代理在系统边界运行，而 SDK 为你提供具有完整上下文的进程内安全保障。
+
+## 核心导出
+
+### createSecurityLayer()
+
+主入口。创建一个 `SecurityLayer` 实例，通过完整的 security pipeline 评估操作。
+
+```typescript
+import { createSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer({
+  configDir: "~/.securitylayer",
+  sessionId: "my-session",
+});
+
+const result = await sl.check("exec", { command: "ls -la" });
+console.log(result.decision); // "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+
+sl.destroy();
+```
+
+支持依赖注入以便于测试——传入预加载的 `config` 或 `eventBus` 可跳过文件 I/O。
+
+### withSecurityLayer()
+
+中间件包装器，透明地为任意函数添加安全检查。
+
+```typescript
+import { createSecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer();
+
+const safeExec = withSecurityLayer(sl, exec, "exec");
+const safeWrite = withSecurityLayer(sl, writeFile, "file.write");
+
+// Same API as the originals — security checks happen automatically
+await safeExec("echo hello");
+await safeWrite("/tmp/out.txt", data);
+```
+
+DENY 时抛出 `SecurityLayerError`。REQUIRE_APPROVAL 时等待审批。
+
+### 错误类
+
+针对每种失败模式的类型化错误：
+
+| 错误 | 说明 |
+|---|---|
+| `SecurityLayerError` | 基础错误类；也由中间件在 DENY 时抛出 |
+| `ConfigError` | 无法加载或解析配置文件 |
+| `InitializationError` | Pipeline 初始化失败 |
+| `CheckError` | 操作评估出现意外错误 |
+| `ApprovalTimeoutError` | 审批请求超时 |
+
+## SecurityLayer 接口
+
+`createSecurityLayer()` 返回的对象提供以下方法：
+
+| 方法 | 说明 |
+|---|---|
+| `check(tool, params, context?)` | 通过 security pipeline 评估操作 |
+| `waitForApproval(id, options?)` | 阻塞等待，直到审批通过或超时 |
+| `ingestContent(content, metadata)` | 使用外部内容更新 taint tracking |
+| `scanEgress(content)` | 扫描出站内容中的泄露密钥 |
+| `getSessionTaint()` | 获取当前会话的有效 taint level |
+| `on(type, handler)` | 订阅安全事件 |
+| `destroy()` | 清理资源和事件处理器 |
+
+## 架构
+
+SDK 仅依赖 `@securitylayerai/core`，并在内部构建 security pipeline：
+
+```
+@securitylayerai/sdk
+├── createSecurityLayer() ─→ loads config, builds pipeline deps
+│   ├── CapabilityStore ─→ from core's buildCapabilityStore()
+│   ├── TaintTracker ─→ from core's createTaintTracker()
+│   ├── LLM Judge ─→ from core's createDefaultLLMJudge() or createNoOpJudge()
+│   ├── ApprovalManager ─→ from core's createApprovalManager()
+│   └── EventBus ─→ from core's createEventBus()
+├── withSecurityLayer() ─→ middleware wrapper over check()
+└── Error classes ─→ SecurityLayerError, ConfigError, etc.
+```
+
+## 包结构
+
+```
+packages/sdk/
+├── src/
+│   ├── index.ts          # Barrel exports
+│   ├── types.ts          # SDK types + core re-exports
+│   ├── errors.ts         # Error classes
+│   ├── session.ts        # Session state factory
+│   ├── client.ts         # createSecurityLayer()
+│   └── middleware.ts     # withSecurityLayer()
+└── test/
+    ├── helpers.ts        # Test fixtures
+    ├── errors.test.ts
+    ├── session.test.ts
+    ├── client.test.ts
+    ├── middleware.test.ts
+    └── integration.test.ts
+```
+
+## 另请参阅
+
+- [SDK 文档](/docs/sdk) — 包含快速入门、集成模式和 API 参考的完整 SDK 指南
+- [Core](/docs/packages/core) — SDK 封装的 security engine
+- [Security pipeline](/docs/concepts/security-pipeline) — 三层 pipeline 的工作原理

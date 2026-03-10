@@ -4,10 +4,6 @@ description: Install the SDK and run your first security check.
 icon: Rocket
 ---
 
-<Callout type="info" title="Preview">
-  The SDK is in active development. APIs shown here reflect the planned design and may change before the stable release.
-</Callout>
-
 ## Prerequisites
 
 - Security Layer CLI installed and initialized (`sl init`)
@@ -41,15 +37,14 @@ icon: Rocket
 ## Basic setup
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
 // Initialize with default config (reads ~/.securitylayer/)
-const sl = new SecurityLayer();
+const sl = await createSecurityLayer();
 
 // Or with explicit configuration
-const sl = new SecurityLayer({
+const sl = await createSecurityLayer({
   configDir: "/path/to/.securitylayer",
-  caller: "my-agent",
   sessionId: "session-123",
 });
 ```
@@ -60,11 +55,7 @@ Every tool call your agent makes should pass through `sl.check()` before executi
 
 ```typescript
 async function runTool(tool: string, params: Record<string, unknown>) {
-  const result = await sl.check(tool, params, {
-    sessionId: "current-session",
-    taint: sl.getSessionTaint(),
-    caller: "my-agent",
-  });
+  const result = await sl.check(tool, params);
 
   switch (result.decision) {
     case "ALLOW":
@@ -77,29 +68,40 @@ async function runTool(tool: string, params: Record<string, unknown>) {
 
     case "REQUIRE_APPROVAL":
       // Needs human approval before proceeding
-      const approved = await sl.waitForApproval(result.approvalId);
+      const approved = await sl.waitForApproval(result.approvalId as string);
       if (!approved) throw new Error("Approval denied or timed out");
       return executeToolCall(tool, params);
   }
 }
 ```
 
+You can also override the session ID for a specific check:
+
+```typescript
+const result = await sl.check("exec", { command: "ls" }, {
+  sessionId: "different-session",
+});
+```
+
 ## Understanding decisions
 
-Every check returns a `CheckResult` with the decision from all three security layers:
+Every check returns a `CheckResult` with the decision and detailed layer results:
 
 ```typescript
 const result = await sl.check("exec", { command: "git push --force" });
 
+// The overall decision
+console.log(result.decision); // "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+console.log(result.reason);   // Human-readable explanation
+
 // Which layer blocked it?
 console.log(result.layers.capability); // { allowed: true }
-console.log(result.layers.taint);      // { level: "owner", allowed: true }
-console.log(result.layers.rules);      // { decision: "DENY", reason: "Force push" }
-console.log(result.layers.llm);        // { decision: "NORMAL", confidence: 0.9 }
+console.log(result.layers.rules);     // { decision: "DENY", reason: "Force push" }
+console.log(result.layers.llm);       // { decision: "NORMAL", confidence: 0.9 }
 
 // Performance
-console.log(result.timing.total_ms);   // 12
-console.log(result.degraded);          // false (LLM was available)
+console.log(result.timing.total);     // 12 (ms)
+console.log(result.degraded);         // false (all layers executed)
 ```
 
 ## Tracking taint
@@ -114,16 +116,24 @@ sl.ingestContent(webContent, {
   url: "https://example.com",
 });
 
-// After reading a file from an untrusted project
+// After reading an untrusted file
 const fileContent = await readFile("/tmp/downloaded-project/config.js", "utf-8");
 sl.ingestContent(fileContent, {
   source: "file",
   path: "/tmp/downloaded-project/config.js",
 });
 
-// Now subsequent checks will reflect the elevated taint
+// After receiving skill output
+sl.ingestContent(skillOutput, { source: "skill", path: "summarize" });
+
+// After loading from memory
+sl.ingestContent(memoryData, { source: "memory" });
+
+// Check the current taint level
 const taint = sl.getSessionTaint(); // "web" (elevated from "owner")
 ```
+
+Taint only escalates — once a session sees web content, it stays at `web` taint or higher for the rest of the session.
 
 ## Scanning outbound content
 
@@ -136,6 +146,52 @@ const scan = sl.scanEgress(message);
 if (!scan.clean) {
   console.error("Secrets detected:", scan.findings.map(f => f.type));
   // Don't send the message — it contains sensitive data
+}
+```
+
+## Listening to events
+
+Subscribe to security events for logging, monitoring, or custom logic:
+
+```typescript
+// Listen for security decisions
+const unsub = sl.on("action.evaluated", (event) => {
+  console.log(`${event.action}: ${event.decision}`);
+});
+
+// Later, unsubscribe
+unsub();
+```
+
+## Cleanup
+
+Always call `destroy()` when you're done to release resources:
+
+```typescript
+sl.destroy();
+```
+
+This resolves any pending approval requests and clears event handlers.
+
+## Error handling
+
+The SDK throws typed errors you can catch:
+
+```typescript
+import {
+  createSecurityLayer,
+  ConfigError,
+  InitializationError,
+} from "@securitylayerai/sdk";
+
+try {
+  const sl = await createSecurityLayer({ configDir: "/bad/path" });
+} catch (err) {
+  if (err instanceof ConfigError) {
+    console.error("Config problem:", err.message, err.configPath);
+  } else if (err instanceof InitializationError) {
+    console.error("Pipeline init failed:", err.message, err.cause);
+  }
 }
 ```
 

@@ -4,18 +4,14 @@ description: Vollständige Referenz aller SDK-Methoden und Typen.
 icon: Code
 ---
 
-<Callout type="info" title="Vorschau">
-  Das SDK befindet sich in aktiver Entwicklung. Die hier gezeigten APIs spiegeln das geplante Design wider und können sich vor dem stabilen Release noch ändern.
-</Callout>
+## createSecurityLayer()
 
-## SecurityLayer
-
-Der Haupteinstiegspunkt des SDK.
+Erstellt und gibt eine `SecurityLayer`-Instanz zurück. Dies ist der Haupteinstiegspunkt für das SDK.
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer(options?: SecurityLayerOptions);
+const sl = await createSecurityLayer(options?: SecurityLayerOptions);
 ```
 
 ### Optionen
@@ -23,16 +19,21 @@ const sl = new SecurityLayer(options?: SecurityLayerOptions);
 | Option | Typ | Standard | Beschreibung |
 |---|---|---|---|
 | `configDir` | `string` | `~/.securitylayer` | Pfad zum Security Layer-Konfigurationsverzeichnis |
-| `caller` | `string` | Automatisch erkannt | Bezeichner der aufrufenden Anwendung |
-| `sessionId` | `string` | Automatisch generiert | Standard-Session-ID für Prüfungen |
+| `sessionId` | `string` | Automatisch generierte UUID | Standard-Session-ID für Prüfungen |
+| `config` | `LoadedConfig` | — | Vorgeladenes Konfigurationsobjekt (überspringt Dateiladen, nützlich für Tests) |
+| `eventBus` | `EventBus` | Automatisch erstellt | Injizierter Event-Bus (nützlich für Tests oder zum Teilen von Events) |
+
+**Wirft:** `ConfigError` wenn Konfigurationsdateien nicht geladen werden können, `InitializationError` wenn die security pipeline nicht initialisiert werden kann.
 
 ---
 
-## Methoden
+## SecurityLayer
 
-### `check()`
+Das von `createSecurityLayer()` zurückgegebene Objekt. Stellt alle Methoden für Sicherheitsprüfungen, taint tracking und Event-Handling bereit.
 
-Wertet eine Aktion durch alle 3 Security Layers aus, bevor sie ausgeführt wird.
+### check()
+
+Wertet eine Aktion durch die security pipeline aus, bevor sie ausgeführt wird.
 
 ```typescript
 const result = await sl.check(
@@ -47,12 +48,12 @@ const result = await sl.check(
 | Parameter | Typ | Beschreibung |
 |---|---|---|
 | `tool` | `string` | Die verwendete capability: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"`, etc. |
-| `params` | `object` | Tool-spezifische Parameter (z. B. `{ command: "ls -la" }` für exec) |
-| `context` | `ExecutionContext` | Optionaler Session-Kontext für die Prüfung |
+| `params` | `object` | Tool-spezifische Parameter. Bei exec wird der Befehl aus den Properties `command`, `cmd` oder `input` extrahiert. |
+| `context` | `ExecutionContext` | Optionale Kontext-Überschreibungen für diese Prüfung |
 
 **Rückgabe:** `Promise<CheckResult>`
 
-### `waitForApproval()`
+### waitForApproval()
 
 Blockiert, bis ein Mensch eine `REQUIRE_APPROVAL`-Entscheidung genehmigt oder ablehnt.
 
@@ -67,12 +68,12 @@ const approved = await sl.waitForApproval(
 
 | Parameter | Typ | Beschreibung |
 |---|---|---|
-| `approvalId` | `string` | Die Genehmigungs-ID aus einem `REQUIRE_APPROVAL`-Ergebnis |
+| `approvalId` | `string` | Die Genehmigungs-ID aus einem `REQUIRE_APPROVAL`-Prüfungsergebnis |
 | `options.timeout` | `number` | Zeitüberschreitung in Millisekunden (Standard: 300000 / 5 Minuten) |
 
-**Rückgabe:** `true` bei Genehmigung, `false` bei Ablehnung oder Zeitüberschreitung.
+**Rückgabe:** `true` bei Genehmigung, `false` bei Ablehnung, Zeitüberschreitung oder unbekannter `approvalId`.
 
-### `ingestContent()`
+### ingestContent()
 
 Aktualisiert den Taint-Tracker, wenn externe Inhalte in die Session gelangen.
 
@@ -87,14 +88,22 @@ sl.ingestContent(
 
 | Parameter | Typ | Beschreibung |
 |---|---|---|
-| `content` | `string` | Der gelesene/abgerufene Inhalt |
-| `metadata.source` | `"web" \| "file"` | Woher der Inhalt stammt |
-| `metadata.path` | `string?` | Dateipfad (bei Dateiquellen) |
+| `content` | `string` | Der gelesene oder abgerufene Inhalt |
+| `metadata.source` | `"web" \| "file" \| "channel" \| "skill" \| "memory"` | Woher der Inhalt stammt |
+| `metadata.path` | `string?` | Dateipfad, Skill-Name oder Channel-Bezeichner |
 | `metadata.url` | `string?` | URL (bei Webquellen) |
 
-Der Aufruf erhöht das Taint-Level der Session basierend auf der Quelle. Web-Inhalte erhöhen auf `WEB_CONTENT`, nicht vertrauenswürdige Projektdateien auf `UNTRUSTED_HUMAN`.
+**Zuordnung von Quelle zu Taint:**
 
-### `scanEgress()`
+| Quelle | Taint Level |
+|---|---|
+| `web` | WEB |
+| `file` | UNTRUSTED |
+| `channel` | UNTRUSTED |
+| `skill` | SKILL |
+| `memory` | MEMORY |
+
+### scanEgress()
 
 Scannt ausgehende Inhalte auf durchgesickerte Geheimnisse, personenbezogene Daten und sensible Daten vor dem Senden.
 
@@ -102,17 +111,103 @@ Scannt ausgehende Inhalte auf durchgesickerte Geheimnisse, personenbezogene Date
 const result = sl.scanEgress(content: string): EgressScanResult;
 ```
 
-**Rückgabe:** `EgressScanResult` mit `clean: boolean` und `findings[]`.
+**Rückgabe:** `EgressScanResult` mit `clean: boolean` und `findings: EgressFinding[]`.
 
-### `getSessionTaint()`
+### getSessionTaint()
 
-Gibt das aktuelle Taint-Level der Session zurück.
+Gibt das aktuelle effektive Taint Level der Session zurück.
 
 ```typescript
-const taint = sl.getSessionTaint(): TaintLevel;
+const taint = sl.getSessionTaint(): string;
 ```
 
 **Rückgabe:** Eines von `"owner"`, `"trusted"`, `"untrusted"`, `"web"`, `"skill"`, `"memory"`.
+
+### on()
+
+Abonniert Sicherheitsereignisse vom internen Event-Bus.
+
+```typescript
+const unsubscribe = sl.on(type: string, handler: (event) => void): () => void;
+```
+
+**Parameter:**
+
+| Parameter | Typ | Beschreibung |
+|---|---|---|
+| `type` | `string` | Event-Typ, auf den gelauscht wird (z. B. `"action.evaluated"`, `"taint.elevated"`, `"approval.requested"`) |
+| `handler` | `function` | Callback, der beim Auslösen des Events aufgerufen wird |
+
+**Rückgabe:** Eine Unsubscribe-Funktion. Rufe sie auf, um keine Events mehr zu empfangen.
+
+### destroy()
+
+Gibt Ressourcen frei. Löst alle ausstehenden Genehmigungsanfragen als abgelaufen auf und entfernt alle Event-Handler.
+
+```typescript
+sl.destroy(): void;
+```
+
+Rufe immer `destroy()` auf, wenn du mit der SecurityLayer-Instanz fertig bist.
+
+---
+
+## withSecurityLayer()
+
+Middleware-Wrapper, der Sicherheitsprüfungen zu jeder Funktion hinzufügt. Fängt Aufrufe transparent ab — die gewrappte Funktion hat dieselbe Signatur wie das Original.
+
+```typescript
+import { createSecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer();
+
+const protectedExec = withSecurityLayer(sl, originalExecFn, "exec");
+const protectedRead = withSecurityLayer(sl, originalReadFn, "file.read");
+```
+
+**Signatur:**
+
+```typescript
+function withSecurityLayer<TArgs extends unknown[], TReturn>(
+  sl: SecurityLayer,
+  fn: (...args: TArgs) => TReturn | Promise<TReturn>,
+  tool: string,
+  options?: {
+    extractParams?: (...args: unknown[]) => Record<string, unknown>;
+  },
+): (...args: TArgs) => Promise<TReturn>;
+```
+
+**Verhalten:**
+- `ALLOW` — ruft die Originalfunktion auf und gibt ihr Ergebnis zurück
+- `DENY` — wirft `SecurityLayerError`, ohne die Funktion aufzurufen
+- `REQUIRE_APPROVAL` — wartet auf Genehmigung, wirft bei Ablehnung
+
+**Standard-Parameterextraktion:** Wenn das erste Argument ein String ist, wird es auf `{ command: arg }` gemappt. Wenn es ein Objekt ist, wird es direkt als Parameter verwendet.
+
+---
+
+## Fehlerklassen
+
+Alle SDK-Fehler erweitern `SecurityLayerError`, welches `Error` erweitert.
+
+```typescript
+import {
+  SecurityLayerError,
+  ConfigError,
+  InitializationError,
+  CheckError,
+  ApprovalTimeoutError,
+} from "@securitylayerai/sdk";
+```
+
+| Fehler | Properties | Wird geworfen wenn |
+|---|---|---|
+| `SecurityLayerError` | `message` | Basisklasse; wird auch von `withSecurityLayer()` bei DENY geworfen |
+| `ConfigError` | `configPath?: string` | Konfigurationsdateien können nicht geladen oder geparst werden |
+| `InitializationError` | `cause?: unknown` | Security pipeline kann nicht initialisiert werden |
+| `CheckError` | `tool?: string` | Aktionsauswertung schlägt unerwartet fehl |
+| `ApprovalTimeoutError` | `approvalId: string` | Genehmigungsanfrage läuft ab |
 
 ---
 
@@ -123,26 +218,35 @@ const taint = sl.getSessionTaint(): TaintLevel;
 ```typescript
 interface CheckResult {
   decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL";
-  reason?: string;
+  reason: string;
   approvalId?: string;
-  layers: {
-    capability: { allowed: boolean; reason?: string };
-    taint: { level: TaintLevel; allowed: boolean; reason?: string };
-    rules: { decision: string; reason?: string } | null;
-    llm: {
-      decision: string;
-      confidence: number;
-      reasoning?: string;
-    } | null;
-  };
+  layers: LayerResults;
   degraded: boolean;
   timing: {
-    capability_ms: number;
-    taint_ms: number;
-    normalize_ms: number;
-    rules_ms: number;
-    llm_ms: number | null;
-    total_ms: number;
+    total: number;
+    capability?: number;
+    rules?: number;
+    llm?: number;
+  };
+}
+```
+
+### LayerResults
+
+```typescript
+interface LayerResults {
+  capability: {
+    allowed: boolean;
+    reason?: string;
+  };
+  rules?: {
+    decision: string;
+    reason?: string;
+  };
+  llm?: {
+    decision: string;
+    confidence: number;
+    reasoning?: string;
   };
 }
 ```
@@ -170,33 +274,48 @@ interface EgressFinding {
 }
 ```
 
-### TaintLevel
-
-```typescript
-type TaintLevel =
-  | "owner"     // Direkt vom authentifizierten Besitzer
-  | "trusted"   // Von einem erlaubten Kontakt
-  | "untrusted" // Von einem unbekannten/nicht verifizierten Menschen
-  | "web"       // Von Web-Abruf, Browser, E-Mail
-  | "skill"     // Generiert durch einen Skill
-  | "memory";   // Aus persistentem Speicher geladen
-```
-
 ### ExecutionContext
 
 ```typescript
 interface ExecutionContext {
-  sessionId: string;
-  taint?: TaintLevel;
-  caller?: string;
+  sessionId?: string;
   skillId?: string;
   channelId?: string;
+}
+```
+
+### ContentMetadata
+
+```typescript
+interface ContentMetadata {
+  source: "web" | "file" | "channel" | "skill" | "memory";
+  path?: string;
+  url?: string;
+}
+```
+
+### SecurityLayerOptions
+
+```typescript
+interface SecurityLayerOptions {
+  configDir?: string;
+  sessionId?: string;
+  config?: LoadedConfig;
+  eventBus?: EventBus;
+}
+```
+
+### ApprovalOptions
+
+```typescript
+interface ApprovalOptions {
+  timeout?: number; // milliseconds, default 300000 (5 min)
 }
 ```
 
 ## Siehe auch
 
 - [Integrationsmuster](/docs/sdk/patterns) — Wähle das richtige Muster für dein Framework
-- [Capabilities](/docs/concepts/capabilities) — Die 15 base capabilities
-- [Taint-Levels](/docs/concepts/taint-levels) — Wie Taint-Tracking funktioniert
+- [Capabilities](/docs/concepts/capabilities) — Die base capabilities
+- [Taint Levels](/docs/concepts/taint-levels) — Wie taint tracking funktioniert
 - [Security pipeline](/docs/concepts/security-pipeline) — Die 3-Schichten-Pipeline

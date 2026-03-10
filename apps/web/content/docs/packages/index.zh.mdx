@@ -4,7 +4,7 @@ description: Monorepo 包架构以及各包的协作方式。
 icon: Cube
 ---
 
-Security Layer 是一个 Bun monorepo，包含五个包。每个包职责单一，边界清晰。
+Security Layer 是一个 Bun monorepo，包含六个包。每个包职责单一，边界清晰。
 
 ## 架构
 
@@ -108,5 +108,11 @@ bun run typecheck
     description="用于代理网关的 WebSocket 安全代理。"
     href="/docs/packages/proxy"
     icon={<Globe weight="duotone" />}
+  />
+  <Card
+    title="SDK"
+    description="用于进程内安全检查的 TypeScript SDK。"
+    href="/docs/packages/sdk"
+    icon={<Package weight="duotone" />}
   />
 </Cards>

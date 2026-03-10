@@ -4,10 +4,6 @@ description: Three ways to integrate the SDK — direct check, middleware wrappe
 icon: GitBranch
 ---
 
-<Callout type="info" title="Preview">
-  The SDK is in active development. APIs shown here reflect the planned design and may change before the stable release.
-</Callout>
-
 The SDK supports three integration patterns. Choose based on how your agent framework handles tool execution.
 
 ## Direct check
@@ -15,23 +11,19 @@ The SDK supports three integration patterns. Choose based on how your agent fram
 Call `sl.check()` before each tool execution. Best for frameworks where you control the tool dispatch loop.
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer();
+const sl = await createSecurityLayer();
 
 async function executeTool(tool: string, params: Record<string, unknown>) {
-  const result = await sl.check(tool, params, {
-    sessionId: currentSession.id,
-    taint: sl.getSessionTaint(),
-    caller: "my-agent-framework",
-  });
+  const result = await sl.check(tool, params);
 
   if (result.decision === "DENY") {
     throw new ToolBlockedError(result.reason);
   }
 
   if (result.decision === "REQUIRE_APPROVAL") {
-    const approved = await sl.waitForApproval(result.approvalId);
+    const approved = await sl.waitForApproval(result.approvalId as string);
     if (!approved) throw new ToolBlockedError("Approval denied");
   }
 
@@ -46,9 +38,9 @@ async function executeTool(tool: string, params: Record<string, unknown>) {
 Wrap existing tool executors with `withSecurityLayer()`. The wrapper intercepts calls transparently — no changes to calling code.
 
 ```typescript
-import { SecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer();
+const sl = await createSecurityLayer();
 
 // Wrap any tool executor
 const protectedExec = withSecurityLayer(sl, originalExecFunction, "exec");
@@ -59,6 +51,14 @@ await protectedExec("git push origin main");
 await protectedWrite("/tmp/output.txt", content);
 ```
 
+You can provide custom parameter extraction when the default doesn't fit:
+
+```typescript
+const protectedFetch = withSecurityLayer(sl, fetchFn, "web_fetch", {
+  extractParams: (url: unknown) => ({ url }),
+});
+```
+
 **When to use:** You want to add security to an existing codebase with minimal changes. Wrap the tool executors once and the rest of the code stays untouched.
 
 ## Event-based
@@ -66,9 +66,9 @@ await protectedWrite("/tmp/output.txt", content);
 Hook into your framework's lifecycle events. Best for frameworks that emit `beforeToolUse` / `afterToolUse` events.
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer();
+const sl = await createSecurityLayer();
 
 // Pre-execution: check and potentially block
 agentFramework.on("beforeToolUse", async (event) => {
@@ -108,13 +108,15 @@ agentFramework.on("afterToolUse", (event) => {
 You can mix patterns in the same application:
 
 ```typescript
+const sl = await createSecurityLayer();
+
 // Middleware for standard tools
 const protectedExec = withSecurityLayer(sl, exec, "exec");
 const protectedWrite = withSecurityLayer(sl, writeFile, "file.write");
 
 // Direct check for custom logic
 async function handleDangerousOperation() {
-  const result = await sl.check("exec.elevated", {
+  const result = await sl.check("exec", {
     command: "sudo systemctl restart nginx",
   });
   // Custom handling...
@@ -124,6 +126,9 @@ async function handleDangerousOperation() {
 framework.on("afterToolUse", (event) => {
   sl.ingestContent(event.output, { source: "file", path: event.params.path });
 });
+
+// Always clean up
+process.on("exit", () => sl.destroy());
 ```
 
 ## See also

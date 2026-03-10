@@ -1,38 +1,39 @@
 ---
 title: Referencia de API
-description: Referencia completa de todos los mtodos y tipos del SDK.
+description: Referencia completa de todos los metodos y tipos del SDK.
 icon: Code
 ---
 
-<Callout type="info" title="Vista previa">
-  El SDK est en desarrollo activo. Las APIs mostradas aqu reflejan el diseo planificado y pueden cambiar antes de la versin estable.
-</Callout>
+## createSecurityLayer()
 
-## SecurityLayer
-
-El punto de entrada principal del SDK.
+Crea y retorna una instancia de `SecurityLayer`. Este es el punto de entrada principal del SDK.
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer(options?: SecurityLayerOptions);
+const sl = await createSecurityLayer(options?: SecurityLayerOptions);
 ```
 
 ### Opciones
 
-| Opcin | Tipo | Valor por defecto | Descripcin |
+| Opcion | Tipo | Valor por defecto | Descripcion |
 |---|---|---|---|
-| `configDir` | `string` | `~/.securitylayer` | Ruta al directorio de configuracin de Security Layer |
-| `caller` | `string` | Auto-detectado | Identificador de la aplicacin que llama |
-| `sessionId` | `string` | Auto-generado | ID de sesin por defecto para verificaciones |
+| `configDir` | `string` | `~/.securitylayer` | Ruta al directorio de configuracion de Security Layer |
+| `sessionId` | `string` | UUID auto-generado | ID de sesion por defecto para verificaciones |
+| `config` | `LoadedConfig` | — | Objeto de configuracion pre-cargado (omite la carga de archivos, util para testing) |
+| `eventBus` | `EventBus` | Auto-creado | Event bus inyectado (util para testing o compartir eventos) |
+
+**Lanza:** `ConfigError` si los archivos de configuracion no se pueden cargar, `InitializationError` si el security pipeline falla al inicializarse.
 
 ---
 
-## Mtodos
+## SecurityLayer
 
-### `check()`
+El objeto retornado por `createSecurityLayer()`. Proporciona todos los metodos de verificacion de seguridad, taint tracking y manejo de eventos.
 
-Evalúa una acción a través de las 3 security layers antes de su ejecución.
+### check()
+
+Evalua una accion a traves del security pipeline antes de su ejecucion.
 
 ```typescript
 const result = await sl.check(
@@ -42,19 +43,19 @@ const result = await sl.check(
 ): Promise<CheckResult>;
 ```
 
-**Parmetros:**
+**Parametros:**
 
-| Parmetro | Tipo | Descripcin |
+| Parametro | Tipo | Descripcion |
 |---|---|---|
-| `tool` | `string` | La capability que se est usando: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"`, etc. |
-| `params` | `object` | Parmetros especficos de la herramienta (ej., `{ command: "ls -la" }` para exec) |
-| `context` | `ExecutionContext` | Contexto de sesin opcional para la verificacin |
+| `tool` | `string` | La capability que se esta usando: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"`, etc. |
+| `params` | `object` | Parametros especificos de la herramienta. Para exec, el comando se extrae de las propiedades `command`, `cmd` o `input`. |
+| `context` | `ExecutionContext` | Sobreescrituras opcionales de contexto para esta verificacion |
 
 **Retorna:** `Promise<CheckResult>`
 
-### `waitForApproval()`
+### waitForApproval()
 
-Bloquea hasta que un humano apruebe o deniegue una decisin `REQUIRE_APPROVAL`.
+Bloquea hasta que un humano apruebe o deniegue una decision `REQUIRE_APPROVAL`.
 
 ```typescript
 const approved = await sl.waitForApproval(
@@ -63,18 +64,18 @@ const approved = await sl.waitForApproval(
 ): Promise<boolean>;
 ```
 
-**Parmetros:**
+**Parametros:**
 
-| Parmetro | Tipo | Descripcin |
+| Parametro | Tipo | Descripcion |
 |---|---|---|
-| `approvalId` | `string` | El ID de aprobacin de un resultado `REQUIRE_APPROVAL` |
-| `options.timeout` | `number` | Tiempo lmite en milisegundos (por defecto: 300000 / 5 minutos) |
+| `approvalId` | `string` | El ID de aprobacion de un resultado `REQUIRE_APPROVAL` |
+| `options.timeout` | `number` | Tiempo limite en milisegundos (por defecto: 300000 / 5 minutos) |
 
-**Retorna:** `true` si fue aprobado, `false` si fue denegado o se agot el tiempo.
+**Retorna:** `true` si fue aprobado, `false` si fue denegado, se agoto el tiempo, o el `approvalId` es desconocido.
 
-### `ingestContent()`
+### ingestContent()
 
-Actualiza el rastreador de taint cuando contenido externo entra en la sesin.
+Actualiza el rastreador de taint cuando contenido externo entra en la sesion.
 
 ```typescript
 sl.ingestContent(
@@ -83,18 +84,26 @@ sl.ingestContent(
 ): void;
 ```
 
-**Parmetros:**
+**Parametros:**
 
-| Parmetro | Tipo | Descripcin |
+| Parametro | Tipo | Descripcion |
 |---|---|---|
-| `content` | `string` | El contenido que fue ledo/obtenido |
-| `metadata.source` | `"web" \| "file"` | De dnde proviene el contenido |
-| `metadata.path` | `string?` | Ruta del archivo (para fuentes de archivo) |
+| `content` | `string` | El contenido que fue leido u obtenido |
+| `metadata.source` | `"web" \| "file" \| "channel" \| "skill" \| "memory"` | De donde proviene el contenido |
+| `metadata.path` | `string?` | Ruta del archivo, nombre del skill o identificador del canal |
 | `metadata.url` | `string?` | URL (para fuentes web) |
 
-Llamar a este mtodo eleva el nivel de taint de la sesin segn la fuente. El contenido web eleva a `WEB_CONTENT`, los archivos de proyectos no confiables elevan a `UNTRUSTED_HUMAN`.
+**Mapeo de source a taint level:**
 
-### `scanEgress()`
+| Source | Taint Level |
+|---|---|
+| `web` | WEB |
+| `file` | UNTRUSTED |
+| `channel` | UNTRUSTED |
+| `skill` | SKILL |
+| `memory` | MEMORY |
+
+### scanEgress()
 
 Escanea contenido saliente en busca de secretos filtrados, PII y datos sensibles antes de enviarlos.
 
@@ -102,17 +111,103 @@ Escanea contenido saliente en busca de secretos filtrados, PII y datos sensibles
 const result = sl.scanEgress(content: string): EgressScanResult;
 ```
 
-**Retorna:** `EgressScanResult` con `clean: boolean` y `findings[]`.
+**Retorna:** `EgressScanResult` con `clean: boolean` y `findings: EgressFinding[]`.
 
-### `getSessionTaint()`
+### getSessionTaint()
 
-Obtiene el nivel de taint actual de la sesin.
+Obtiene el taint level efectivo de la sesion actual.
 
 ```typescript
-const taint = sl.getSessionTaint(): TaintLevel;
+const taint = sl.getSessionTaint(): string;
 ```
 
 **Retorna:** Uno de `"owner"`, `"trusted"`, `"untrusted"`, `"web"`, `"skill"`, `"memory"`.
+
+### on()
+
+Se suscribe a eventos de seguridad del event bus interno.
+
+```typescript
+const unsubscribe = sl.on(type: string, handler: (event) => void): () => void;
+```
+
+**Parametros:**
+
+| Parametro | Tipo | Descripcion |
+|---|---|---|
+| `type` | `string` | Tipo de evento a escuchar (ej., `"action.evaluated"`, `"taint.elevated"`, `"approval.requested"`) |
+| `handler` | `function` | Callback invocado cuando el evento se dispara |
+
+**Retorna:** Una funcion para cancelar la suscripcion. Llamala para dejar de recibir eventos.
+
+### destroy()
+
+Limpia recursos. Resuelve todas las solicitudes de aprobacion pendientes como expiradas y limpia todos los manejadores de eventos.
+
+```typescript
+sl.destroy(): void;
+```
+
+Siempre llama a `destroy()` cuando hayas terminado con la instancia de SecurityLayer.
+
+---
+
+## withSecurityLayer()
+
+Middleware wrapper que agrega verificaciones de seguridad a cualquier funcion. Intercepta llamadas de forma transparente -- la funcion envuelta tiene la misma firma que la original.
+
+```typescript
+import { createSecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer();
+
+const protectedExec = withSecurityLayer(sl, originalExecFn, "exec");
+const protectedRead = withSecurityLayer(sl, originalReadFn, "file.read");
+```
+
+**Firma:**
+
+```typescript
+function withSecurityLayer<TArgs extends unknown[], TReturn>(
+  sl: SecurityLayer,
+  fn: (...args: TArgs) => TReturn | Promise<TReturn>,
+  tool: string,
+  options?: {
+    extractParams?: (...args: unknown[]) => Record<string, unknown>;
+  },
+): (...args: TArgs) => Promise<TReturn>;
+```
+
+**Comportamiento:**
+- `ALLOW` -> llama a la funcion original y retorna su resultado
+- `DENY` -> lanza `SecurityLayerError` sin llamar a la funcion
+- `REQUIRE_APPROVAL` -> espera la aprobacion, lanza error si es denegada
+
+**Extraccion de parametros por defecto:** Si el primer argumento es un string, se mapea a `{ command: arg }`. Si es un objeto, se usa directamente como parametros.
+
+---
+
+## Clases de error
+
+Todos los errores del SDK extienden `SecurityLayerError`, que a su vez extiende `Error`.
+
+```typescript
+import {
+  SecurityLayerError,
+  ConfigError,
+  InitializationError,
+  CheckError,
+  ApprovalTimeoutError,
+} from "@securitylayerai/sdk";
+```
+
+| Error | Propiedades | Se lanza cuando |
+|---|---|---|
+| `SecurityLayerError` | `message` | Clase base; tambien lanzado por `withSecurityLayer()` en DENY |
+| `ConfigError` | `configPath?: string` | Los archivos de configuracion no se pueden cargar o parsear |
+| `InitializationError` | `cause?: unknown` | El security pipeline falla al inicializarse |
+| `CheckError` | `tool?: string` | La evaluacion de una accion falla inesperadamente |
+| `ApprovalTimeoutError` | `approvalId: string` | La solicitud de aprobacion expira |
 
 ---
 
@@ -123,26 +218,35 @@ const taint = sl.getSessionTaint(): TaintLevel;
 ```typescript
 interface CheckResult {
   decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL";
-  reason?: string;
+  reason: string;
   approvalId?: string;
-  layers: {
-    capability: { allowed: boolean; reason?: string };
-    taint: { level: TaintLevel; allowed: boolean; reason?: string };
-    rules: { decision: string; reason?: string } | null;
-    llm: {
-      decision: string;
-      confidence: number;
-      reasoning?: string;
-    } | null;
-  };
+  layers: LayerResults;
   degraded: boolean;
   timing: {
-    capability_ms: number;
-    taint_ms: number;
-    normalize_ms: number;
-    rules_ms: number;
-    llm_ms: number | null;
-    total_ms: number;
+    total: number;
+    capability?: number;
+    rules?: number;
+    llm?: number;
+  };
+}
+```
+
+### LayerResults
+
+```typescript
+interface LayerResults {
+  capability: {
+    allowed: boolean;
+    reason?: string;
+  };
+  rules?: {
+    decision: string;
+    reason?: string;
+  };
+  llm?: {
+    decision: string;
+    confidence: number;
+    reasoning?: string;
   };
 }
 ```
@@ -170,33 +274,48 @@ interface EgressFinding {
 }
 ```
 
-### TaintLevel
-
-```typescript
-type TaintLevel =
-  | "owner"     // Directamente del propietario autenticado
-  | "trusted"   // De un contacto en la lista de confianza
-  | "untrusted" // De un humano desconocido/no verificado
-  | "web"       // De web fetch, navegador, email
-  | "skill"     // Generado por un skill
-  | "memory";   // Cargado desde memoria persistente
-```
-
 ### ExecutionContext
 
 ```typescript
 interface ExecutionContext {
-  sessionId: string;
-  taint?: TaintLevel;
-  caller?: string;
+  sessionId?: string;
   skillId?: string;
   channelId?: string;
 }
 ```
 
-## Ver tambin
+### ContentMetadata
 
-- [Patrones de integracin](/docs/sdk/patterns) -- Elige el patrn adecuado para tu framework
-- [Capabilities](/docs/concepts/capabilities) -- Las 15 capabilities base
-- [Niveles de taint](/docs/concepts/taint-levels) -- Cmo funciona el seguimiento de taint
+```typescript
+interface ContentMetadata {
+  source: "web" | "file" | "channel" | "skill" | "memory";
+  path?: string;
+  url?: string;
+}
+```
+
+### SecurityLayerOptions
+
+```typescript
+interface SecurityLayerOptions {
+  configDir?: string;
+  sessionId?: string;
+  config?: LoadedConfig;
+  eventBus?: EventBus;
+}
+```
+
+### ApprovalOptions
+
+```typescript
+interface ApprovalOptions {
+  timeout?: number; // milliseconds, default 300000 (5 min)
+}
+```
+
+## Ver tambien
+
+- [Patrones de integracion](/docs/sdk/patterns) -- Elige el patron adecuado para tu framework
+- [Capabilities](/docs/concepts/capabilities) -- Las capabilities base
+- [Taint levels](/docs/concepts/taint-levels) -- Como funciona el taint tracking
 - [Security pipeline](/docs/concepts/security-pipeline) -- El pipeline de 3 capas

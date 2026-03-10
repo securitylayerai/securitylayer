@@ -4,18 +4,14 @@ description: Complete reference for all SDK methods and types.
 icon: Code
 ---
 
-<Callout type="info" title="Preview">
-  The SDK is in active development. APIs shown here reflect the planned design and may change before the stable release.
-</Callout>
+## createSecurityLayer()
 
-## SecurityLayer
-
-The main SDK entry point.
+Creates and returns a `SecurityLayer` instance. This is the main entry point for the SDK.
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer(options?: SecurityLayerOptions);
+const sl = await createSecurityLayer(options?: SecurityLayerOptions);
 ```
 
 ### Options
@@ -23,16 +19,21 @@ const sl = new SecurityLayer(options?: SecurityLayerOptions);
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `configDir` | `string` | `~/.securitylayer` | Path to Security Layer configuration directory |
-| `caller` | `string` | Auto-detected | Identifier for the calling application |
-| `sessionId` | `string` | Auto-generated | Default session ID for checks |
+| `sessionId` | `string` | Auto-generated UUID | Default session ID for checks |
+| `config` | `LoadedConfig` | — | Pre-loaded config object (skips file loading, useful for testing) |
+| `eventBus` | `EventBus` | Auto-created | Injected event bus (useful for testing or sharing events) |
+
+**Throws:** `ConfigError` if config files can't be loaded, `InitializationError` if the security pipeline fails to initialize.
 
 ---
 
-## Methods
+## SecurityLayer
 
-### `check()`
+The object returned by `createSecurityLayer()`. Provides all security checking, taint tracking, and event handling methods.
 
-Evaluate an action through all 3 security layers before execution.
+### check()
+
+Evaluate an action through the security pipeline before execution.
 
 ```typescript
 const result = await sl.check(
@@ -47,12 +48,12 @@ const result = await sl.check(
 | Parameter | Type | Description |
 |---|---|---|
 | `tool` | `string` | The capability being used: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"`, etc. |
-| `params` | `object` | Tool-specific parameters (e.g., `{ command: "ls -la" }` for exec) |
-| `context` | `ExecutionContext` | Optional session context for the check |
+| `params` | `object` | Tool-specific parameters. For exec, the command is extracted from `command`, `cmd`, or `input` properties. |
+| `context` | `ExecutionContext` | Optional context overrides for this check |
 
 **Returns:** `Promise<CheckResult>`
 
-### `waitForApproval()`
+### waitForApproval()
 
 Block until a human approves or denies a `REQUIRE_APPROVAL` decision.
 
@@ -67,12 +68,12 @@ const approved = await sl.waitForApproval(
 
 | Parameter | Type | Description |
 |---|---|---|
-| `approvalId` | `string` | The approval ID from a `REQUIRE_APPROVAL` result |
+| `approvalId` | `string` | The approval ID from a `REQUIRE_APPROVAL` check result |
 | `options.timeout` | `number` | Timeout in milliseconds (default: 300000 / 5 minutes) |
 
-**Returns:** `true` if approved, `false` if denied or timed out.
+**Returns:** `true` if approved, `false` if denied, timed out, or `approvalId` is unknown.
 
-### `ingestContent()`
+### ingestContent()
 
 Update the taint tracker when external content enters the session.
 
@@ -87,14 +88,22 @@ sl.ingestContent(
 
 | Parameter | Type | Description |
 |---|---|---|
-| `content` | `string` | The content that was read/fetched |
-| `metadata.source` | `"web" \| "file"` | Where the content came from |
-| `metadata.path` | `string?` | File path (for file sources) |
+| `content` | `string` | The content that was read or fetched |
+| `metadata.source` | `"web" \| "file" \| "channel" \| "skill" \| "memory"` | Where the content came from |
+| `metadata.path` | `string?` | File path, skill name, or channel identifier |
 | `metadata.url` | `string?` | URL (for web sources) |
 
-Calling this elevates the session taint level based on the source. Web content elevates to `WEB_CONTENT`, untrusted project files elevate to `UNTRUSTED_HUMAN`.
+**Source-to-taint mapping:**
 
-### `scanEgress()`
+| Source | Taint Level |
+|---|---|
+| `web` | WEB |
+| `file` | UNTRUSTED |
+| `channel` | UNTRUSTED |
+| `skill` | SKILL |
+| `memory` | MEMORY |
+
+### scanEgress()
 
 Scan outbound content for leaked secrets, PII, and sensitive data before sending.
 
@@ -102,17 +111,103 @@ Scan outbound content for leaked secrets, PII, and sensitive data before sending
 const result = sl.scanEgress(content: string): EgressScanResult;
 ```
 
-**Returns:** `EgressScanResult` with `clean: boolean` and `findings[]`.
+**Returns:** `EgressScanResult` with `clean: boolean` and `findings: EgressFinding[]`.
 
-### `getSessionTaint()`
+### getSessionTaint()
 
-Get the current session's taint level.
+Get the current session's effective taint level.
 
 ```typescript
-const taint = sl.getSessionTaint(): TaintLevel;
+const taint = sl.getSessionTaint(): string;
 ```
 
 **Returns:** One of `"owner"`, `"trusted"`, `"untrusted"`, `"web"`, `"skill"`, `"memory"`.
+
+### on()
+
+Subscribe to security events from the internal event bus.
+
+```typescript
+const unsubscribe = sl.on(type: string, handler: (event) => void): () => void;
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `type` | `string` | Event type to listen for (e.g., `"action.evaluated"`, `"taint.elevated"`, `"approval.requested"`) |
+| `handler` | `function` | Callback invoked when the event fires |
+
+**Returns:** An unsubscribe function. Call it to stop receiving events.
+
+### destroy()
+
+Clean up resources. Resolves all pending approval requests as timed-out and clears all event handlers.
+
+```typescript
+sl.destroy(): void;
+```
+
+Always call `destroy()` when you're done with the SecurityLayer instance.
+
+---
+
+## withSecurityLayer()
+
+Middleware wrapper that adds security checks to any function. Intercepts calls transparently — the wrapped function has the same signature as the original.
+
+```typescript
+import { createSecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer();
+
+const protectedExec = withSecurityLayer(sl, originalExecFn, "exec");
+const protectedRead = withSecurityLayer(sl, originalReadFn, "file.read");
+```
+
+**Signature:**
+
+```typescript
+function withSecurityLayer<TArgs extends unknown[], TReturn>(
+  sl: SecurityLayer,
+  fn: (...args: TArgs) => TReturn | Promise<TReturn>,
+  tool: string,
+  options?: {
+    extractParams?: (...args: unknown[]) => Record<string, unknown>;
+  },
+): (...args: TArgs) => Promise<TReturn>;
+```
+
+**Behavior:**
+- `ALLOW` → calls the original function and returns its result
+- `DENY` → throws `SecurityLayerError` without calling the function
+- `REQUIRE_APPROVAL` → waits for approval, throws if denied
+
+**Default parameter extraction:** If the first argument is a string, it's mapped to `{ command: arg }`. If it's an object, it's used directly as params.
+
+---
+
+## Error classes
+
+All SDK errors extend `SecurityLayerError`, which extends `Error`.
+
+```typescript
+import {
+  SecurityLayerError,
+  ConfigError,
+  InitializationError,
+  CheckError,
+  ApprovalTimeoutError,
+} from "@securitylayerai/sdk";
+```
+
+| Error | Properties | Thrown when |
+|---|---|---|
+| `SecurityLayerError` | `message` | Base class; also thrown by `withSecurityLayer()` on DENY |
+| `ConfigError` | `configPath?: string` | Config files can't be loaded or parsed |
+| `InitializationError` | `cause?: unknown` | Security pipeline fails to initialize |
+| `CheckError` | `tool?: string` | Action evaluation fails unexpectedly |
+| `ApprovalTimeoutError` | `approvalId: string` | Approval request times out |
 
 ---
 
@@ -123,26 +218,35 @@ const taint = sl.getSessionTaint(): TaintLevel;
 ```typescript
 interface CheckResult {
   decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL";
-  reason?: string;
+  reason: string;
   approvalId?: string;
-  layers: {
-    capability: { allowed: boolean; reason?: string };
-    taint: { level: TaintLevel; allowed: boolean; reason?: string };
-    rules: { decision: string; reason?: string } | null;
-    llm: {
-      decision: string;
-      confidence: number;
-      reasoning?: string;
-    } | null;
-  };
+  layers: LayerResults;
   degraded: boolean;
   timing: {
-    capability_ms: number;
-    taint_ms: number;
-    normalize_ms: number;
-    rules_ms: number;
-    llm_ms: number | null;
-    total_ms: number;
+    total: number;
+    capability?: number;
+    rules?: number;
+    llm?: number;
+  };
+}
+```
+
+### LayerResults
+
+```typescript
+interface LayerResults {
+  capability: {
+    allowed: boolean;
+    reason?: string;
+  };
+  rules?: {
+    decision: string;
+    reason?: string;
+  };
+  llm?: {
+    decision: string;
+    confidence: number;
+    reasoning?: string;
   };
 }
 ```
@@ -170,33 +274,48 @@ interface EgressFinding {
 }
 ```
 
-### TaintLevel
-
-```typescript
-type TaintLevel =
-  | "owner"     // Direct from authenticated owner
-  | "trusted"   // From allowlisted contact
-  | "untrusted" // From unknown/unverified human
-  | "web"       // From web fetch, browser, email
-  | "skill"     // Generated by a skill
-  | "memory";   // Loaded from persistent memory
-```
-
 ### ExecutionContext
 
 ```typescript
 interface ExecutionContext {
-  sessionId: string;
-  taint?: TaintLevel;
-  caller?: string;
+  sessionId?: string;
   skillId?: string;
   channelId?: string;
+}
+```
+
+### ContentMetadata
+
+```typescript
+interface ContentMetadata {
+  source: "web" | "file" | "channel" | "skill" | "memory";
+  path?: string;
+  url?: string;
+}
+```
+
+### SecurityLayerOptions
+
+```typescript
+interface SecurityLayerOptions {
+  configDir?: string;
+  sessionId?: string;
+  config?: LoadedConfig;
+  eventBus?: EventBus;
+}
+```
+
+### ApprovalOptions
+
+```typescript
+interface ApprovalOptions {
+  timeout?: number; // milliseconds, default 300000 (5 min)
 }
 ```
 
 ## See also
 
 - [Integration patterns](/docs/sdk/patterns) — Choose the right pattern for your framework
-- [Capabilities](/docs/concepts/capabilities) — The 15 base capabilities
+- [Capabilities](/docs/concepts/capabilities) — The base capabilities
 - [Taint levels](/docs/concepts/taint-levels) — How taint tracking works
 - [Security pipeline](/docs/concepts/security-pipeline) — The 3-layer pipeline

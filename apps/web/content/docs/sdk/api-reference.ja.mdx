@@ -4,18 +4,14 @@ description: SDK の全メソッドと型の完全なリファレンス。
 icon: Code
 ---
 
-<Callout type="info" title="プレビュー">
-  SDK は現在活発に開発中です。ここに記載されている API は計画中の設計を反映しており、安定版リリース前に変更される可能性があります。
-</Callout>
+## createSecurityLayer()
 
-## SecurityLayer
-
-SDK のメインエントリーポイントです。
+`SecurityLayer` インスタンスを作成して返します。これが SDK のメインエントリーポイントです。
 
 ```typescript
-import { SecurityLayer } from "@securitylayerai/sdk";
+import { createSecurityLayer } from "@securitylayerai/sdk";
 
-const sl = new SecurityLayer(options?: SecurityLayerOptions);
+const sl = await createSecurityLayer(options?: SecurityLayerOptions);
 ```
 
 ### オプション
@@ -23,16 +19,21 @@ const sl = new SecurityLayer(options?: SecurityLayerOptions);
 | オプション | 型 | デフォルト | 説明 |
 |---|---|---|---|
 | `configDir` | `string` | `~/.securitylayer` | Security Layer 設定ディレクトリのパス |
-| `caller` | `string` | 自動検出 | 呼び出し元アプリケーションの識別子 |
-| `sessionId` | `string` | 自動生成 | チェック用のデフォルトセッション ID |
+| `sessionId` | `string` | 自動生成 UUID | チェック用のデフォルトセッション ID |
+| `config` | `LoadedConfig` | — | プリロードされた設定オブジェクト（ファイル読み込みをスキップ、テストに便利） |
+| `eventBus` | `EventBus` | 自動作成 | 注入されたイベントバス（テストやイベント共有に便利） |
+
+**スロー:** 設定ファイルをロードできない場合は `ConfigError`、security pipeline の初期化に失敗した場合は `InitializationError`。
 
 ---
 
-## メソッド
+## SecurityLayer
 
-### `check()`
+`createSecurityLayer()` が返すオブジェクトです。セキュリティチェック、taint tracking、イベントハンドリングの全メソッドを提供します。
 
-実行前にアクションを 3 つの security layers すべてで評価します。
+### check()
+
+実行前にアクションを security pipeline で評価します。
 
 ```typescript
 const result = await sl.check(
@@ -47,12 +48,12 @@ const result = await sl.check(
 | パラメータ | 型 | 説明 |
 |---|---|---|
 | `tool` | `string` | 使用する capability: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"` など |
-| `params` | `object` | ツール固有のパラメータ（例: exec の場合 `{ command: "ls -la" }`） |
-| `context` | `ExecutionContext` | チェック用のオプショナルなセッションコンテキスト |
+| `params` | `object` | ツール固有のパラメータ。exec の場合、コマンドは `command`、`cmd`、または `input` プロパティから抽出されます。 |
+| `context` | `ExecutionContext` | このチェックに対するオプショナルなコンテキストオーバーライド |
 
 **戻り値:** `Promise<CheckResult>`
 
-### `waitForApproval()`
+### waitForApproval()
 
 `REQUIRE_APPROVAL` 判定に対して、人間が承認または拒否するまでブロックします。
 
@@ -67,12 +68,12 @@ const approved = await sl.waitForApproval(
 
 | パラメータ | 型 | 説明 |
 |---|---|---|
-| `approvalId` | `string` | `REQUIRE_APPROVAL` 結果からの承認 ID |
+| `approvalId` | `string` | `REQUIRE_APPROVAL` チェック結果からの承認 ID |
 | `options.timeout` | `number` | タイムアウト（ミリ秒、デフォルト: 300000 / 5 分） |
 
-**戻り値:** 承認された場合 `true`、拒否またはタイムアウトの場合 `false`。
+**戻り値:** 承認された場合 `true`、拒否・タイムアウト・`approvalId` が不明な場合は `false`。
 
-### `ingestContent()`
+### ingestContent()
 
 外部コンテンツがセッションに入った際に taint トラッカーを更新します。
 
@@ -87,14 +88,22 @@ sl.ingestContent(
 
 | パラメータ | 型 | 説明 |
 |---|---|---|
-| `content` | `string` | 読み取り/フェッチされたコンテンツ |
-| `metadata.source` | `"web" \| "file"` | コンテンツの取得元 |
-| `metadata.path` | `string?` | ファイルパス（ファイルソースの場合） |
+| `content` | `string` | 読み取りまたはフェッチされたコンテンツ |
+| `metadata.source` | `"web" \| "file" \| "channel" \| "skill" \| "memory"` | コンテンツの取得元 |
+| `metadata.path` | `string?` | ファイルパス、スキル名、またはチャネル識別子 |
 | `metadata.url` | `string?` | URL（Web ソースの場合） |
 
-この呼び出しはソースに基づいてセッションの taint level を上昇させます。Web コンテンツは `WEB_CONTENT` に、信頼されていないプロジェクトのファイルは `UNTRUSTED_HUMAN` に上昇します。
+**ソースから taint level へのマッピング:**
 
-### `scanEgress()`
+| ソース | Taint Level |
+|---|---|
+| `web` | WEB |
+| `file` | UNTRUSTED |
+| `channel` | UNTRUSTED |
+| `skill` | SKILL |
+| `memory` | MEMORY |
+
+### scanEgress()
 
 送信前に、送信コンテンツに漏洩した秘密情報、PII、機密データがないかスキャンします。
 
@@ -102,17 +111,103 @@ sl.ingestContent(
 const result = sl.scanEgress(content: string): EgressScanResult;
 ```
 
-**戻り値:** `clean: boolean` と `findings[]` を含む `EgressScanResult`。
+**戻り値:** `clean: boolean` と `findings: EgressFinding[]` を含む `EgressScanResult`。
 
-### `getSessionTaint()`
+### getSessionTaint()
 
-現在のセッションの taint level を取得します。
+現在のセッションの有効な taint level を取得します。
 
 ```typescript
-const taint = sl.getSessionTaint(): TaintLevel;
+const taint = sl.getSessionTaint(): string;
 ```
 
 **戻り値:** `"owner"`, `"trusted"`, `"untrusted"`, `"web"`, `"skill"`, `"memory"` のいずれか。
+
+### on()
+
+内部イベントバスからセキュリティイベントをサブスクライブします。
+
+```typescript
+const unsubscribe = sl.on(type: string, handler: (event) => void): () => void;
+```
+
+**パラメータ:**
+
+| パラメータ | 型 | 説明 |
+|---|---|---|
+| `type` | `string` | リッスンするイベントタイプ（例: `"action.evaluated"`, `"taint.elevated"`, `"approval.requested"`） |
+| `handler` | `function` | イベント発生時に呼び出されるコールバック |
+
+**戻り値:** アンサブスクライブ関数。呼び出すとイベントの受信を停止します。
+
+### destroy()
+
+リソースをクリーンアップします。保留中のすべての承認リクエストをタイムアウトとして解決し、すべてのイベントハンドラーをクリアします。
+
+```typescript
+sl.destroy(): void;
+```
+
+SecurityLayer インスタンスの使用が完了したら、必ず `destroy()` を呼び出してください。
+
+---
+
+## withSecurityLayer()
+
+任意の関数にセキュリティチェックを追加するミドルウェアラッパーです。呼び出しを透過的にインターセプトします — ラップされた関数は元の関数と同じシグネチャを持ちます。
+
+```typescript
+import { createSecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = await createSecurityLayer();
+
+const protectedExec = withSecurityLayer(sl, originalExecFn, "exec");
+const protectedRead = withSecurityLayer(sl, originalReadFn, "file.read");
+```
+
+**シグネチャ:**
+
+```typescript
+function withSecurityLayer<TArgs extends unknown[], TReturn>(
+  sl: SecurityLayer,
+  fn: (...args: TArgs) => TReturn | Promise<TReturn>,
+  tool: string,
+  options?: {
+    extractParams?: (...args: unknown[]) => Record<string, unknown>;
+  },
+): (...args: TArgs) => Promise<TReturn>;
+```
+
+**動作:**
+- `ALLOW` → 元の関数を呼び出し、その結果を返します
+- `DENY` → 関数を呼び出さずに `SecurityLayerError` をスローします
+- `REQUIRE_APPROVAL` → 承認を待ち、拒否された場合はスローします
+
+**デフォルトのパラメータ抽出:** 最初の引数が文字列の場合、`{ command: arg }` にマッピングされます。オブジェクトの場合、そのまま params として使用されます。
+
+---
+
+## エラークラス
+
+すべての SDK エラーは `SecurityLayerError` を継承し、`SecurityLayerError` は `Error` を継承しています。
+
+```typescript
+import {
+  SecurityLayerError,
+  ConfigError,
+  InitializationError,
+  CheckError,
+  ApprovalTimeoutError,
+} from "@securitylayerai/sdk";
+```
+
+| エラー | プロパティ | スローされる条件 |
+|---|---|---|
+| `SecurityLayerError` | `message` | 基底クラス。`withSecurityLayer()` による DENY 時にもスローされます |
+| `ConfigError` | `configPath?: string` | 設定ファイルをロードまたはパースできない場合 |
+| `InitializationError` | `cause?: unknown` | Security pipeline の初期化に失敗した場合 |
+| `CheckError` | `tool?: string` | アクション評価が予期せず失敗した場合 |
+| `ApprovalTimeoutError` | `approvalId: string` | 承認リクエストがタイムアウトした場合 |
 
 ---
 
@@ -123,26 +218,35 @@ const taint = sl.getSessionTaint(): TaintLevel;
 ```typescript
 interface CheckResult {
   decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL";
-  reason?: string;
+  reason: string;
   approvalId?: string;
-  layers: {
-    capability: { allowed: boolean; reason?: string };
-    taint: { level: TaintLevel; allowed: boolean; reason?: string };
-    rules: { decision: string; reason?: string } | null;
-    llm: {
-      decision: string;
-      confidence: number;
-      reasoning?: string;
-    } | null;
-  };
+  layers: LayerResults;
   degraded: boolean;
   timing: {
-    capability_ms: number;
-    taint_ms: number;
-    normalize_ms: number;
-    rules_ms: number;
-    llm_ms: number | null;
-    total_ms: number;
+    total: number;
+    capability?: number;
+    rules?: number;
+    llm?: number;
+  };
+}
+```
+
+### LayerResults
+
+```typescript
+interface LayerResults {
+  capability: {
+    allowed: boolean;
+    reason?: string;
+  };
+  rules?: {
+    decision: string;
+    reason?: string;
+  };
+  llm?: {
+    decision: string;
+    confidence: number;
+    reasoning?: string;
   };
 }
 ```
@@ -170,33 +274,48 @@ interface EgressFinding {
 }
 ```
 
-### TaintLevel
-
-```typescript
-type TaintLevel =
-  | "owner"     // 認証済みオーナーから直接
-  | "trusted"   // 許可リストに登録されたコンタクトから
-  | "untrusted" // 不明または未確認の人物から
-  | "web"       // Web フェッチ、ブラウザ、メールから
-  | "skill"     // スキルによって生成
-  | "memory";   // 永続メモリから読み込み
-```
-
 ### ExecutionContext
 
 ```typescript
 interface ExecutionContext {
-  sessionId: string;
-  taint?: TaintLevel;
-  caller?: string;
+  sessionId?: string;
   skillId?: string;
   channelId?: string;
+}
+```
+
+### ContentMetadata
+
+```typescript
+interface ContentMetadata {
+  source: "web" | "file" | "channel" | "skill" | "memory";
+  path?: string;
+  url?: string;
+}
+```
+
+### SecurityLayerOptions
+
+```typescript
+interface SecurityLayerOptions {
+  configDir?: string;
+  sessionId?: string;
+  config?: LoadedConfig;
+  eventBus?: EventBus;
+}
+```
+
+### ApprovalOptions
+
+```typescript
+interface ApprovalOptions {
+  timeout?: number; // milliseconds, default 300000 (5 min)
 }
 ```
 
 ## 関連項目
 
 - [統合パターン](/docs/sdk/patterns) — フレームワークに適したパターンを選択する
-- [Capabilities](/docs/concepts/capabilities) — 15 の基本 capabilities
+- [Capabilities](/docs/concepts/capabilities) — 基本 capabilities
 - [Taint Levels](/docs/concepts/taint-levels) — taint tracking の仕組み
-- [Security Pipeline](/docs/concepts/security-pipeline) — 3 層パイプライン
+- [Security Pipeline](/docs/concepts/security-pipeline) — 3 層 pipeline
