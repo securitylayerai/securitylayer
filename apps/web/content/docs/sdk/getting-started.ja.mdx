@@ -1,0 +1,145 @@
+---
+title: はじめに
+description: SDK をインストールして最初のセキュリティチェックを実行する。
+icon: Rocket
+---
+
+<Callout type="info" title="プレビュー">
+  SDK は現在活発に開発中です。ここに記載されている API は計画中の設計を反映しており、安定版リリース前に変更される可能性があります。
+</Callout>
+
+## 前提条件
+
+- Security Layer CLI がインストール・初期化済み（`sl init`）
+- Node.js 18+ または Bun 1.0+
+
+## インストール
+
+<Tabs items={["npm", "yarn", "pnpm", "bun"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @securitylayerai/sdk
+    ```
+  </Tab>
+</Tabs>
+
+## 基本セットアップ
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+// デフォルト設定で初期化（~/.securitylayer/ を読み込み）
+const sl = new SecurityLayer();
+
+// または明示的な設定で初期化
+const sl = new SecurityLayer({
+  configDir: "/path/to/.securitylayer",
+  caller: "my-agent",
+  sessionId: "session-123",
+});
+```
+
+## 最初のチェック
+
+エージェントが行うすべてのツール呼び出しは、実行前に `sl.check()` を通過する必要があります:
+
+```typescript
+async function runTool(tool: string, params: Record<string, unknown>) {
+  const result = await sl.check(tool, params, {
+    sessionId: "current-session",
+    taint: sl.getSessionTaint(),
+    caller: "my-agent",
+  });
+
+  switch (result.decision) {
+    case "ALLOW":
+      // 安全に実行可能
+      return executeToolCall(tool, params);
+
+    case "DENY":
+      // 構造的にブロック — 実行しない
+      throw new Error(`Security Layer: ${result.reason}`);
+
+    case "REQUIRE_APPROVAL":
+      // 続行前に人間の承認が必要
+      const approved = await sl.waitForApproval(result.approvalId);
+      if (!approved) throw new Error("承認が拒否されたかタイムアウトしました");
+      return executeToolCall(tool, params);
+  }
+}
+```
+
+## 判定を理解する
+
+すべてのチェックは、3 つの security layers すべての判定を含む `CheckResult` を返します:
+
+```typescript
+const result = await sl.check("exec", { command: "git push --force" });
+
+// どのレイヤーがブロックしたか？
+console.log(result.layers.capability); // { allowed: true }
+console.log(result.layers.taint);      // { level: "owner", allowed: true }
+console.log(result.layers.rules);      // { decision: "DENY", reason: "Force push" }
+console.log(result.layers.llm);        // { decision: "NORMAL", confidence: 0.9 }
+
+// パフォーマンス
+console.log(result.timing.total_ms);   // 12
+console.log(result.degraded);          // false（LLM が利用可能だった）
+```
+
+## Taint の追跡
+
+エージェントが外部コンテンツを読み取った際、taint トラッカーを更新します:
+
+```typescript
+// Web ページを読み取った後
+const webContent = await fetch("https://example.com").then(r => r.text());
+sl.ingestContent(webContent, {
+  source: "web",
+  url: "https://example.com",
+});
+
+// 信頼されていないプロジェクトのファイルを読み取った後
+const fileContent = await readFile("/tmp/downloaded-project/config.js", "utf-8");
+sl.ingestContent(fileContent, {
+  source: "file",
+  path: "/tmp/downloaded-project/config.js",
+});
+
+// 以降のチェックでは上昇した taint が反映される
+const taint = sl.getSessionTaint(); // "web"（"owner" から上昇）
+```
+
+## 送信コンテンツのスキャン
+
+エージェントがデータを外部に送信する前に、漏洩した秘密情報をスキャンします:
+
+```typescript
+const message = agent.generateResponse();
+
+const scan = sl.scanEgress(message);
+if (!scan.clean) {
+  console.error("秘密情報を検出:", scan.findings.map(f => f.type));
+  // メッセージを送信しない — 機密データが含まれている
+}
+```
+
+## 次のステップ
+
+- [統合パターン](/docs/sdk/patterns) — フレームワークに適したパターンを選択する
+- [API リファレンス](/docs/sdk/api-reference) — メソッドと型の完全なドキュメント

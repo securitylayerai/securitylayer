@@ -1,0 +1,145 @@
+---
+title: 快速开始
+description: 安装 SDK 并运行第一次安全检查。
+icon: Rocket
+---
+
+<Callout type="info" title="预览">
+  SDK 正在积极开发中。此处展示的 API 反映了计划中的设计，在稳定版本发布前可能会有所变化。
+</Callout>
+
+## 前置条件
+
+- 已安装并初始化 Security Layer CLI（`sl init`）
+- Node.js 18+ 或 Bun 1.0+
+
+## 安装
+
+<Tabs items={["npm", "yarn", "pnpm", "bun"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @securitylayerai/sdk
+    ```
+  </Tab>
+</Tabs>
+
+## 基本设置
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+// 使用默认配置初始化（读取 ~/.securitylayer/）
+const sl = new SecurityLayer();
+
+// 或使用显式配置
+const sl = new SecurityLayer({
+  configDir: "/path/to/.securitylayer",
+  caller: "my-agent",
+  sessionId: "session-123",
+});
+```
+
+## 第一次检查
+
+您的代理执行的每个工具调用都应在执行前通过 `sl.check()` 进行检查：
+
+```typescript
+async function runTool(tool: string, params: Record<string, unknown>) {
+  const result = await sl.check(tool, params, {
+    sessionId: "current-session",
+    taint: sl.getSessionTaint(),
+    caller: "my-agent",
+  });
+
+  switch (result.decision) {
+    case "ALLOW":
+      // 安全，可以执行
+      return executeToolCall(tool, params);
+
+    case "DENY":
+      // 结构性阻止 — 不得执行
+      throw new Error(`Security Layer: ${result.reason}`);
+
+    case "REQUIRE_APPROVAL":
+      // 需要人工审批后才能继续
+      const approved = await sl.waitForApproval(result.approvalId);
+      if (!approved) throw new Error("审批被拒绝或超时");
+      return executeToolCall(tool, params);
+  }
+}
+```
+
+## 理解决策
+
+每次检查都会返回一个 `CheckResult`，包含来自所有三个 security layers 的决策：
+
+```typescript
+const result = await sl.check("exec", { command: "git push --force" });
+
+// 哪个层阻止了它？
+console.log(result.layers.capability); // { allowed: true }
+console.log(result.layers.taint);      // { level: "owner", allowed: true }
+console.log(result.layers.rules);      // { decision: "DENY", reason: "Force push" }
+console.log(result.layers.llm);        // { decision: "NORMAL", confidence: 0.9 }
+
+// 性能
+console.log(result.timing.total_ms);   // 12
+console.log(result.degraded);          // false（LLM 可用）
+```
+
+## 追踪 taint
+
+当您的代理读取外部内容时，需要更新 taint tracker：
+
+```typescript
+// 读取网页后
+const webContent = await fetch("https://example.com").then(r => r.text());
+sl.ingestContent(webContent, {
+  source: "web",
+  url: "https://example.com",
+});
+
+// 读取不受信任项目中的文件后
+const fileContent = await readFile("/tmp/downloaded-project/config.js", "utf-8");
+sl.ingestContent(fileContent, {
+  source: "file",
+  path: "/tmp/downloaded-project/config.js",
+});
+
+// 现在后续检查将反映提升后的 taint
+const taint = sl.getSessionTaint(); // "web"（从 "owner" 提升）
+```
+
+## 扫描出站内容
+
+在您的代理向外部发送数据前，扫描是否存在泄露的密钥：
+
+```typescript
+const message = agent.generateResponse();
+
+const scan = sl.scanEgress(message);
+if (!scan.clean) {
+  console.error("检测到密钥:", scan.findings.map(f => f.type));
+  // 不要发送消息 — 其中包含敏感数据
+}
+```
+
+## 下一步
+
+- [集成模式](/docs/sdk/patterns) — 为您的框架选择合适的模式
+- [API 参考](/docs/sdk/api-reference) — 完整的方法和类型文档

@@ -1,0 +1,111 @@
+---
+title: SDK
+description: 用于将 Security Layer 集成到 AI 代理应用中的原生 TypeScript SDK。
+icon: Package
+---
+
+<Callout type="info" title="预览">
+  SDK 正在积极开发中。此处记录的 API 反映了计划中的设计。您可以立即安装该包，跟踪功能的陆续发布。
+</Callout>
+
+## 为什么使用 SDK？
+
+CLI 集成（hooks、shell shim）无需代码修改即可工作 — 但它们在边界处运行。SDK 为您提供**进程内安全**，拥有完整的上下文：
+
+| | Shell Shim | Hooks | SDK |
+|---|---|---|---|
+| 拦截执行 | 是 | 是 | 是 |
+| 拦截文件写入 | 否 | 是 | 是 |
+| 拦截网络请求 | 否 | 是 | 是 |
+| 完整会话上下文 | 否 | 部分 | **是** |
+| Taint tracking 精度 | 粗粒度 | 中等 | **每次操作** |
+| 绕过风险 | PATH 操纵 | 无 | **无（进程内）** |
+| 兼容任何框架 | 是（仅 shell） | 仅 Claude Code | **任何框架** |
+| 集成工作量 | 零 | 一条命令 | 代码修改 |
+
+当您构建 AI 代理应用并需要结构性安全保障 — 而不仅仅是命令行拦截时，SDK 是正确的选择。
+
+## 安装
+
+<Tabs items={["npm", "yarn", "pnpm", "bun"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @securitylayerai/sdk
+    ```
+  </Tab>
+</Tabs>
+
+## 快速示例
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// 执行操作前进行检查
+const result = await sl.check("exec", { command: "rm -rf /tmp/output" });
+
+if (result.decision === "DENY") {
+  console.error(`已阻止: ${result.reason}`);
+} else if (result.decision === "REQUIRE_APPROVAL") {
+  const approved = await sl.waitForApproval(result.approvalId);
+  if (!approved) console.error("审批被拒绝");
+}
+```
+
+## 集成模式
+
+SDK 支持三种模式，具体取决于您的代理框架的结构：
+
+<Cards>
+  <Card
+    title="直接检查"
+    description="在每次工具执行前调用 sl.check()。"
+    href="/docs/sdk/patterns#direct-check"
+    icon={<Code weight="duotone" />}
+  />
+  <Card
+    title="中间件包装"
+    description="使用 withSecurityLayer() 透明地包装工具执行器。"
+    href="/docs/sdk/patterns#middleware-wrapper"
+    icon={<Wrench weight="duotone" />}
+  />
+  <Card
+    title="基于事件"
+    description="挂载到 beforeToolUse / afterToolUse 生命周期事件。"
+    href="/docs/sdk/patterns#event-based"
+    icon={<Lightning weight="duotone" />}
+  />
+</Cards>
+
+## 下一步
+
+<Cards>
+  <Card
+    title="快速开始"
+    description="安装、配置和第一次检查。"
+    href="/docs/sdk/getting-started"
+    icon={<Lightning weight="duotone" />}
+  />
+  <Card
+    title="API 参考"
+    description="所有 SDK 方法和类型的完整参考。"
+    href="/docs/sdk/api-reference"
+    icon={<Code weight="duotone" />}
+  />
+</Cards>

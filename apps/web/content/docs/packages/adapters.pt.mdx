@@ -1,0 +1,185 @@
+---
+title: Adapters
+description: Adaptadores de protocolo de agente para parsing e interceptação de frames de agente.
+icon: Plug
+---
+
+`@securitylayerai/adapters` define a interface `AgentAdapter` e fornece implementações para diferentes protocolos de agente. O proxy usa adaptadores para converter frames de comunicação do agente em eventos de segurança tipados.
+
+## Interface AgentAdapter
+
+Todo adaptador implementa este contrato:
+
+```typescript
+interface AgentAdapter {
+  // Converte frames cliente→agente em eventos tipados
+  parseInboundFrame(raw: Buffer): InboundEvent;
+
+  // Converte frames agente→mundo em ações tipadas
+  parseOutboundFrame(raw: Buffer): OutboundAction[];
+
+  // Cria uma resposta de negação para injetar de volta ao agente
+  injectDenyResponse(
+    action: OutboundAction,
+    reason: string,
+    toolCallId?: string,
+  ): Buffer;
+
+  // Obtém metadados da sessão (canal, nível de confiança, skill ativa)
+  getSessionMetadata(sessionId: string): SessionInfo | null;
+
+  // Extrai chamadas de ferramenta de um frame de resposta do agente
+  extractToolCalls(frame: Buffer): ToolCall[];
+
+  // Envolve uma ação aprovada para reinjeção ao agente
+  wrapReplayAction(action: OutboundAction): Buffer;
+}
+```
+
+## Adaptadores incluídos
+
+### Adaptador OpenClaw
+
+Para o protocolo WebSocket do OpenClaw com tipos de frame tipados (`req:send`, `req:agent`, `res:agent`, `event:chat`, etc.).
+
+```typescript
+import { createOpenClawAdapter } from "@securitylayerai/adapters";
+
+const adapter = createOpenClawAdapter({
+  gatewayUrl: "ws://localhost:18789",
+});
+```
+
+Lida com tipos de frame específicos do OpenClaw:
+
+| Tipo de frame | Direção | Descrição |
+|---|---|---|
+| `req:send` | Cliente → Agente | Requisição de envio de mensagem |
+| `req:agent` | Cliente → Agente | Instrução ao agente |
+| `res:agent` | Agente → Cliente | Resposta do agente com chamadas de ferramenta |
+| `event:chat` | Agente → Cliente | Evento de mensagem de chat |
+| `event:skills.install` | Agente → Cliente | Evento de instalação de skill |
+
+### Adaptador genérico
+
+Para agentes simples baseados em JSON com chamadas de ferramenta que não usam um protocolo específico.
+
+```typescript
+import { createGenericAdapter } from "@securitylayerai/adapters";
+
+const adapter = createGenericAdapter({
+  parseToolCall: (data) => ({
+    id: data.id,
+    name: data.tool,
+    input: data.params,
+  }),
+});
+```
+
+## Tipos
+
+### InboundEvent
+
+Eventos fluindo do cliente para o agente:
+
+```typescript
+interface InboundEvent {
+  type: InboundEventType;
+  sessionId: string;
+  sender?: string;
+  channel?: string;
+  data: Record<string, unknown>;
+}
+
+type InboundEventType =
+  | "message"
+  | "agent_instruction"
+  | "config_change"
+  | "cron_create"
+  | "skill_install"
+  | "chat";
+```
+
+### OutboundAction
+
+Ações que o agente deseja executar:
+
+```typescript
+interface OutboundAction {
+  tool: string;
+  params: Record<string, unknown>;
+  requiredCapability: string;
+  toolCallId?: string;
+}
+```
+
+### FrameParseError
+
+Lançado quando um frame não pode ser parseado. O proxy captura este erro para lidar com frames malformados de forma graciosa sem causar crash.
+
+```typescript
+class FrameParseError extends Error {
+  constructor(message: string);
+}
+```
+
+## Criando um adaptador customizado
+
+Para suportar um novo protocolo de agente, implemente a interface `AgentAdapter`:
+
+```typescript
+import type { AgentAdapter } from "@securitylayerai/adapters";
+
+function createMyAdapter(config: MyConfig): AgentAdapter {
+  return {
+    parseInboundFrame(raw) {
+      const data = JSON.parse(raw.toString());
+      return {
+        type: "message",
+        sessionId: data.session,
+        data: data.payload,
+      };
+    },
+
+    parseOutboundFrame(raw) {
+      const data = JSON.parse(raw.toString());
+      return data.toolCalls.map((tc: any) => ({
+        tool: tc.name,
+        params: tc.arguments,
+        requiredCapability: mapToolToCapability(tc.name),
+        toolCallId: tc.id,
+      }));
+    },
+
+    injectDenyResponse(action, reason, toolCallId) {
+      return Buffer.from(JSON.stringify({
+        type: "error",
+        toolCallId,
+        error: reason,
+      }));
+    },
+
+    // ... métodos restantes
+  };
+}
+```
+
+## Estrutura do pacote
+
+```
+packages/adapters/
+├── src/
+│   ├── index.ts          # Barrel exports
+│   ├── interface.ts      # Interface AgentAdapter
+│   ├── types.ts          # InboundEvent, OutboundAction, etc.
+│   ├── openclaw.ts       # Adaptador OpenClaw
+│   └── generic.ts        # Adaptador JSON genérico
+└── test/
+    ├── openclaw.test.ts
+    └── generic.test.ts
+```
+
+## Veja também
+
+- [Proxy](/docs/packages/proxy) — Usa adaptadores para interceptar frames de agente
+- [Security pipeline](/docs/concepts/security-pipeline) — O que acontece após os frames serem parseados

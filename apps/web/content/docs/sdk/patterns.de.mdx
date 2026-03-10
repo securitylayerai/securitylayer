@@ -1,0 +1,133 @@
+---
+title: Integrationsmuster
+description: Drei Wege zur SDK-Integration — Direktprüfung, Middleware-Wrapper und Event-basiert.
+icon: GitBranch
+---
+
+<Callout type="info" title="Vorschau">
+  Das SDK befindet sich in aktiver Entwicklung. Die hier gezeigten APIs spiegeln das geplante Design wider und können sich vor dem stabilen Release noch ändern.
+</Callout>
+
+Das SDK unterstützt drei Integrationsmuster. Wähle basierend darauf, wie dein Agent-Framework die Tool-Ausführung handhabt.
+
+## Direktprüfung
+
+Rufe `sl.check()` vor jeder Tool-Ausführung auf. Am besten geeignet für Frameworks, bei denen du die Tool-Dispatch-Schleife kontrollierst.
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+async function executeTool(tool: string, params: Record<string, unknown>) {
+  const result = await sl.check(tool, params, {
+    sessionId: currentSession.id,
+    taint: sl.getSessionTaint(),
+    caller: "my-agent-framework",
+  });
+
+  if (result.decision === "DENY") {
+    throw new ToolBlockedError(result.reason);
+  }
+
+  if (result.decision === "REQUIRE_APPROVAL") {
+    const approved = await sl.waitForApproval(result.approvalId);
+    if (!approved) throw new ToolBlockedError("Genehmigung verweigert");
+  }
+
+  return actualToolExecution(tool, params);
+}
+```
+
+**Wann verwenden:** Du kontrollierst die Tool-Dispatch-Schleife und willst explizite Kontrolle über Sicherheitsentscheidungen.
+
+## Middleware-Wrapper
+
+Umhülle bestehende Tool-Executors mit `withSecurityLayer()`. Der Wrapper fängt Aufrufe transparent ab — keine Änderungen am aufrufenden Code.
+
+```typescript
+import { SecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// Beliebigen Tool-Executor umhüllen
+const protectedExec = withSecurityLayer(sl, originalExecFunction, "exec");
+const protectedWrite = withSecurityLayer(sl, originalWriteFunction, "file.write");
+
+// Verwendung — identische API, Sicherheitsprüfungen erfolgen transparent
+await protectedExec("git push origin main");
+await protectedWrite("/tmp/output.txt", content);
+```
+
+**Wann verwenden:** Du willst Sicherheit zu einer bestehenden Codebase mit minimalen Änderungen hinzufügen. Umhülle die Tool-Executors einmal und der Rest des Codes bleibt unverändert.
+
+## Event-basiert
+
+Hänge dich in die Lifecycle-Events deines Frameworks ein. Am besten geeignet für Frameworks, die `beforeToolUse` / `afterToolUse`-Events emittieren.
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// Vor der Ausführung: prüfen und ggf. blockieren
+agentFramework.on("beforeToolUse", async (event) => {
+  const result = await sl.check(event.tool, event.params);
+  if (result.decision !== "ALLOW") {
+    event.preventDefault();
+    event.setError(`Security Layer: ${result.reason}`);
+  }
+});
+
+// Nach der Ausführung: Taint-Tracking aktualisieren
+agentFramework.on("afterToolUse", (event) => {
+  if (event.tool === "file.read" || event.tool === "web_fetch") {
+    sl.ingestContent(event.output, {
+      source: event.tool === "web_fetch" ? "web" : "file",
+      path: event.params.path,
+      url: event.params.url,
+    });
+  }
+});
+```
+
+**Wann verwenden:** Dein Framework hat bereits ein Plugin-/Event-System. Das Event-basierte Muster hält die Sicherheitslogik von der Tool-Ausführung entkoppelt.
+
+## Mustervergleich
+
+| Aspekt | Direktprüfung | Middleware | Event-basiert |
+|---|---|---|---|
+| Code-Änderungen | Moderat | Minimal | Minimal |
+| Kontrolle | Voll | Transparent | Entkoppelt |
+| Taint-Tracking | Manuell | Automatisch | Manuell |
+| Am besten für | Eigene Frameworks | Bestehende Codebases | Plugin-Architekturen |
+| Genehmigungsablauf | Explizit | Eingebaut | Manuell |
+
+## Muster kombinieren
+
+Du kannst Muster in derselben Anwendung kombinieren:
+
+```typescript
+// Middleware für Standard-Tools
+const protectedExec = withSecurityLayer(sl, exec, "exec");
+const protectedWrite = withSecurityLayer(sl, writeFile, "file.write");
+
+// Direktprüfung für eigene Logik
+async function handleDangerousOperation() {
+  const result = await sl.check("exec.elevated", {
+    command: "sudo systemctl restart nginx",
+  });
+  // Eigene Behandlung...
+}
+
+// Event-basiert für Taint-Tracking
+framework.on("afterToolUse", (event) => {
+  sl.ingestContent(event.output, { source: "file", path: event.params.path });
+});
+```
+
+## Siehe auch
+
+- [Erste Schritte](/docs/sdk/getting-started) — Installation und grundlegende Einrichtung
+- [API-Referenz](/docs/sdk/api-reference) — Vollständige Methoden-Dokumentation
+- [Security pipeline](/docs/concepts/security-pipeline) — Wie die 3-Schichten-Pipeline funktioniert

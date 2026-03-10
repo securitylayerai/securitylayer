@@ -1,0 +1,185 @@
+---
+title: Adapters
+description: エージェントプロトコルアダプター — エージェントフレームの解析とインターセプト。
+icon: Plug
+---
+
+`@securitylayerai/adapters` は `AgentAdapter` インターフェースを定義し、異なるエージェントプロトコルの実装を提供します。プロキシはアダプターを使用してエージェント通信フレームを型付きセキュリティイベントに解析します。
+
+## AgentAdapter インターフェース
+
+すべてのアダプターはこの契約を実装します:
+
+```typescript
+interface AgentAdapter {
+  // クライアント→エージェントのフレームを型付きイベントに解析
+  parseInboundFrame(raw: Buffer): InboundEvent;
+
+  // エージェント→外部のフレームを型付きアクションに解析
+  parseOutboundFrame(raw: Buffer): OutboundAction[];
+
+  // エージェントに返す拒否レスポンスを作成
+  injectDenyResponse(
+    action: OutboundAction,
+    reason: string,
+    toolCallId?: string,
+  ): Buffer;
+
+  // セッションメタデータを取得（チャネル、信頼レベル、アクティブスキル）
+  getSessionMetadata(sessionId: string): SessionInfo | null;
+
+  // エージェントレスポンスフレームからツール呼び出しを抽出
+  extractToolCalls(frame: Buffer): ToolCall[];
+
+  // 承認済みアクションをエージェントに再注入するためにラップ
+  wrapReplayAction(action: OutboundAction): Buffer;
+}
+```
+
+## 同梱アダプター
+
+### OpenClaw アダプター
+
+OpenClaw の WebSocket プロトコル用。型付きフレームタイプ（`req:send`、`req:agent`、`res:agent`、`event:chat` など）に対応しています。
+
+```typescript
+import { createOpenClawAdapter } from "@securitylayerai/adapters";
+
+const adapter = createOpenClawAdapter({
+  gatewayUrl: "ws://localhost:18789",
+});
+```
+
+OpenClaw 固有のフレームタイプを処理します:
+
+| フレームタイプ | 方向 | 説明 |
+|---|---|---|
+| `req:send` | クライアント → エージェント | メッセージ送信リクエスト |
+| `req:agent` | クライアント → エージェント | エージェント指示 |
+| `res:agent` | エージェント → クライアント | ツール呼び出しを含むエージェントレスポンス |
+| `event:chat` | エージェント → クライアント | チャットメッセージイベント |
+| `event:skills.install` | エージェント → クライアント | スキルインストールイベント |
+
+### 汎用アダプター
+
+特定のプロトコルを使用しないシンプルな JSON ベースのツール呼び出しエージェント用。
+
+```typescript
+import { createGenericAdapter } from "@securitylayerai/adapters";
+
+const adapter = createGenericAdapter({
+  parseToolCall: (data) => ({
+    id: data.id,
+    name: data.tool,
+    input: data.params,
+  }),
+});
+```
+
+## 型
+
+### InboundEvent
+
+クライアントからエージェントへ流れるイベント:
+
+```typescript
+interface InboundEvent {
+  type: InboundEventType;
+  sessionId: string;
+  sender?: string;
+  channel?: string;
+  data: Record<string, unknown>;
+}
+
+type InboundEventType =
+  | "message"
+  | "agent_instruction"
+  | "config_change"
+  | "cron_create"
+  | "skill_install"
+  | "chat";
+```
+
+### OutboundAction
+
+エージェントが実行しようとするアクション:
+
+```typescript
+interface OutboundAction {
+  tool: string;
+  params: Record<string, unknown>;
+  requiredCapability: string;
+  toolCallId?: string;
+}
+```
+
+### FrameParseError
+
+フレームが解析できない場合にスローされます。プロキシはこれをキャッチして、不正なフレームをクラッシュせずに適切に処理します。
+
+```typescript
+class FrameParseError extends Error {
+  constructor(message: string);
+}
+```
+
+## カスタムアダプターの作成
+
+新しいエージェントプロトコルをサポートするには、`AgentAdapter` インターフェースを実装します:
+
+```typescript
+import type { AgentAdapter } from "@securitylayerai/adapters";
+
+function createMyAdapter(config: MyConfig): AgentAdapter {
+  return {
+    parseInboundFrame(raw) {
+      const data = JSON.parse(raw.toString());
+      return {
+        type: "message",
+        sessionId: data.session,
+        data: data.payload,
+      };
+    },
+
+    parseOutboundFrame(raw) {
+      const data = JSON.parse(raw.toString());
+      return data.toolCalls.map((tc: any) => ({
+        tool: tc.name,
+        params: tc.arguments,
+        requiredCapability: mapToolToCapability(tc.name),
+        toolCallId: tc.id,
+      }));
+    },
+
+    injectDenyResponse(action, reason, toolCallId) {
+      return Buffer.from(JSON.stringify({
+        type: "error",
+        toolCallId,
+        error: reason,
+      }));
+    },
+
+    // ... 残りのメソッド
+  };
+}
+```
+
+## パッケージ構造
+
+```
+packages/adapters/
+├── src/
+│   ├── index.ts          # バレルエクスポート
+│   ├── interface.ts      # AgentAdapter インターフェース
+│   ├── types.ts          # InboundEvent, OutboundAction など
+│   ├── openclaw.ts       # OpenClaw アダプター
+│   └── generic.ts        # 汎用 JSON アダプター
+└── test/
+    ├── openclaw.test.ts
+    └── generic.test.ts
+```
+
+## 関連項目
+
+- [Proxy](/docs/packages/proxy) — アダプターを使用してエージェントフレームをインターセプト
+- [Security Pipeline](/docs/concepts/security-pipeline) — フレーム解析後の処理

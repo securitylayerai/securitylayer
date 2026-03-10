@@ -1,0 +1,132 @@
+---
+title: Rules
+description: Baseline rules und capability templates.
+icon: Gear
+---
+
+`@securitylayerai/rules` ist ein Datenpaket — YAML-Rule-Definitionen und capability templates mit einem schlanken TypeScript-Loader. Es hat keine Laufzeitabhängigkeit von core. Die CLI und andere Pakete konsumieren das YAML zur Laufzeit über `parseRulesYaml()` von core.
+
+## Inhalte
+
+### Baseline rules (`rules/baseline.yaml`)
+
+14 deterministische rules, die die eingebauten rules von core ergänzen. Diese decken Muster ab, die die eingebauten rules nicht abfangen:
+
+| Kategorie | Rule-ID | Entscheidung | Was erkannt wird |
+|---|---|---|---|
+| Destruktiv | `destructive-chmod-recursive-777` | DENY | `chmod -R 777 /` (rekursiv weltbeschreibbar auf Root) |
+| Destruktiv | `destructive-chown-recursive` | DENY | `chown -R` auf Systempfaden (`/usr`, `/etc`, `/var`, etc.) |
+| Credentials | `cred-gnupg` | DENY | Zugriff auf `~/.gnupg/**` (GnuPG-Schlüsselbund) |
+| Credentials | `cred-pem-files` | DENY | `cat`, `cp`, `scp` etc. auf `.pem`- / `.key`-Dateien |
+| Credentials | `cred-kube-config` | DENY | Zugriff auf `~/.kube/config` |
+| Credentials | `cred-docker-config` | DENY | Zugriff auf `~/.docker/config.json` |
+| Exfiltration | `exfil-base64-to-curl` | DENY | `base64 \| curl` Pipe-Muster |
+| Exfiltration | `exfil-tar-to-curl` | DENY | `tar \| curl` Pipe-Muster (Archiv ins Netzwerk) |
+| RCE | `rce-python-pipe` | DENY | `curl \| python` Pipe-Muster |
+| RCE | `rce-eval-command` | REQUIRE_APPROVAL | `eval`-Verwendung (kann beliebigen Code ausführen) |
+| RCE | `rce-netcat-listener` | DENY | `nc -l` (potentielle Reverse Shell) |
+| Git | `dangerous-git-force-push` | DENY | `git push --force` auf main/master |
+| Pakete | `dangerous-npm-publish` | REQUIRE_APPROVAL | `npm publish` |
+| Container | `dangerous-docker-privileged` | DENY | `docker run --privileged` |
+
+### Session-Vorlagen (`capabilities/sessions.yaml`)
+
+Vorkonfigurierte Session-Capability-Sets:
+
+| Vorlage | Capabilities | Standard-Taint |
+|---|---|---|
+| `main` | Alle 15 capabilities | `owner` |
+| `group` | `channel.send`, `file.read`, `memory.read.trusted`, `web_fetch` | `trusted` |
+| `dm-unknown` | Nur `channel.send` | `untrusted` |
+
+### Channel-Standards (`capabilities/channels.yaml`)
+
+Capability-Limits pro Channel:
+
+| Channel | Maximale capabilities |
+|---|---|
+| `owner-terminal` | ALLE |
+| `whatsapp` | `channel.send`, `file.read`, `memory.read.trusted` |
+| `telegram` | `channel.send`, `file.read`, `memory.read.trusted`, `web_fetch` |
+| `slack` | `channel.send`, `file.read`, `web_fetch` |
+| `discord` | `channel.send`, `file.read` |
+| `email` | `channel.send` |
+| `webchat` | `channel.send`, `web_fetch` |
+
+### Skill-Standards (`capabilities/skills-defaults.yaml`)
+
+Gängige Skill-Capability-Profile:
+
+| Profil | Capabilities |
+|---|---|
+| `read-only` | `file.read`, `web_fetch` |
+| `file-editor` | `file.read`, `file.write` |
+| `web-only` | `web_fetch` |
+| `full-access` | Alle nicht-erhöhten capabilities |
+
+## TypeScript-API
+
+```typescript
+import {
+  getPackMetadata,
+  loadBaselineRules,
+  loadSessionTemplates,
+  loadChannelDefaults,
+  loadSkillDefaults,
+} from "@securitylayerai/rules";
+
+// Paket-Metadaten
+const meta = getPackMetadata();
+// { name: "@securitylayerai/rules", version: "0.0.1", type: "rule-pack", ruleCount: 14 }
+
+// Baseline rules als rohen YAML-String laden
+const rulesYaml = await loadBaselineRules();
+
+// Geparste capability templates laden
+const sessions = await loadSessionTemplates();
+const channels = await loadChannelDefaults();
+const skills = await loadSkillDefaults();
+```
+
+## Paketstruktur
+
+```
+packages/rules/
+├── src/
+│   ├── index.ts          # Loader-Funktionen
+│   └── types.ts          # RulePackMetadata, Vorlagentypen
+├── rules/
+│   └── baseline.yaml     # 14 Sicherheits-rules
+├── capabilities/
+│   ├── sessions.yaml     # Session-Vorlagen
+│   ├── channels.yaml     # Channel-Standards
+│   └── skills-defaults.yaml  # Skill-Profile
+└── test/
+    └── loader.test.ts    # YAML-Lade- + Regex-Genauigkeitstests
+```
+
+## Eigene rules schreiben
+
+Die baseline rules sind ein Ausgangspunkt. Du kannst eigene rules im selben YAML-Format hinzufügen:
+
+```yaml
+version: 1
+rules:
+  - id: my-custom-rule
+    description: Zugriff auf Produktionsdatenbank blockieren
+    match:
+      type: pattern
+      value: "\\bpsql\\s+.*production"
+    decision: DENY
+    reason: "Direkter Zugriff auf Produktionsdatenbank"
+```
+
+Rule-Abgleichtypen:
+- `pattern` — Regex-Abgleich gegen den gesamten Befehlsstring
+- `path` — Glob-Abgleich gegen Dateipfade
+- `pipe_pair` — Abgleich von Pipe-Befehlsstrukturen (`from` → `to`)
+
+## Siehe auch
+
+- [rules-Befehl](/docs/commands/rules) — CLI-Rule-Verwaltung
+- [Security pipeline](/docs/concepts/security-pipeline) — Wie rules in Schicht 3 eingebunden sind

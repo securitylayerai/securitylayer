@@ -1,0 +1,133 @@
+---
+title: Patrones de integracin
+description: Tres formas de integrar el SDK -- verificacin directa, middleware wrapper y basado en eventos.
+icon: GitBranch
+---
+
+<Callout type="info" title="Vista previa">
+  El SDK est en desarrollo activo. Las APIs mostradas aqu reflejan el diseo planificado y pueden cambiar antes de la versin estable.
+</Callout>
+
+El SDK soporta tres patrones de integracin. Elige segn cmo tu framework de agentes maneja la ejecucin de herramientas.
+
+## Verificacin directa
+
+Llama a `sl.check()` antes de cada ejecucin de herramienta. Ideal para frameworks donde controlas el bucle de despacho de herramientas.
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+async function executeTool(tool: string, params: Record<string, unknown>) {
+  const result = await sl.check(tool, params, {
+    sessionId: currentSession.id,
+    taint: sl.getSessionTaint(),
+    caller: "my-agent-framework",
+  });
+
+  if (result.decision === "DENY") {
+    throw new ToolBlockedError(result.reason);
+  }
+
+  if (result.decision === "REQUIRE_APPROVAL") {
+    const approved = await sl.waitForApproval(result.approvalId);
+    if (!approved) throw new ToolBlockedError("Aprobacin denegada");
+  }
+
+  return actualToolExecution(tool, params);
+}
+```
+
+**Cundo usarlo:** Cuando controlas el bucle de despacho de herramientas y quieres control explcito sobre las decisiones de seguridad.
+
+## Middleware wrapper
+
+Envuelve ejecutores de herramientas existentes con `withSecurityLayer()`. El wrapper intercepta las llamadas de forma transparente -- sin cambios en el cdigo que las invoca.
+
+```typescript
+import { SecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// Envolver cualquier ejecutor de herramienta
+const protectedExec = withSecurityLayer(sl, originalExecFunction, "exec");
+const protectedWrite = withSecurityLayer(sl, originalWriteFunction, "file.write");
+
+// Uso -- API idntica, las verificaciones de seguridad ocurren de forma transparente
+await protectedExec("git push origin main");
+await protectedWrite("/tmp/output.txt", content);
+```
+
+**Cundo usarlo:** Cuando quieres agregar seguridad a un codebase existente con cambios mnimos. Envuelve los ejecutores de herramientas una vez y el resto del cdigo permanece intacto.
+
+## Basado en eventos
+
+Conecta a los eventos del ciclo de vida de tu framework. Ideal para frameworks que emiten eventos `beforeToolUse` / `afterToolUse`.
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// Pre-ejecucin: verificar y potencialmente bloquear
+agentFramework.on("beforeToolUse", async (event) => {
+  const result = await sl.check(event.tool, event.params);
+  if (result.decision !== "ALLOW") {
+    event.preventDefault();
+    event.setError(`Security Layer: ${result.reason}`);
+  }
+});
+
+// Post-ejecucin: actualizar seguimiento de taint
+agentFramework.on("afterToolUse", (event) => {
+  if (event.tool === "file.read" || event.tool === "web_fetch") {
+    sl.ingestContent(event.output, {
+      source: event.tool === "web_fetch" ? "web" : "file",
+      path: event.params.path,
+      url: event.params.url,
+    });
+  }
+});
+```
+
+**Cundo usarlo:** Cuando tu framework ya tiene un sistema de plugins/eventos. El patrn basado en eventos mantiene la lgica de seguridad desacoplada de la ejecucin de herramientas.
+
+## Comparacin de patrones
+
+| Aspecto | Verificacin directa | Middleware | Basado en eventos |
+|---|---|---|---|
+| Cambios de cdigo | Moderados | Mnimos | Mnimos |
+| Control | Total | Transparente | Desacoplado |
+| Seguimiento de taint | Manual | Automtico | Manual |
+| Ideal para | Frameworks personalizados | Codebases existentes | Arquitecturas de plugins |
+| Flujo de aprobacin | Explcito | Integrado | Manual |
+
+## Combinando patrones
+
+Puedes mezclar patrones en la misma aplicacin:
+
+```typescript
+// Middleware para herramientas estndar
+const protectedExec = withSecurityLayer(sl, exec, "exec");
+const protectedWrite = withSecurityLayer(sl, writeFile, "file.write");
+
+// Verificacin directa para lgica personalizada
+async function handleDangerousOperation() {
+  const result = await sl.check("exec.elevated", {
+    command: "sudo systemctl restart nginx",
+  });
+  // Manejo personalizado...
+}
+
+// Basado en eventos para seguimiento de taint
+framework.on("afterToolUse", (event) => {
+  sl.ingestContent(event.output, { source: "file", path: event.params.path });
+});
+```
+
+## Ver tambin
+
+- [Primeros pasos](/docs/sdk/getting-started) -- Instalacin y configuracin bsica
+- [Referencia de API](/docs/sdk/api-reference) -- Documentacin completa de mtodos
+- [Security pipeline](/docs/concepts/security-pipeline) -- Cmo funciona el pipeline de 3 capas

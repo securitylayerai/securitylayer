@@ -1,0 +1,177 @@
+---
+title: Proxy
+description: Proxy de segurança WebSocket entre clientes e gateway do agente.
+icon: Globe
+---
+
+`@securitylayerai/proxy` é um proxy WebSocket que fica entre os clientes e o gateway do agente. Ele intercepta cada frame, passa pelo security pipeline via um adaptador, e bloqueia ou permite com base no resultado da avaliação.
+
+## Arquitetura
+
+```
+Client (porta 18790) ──→ Proxy ──→ Agent Gateway (porta 18789)
+                          │
+                          ├── Adapter (parse de frames)
+                          ├── Interceptor (avaliação de ações)
+                          ├── Gateway Lock (prevenção de bypass)
+                          └── Metrics (endpoint /metrics)
+```
+
+O proxy é transparente — os clientes se conectam a ele em vez de diretamente ao gateway do agente. O gateway lock garante que o gateway do agente aceite apenas conexões do proxy, prevenindo bypass.
+
+## Componentes
+
+### Servidor proxy
+
+Servidor WebSocket Bun que aceita conexões de clientes e retransmite frames pelo interceptor.
+
+```typescript
+import { createProxyServer } from "@securitylayerai/proxy";
+
+const server = createProxyServer({
+  port: 18790,
+  host: "127.0.0.1",
+  getMetricsText: () => metrics.toPrometheusText(),
+});
+```
+
+Também serve um endpoint HTTP `/metrics` para scraping do Prometheus.
+
+### Conexão upstream
+
+Cliente WebSocket que se conecta ao gateway do agente com reconexão automática e backoff exponencial.
+
+```typescript
+import { createUpstreamConnection } from "@securitylayerai/proxy";
+
+const upstream = createUpstreamConnection({
+  url: "ws://127.0.0.1:18789",
+  maxRetries: 10,
+  retryDelayMs: 1000,
+  maxRetryDelayMs: 30000,
+  onMessage: handleUpstreamMessage,
+  onConnect: () => console.log("Conectado ao gateway"),
+  onDisconnect: () => console.log("Desconectado do gateway"),
+});
+```
+
+### Interceptor
+
+Roteia frames parseados pelo security pipeline usando o adaptador.
+
+```typescript
+import { createInterceptor } from "@securitylayerai/proxy";
+
+const interceptor = createInterceptor({
+  adapter,
+  evaluateAction: pipeline.evaluate,
+});
+
+const result = await interceptor.intercept(rawFrame);
+// result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+// result.denyResponse?: Buffer (se negado)
+```
+
+### Gateway lock
+
+Impede que clientes se conectem diretamente ao gateway do agente, garantindo que todo o tráfego flua pelo proxy.
+
+Três estratégias de bloqueio:
+
+| Estratégia | Como funciona |
+|---|---|
+| `validation_token` | O proxy inclui um token secreto; o gateway rejeita conexões sem ele |
+| `unix_socket` | O gateway escuta em um Unix socket acessível apenas pelo proxy |
+| `firewall` | Regras de firewall restringem a porta do gateway ao localhost |
+
+```typescript
+import { createGatewayLock } from "@securitylayerai/proxy";
+
+const lock = createGatewayLock({
+  strategy: "validation_token",
+  token: process.env.GATEWAY_TOKEN,
+});
+
+await lock.verify(); // Lança erro se o bloqueio não estiver ativo
+```
+
+### Coletor de métricas
+
+Rastreia performance do proxy e decisões de segurança. Expõe saída em texto compatível com Prometheus.
+
+```typescript
+import { createMetricsCollector } from "@securitylayerai/proxy";
+
+const metrics = createMetricsCollector();
+
+metrics.recordDecision("ALLOW", 12);  // decisão, latência_ms
+metrics.recordDecision("DENY", 3);
+metrics.recordTaintElevation("owner", "web");
+
+console.log(metrics.toPrometheusText());
+// securitylayer_decisions_total{decision="ALLOW"} 42
+// securitylayer_decisions_total{decision="DENY"} 3
+// securitylayer_latency_p50 8
+// securitylayer_latency_p95 45
+// securitylayer_latency_p99 120
+```
+
+## Iniciando o proxy
+
+A função `startProxy()` conecta tudo:
+
+```typescript
+import { startProxy } from "@securitylayerai/proxy";
+
+const proxy = startProxy({
+  listenPort: 18790,
+  listenHost: "127.0.0.1",
+  upstreamUrl: "ws://127.0.0.1:18789",
+  adapter: openClawAdapter,
+  evaluateAction: pipeline.evaluate,
+  gatewayLock: {
+    strategy: "validation_token",
+    token: process.env.GATEWAY_TOKEN,
+  },
+});
+
+// Depois
+await proxy.stop();
+```
+
+## Configuração
+
+```typescript
+interface ProxyConfig {
+  listenPort: number;        // Padrão: 18790
+  listenHost: string;        // Padrão: "127.0.0.1"
+  upstreamUrl: string;       // URL do gateway do agente
+  adapter: AgentAdapter;     // De @securitylayerai/adapters
+  evaluateAction: EvaluateActionFn;  // Security pipeline
+  gatewayLock?: GatewayLockConfig;
+}
+```
+
+## Estrutura do pacote
+
+```
+packages/proxy/
+├── src/
+│   ├── index.ts           # startProxy() + barrel exports
+│   ├── types.ts           # ProxyConfig, ProxyState, etc.
+│   ├── server.ts          # Servidor WebSocket + /metrics
+│   ├── upstream.ts        # Conexão com gateway + reconexão
+│   ├── interceptor.ts     # Lógica de interceptação de frames
+│   ├── gateway-lock.ts    # Prevenção de bypass
+│   └── metrics.ts         # Métricas Prometheus
+└── test/
+    ├── interceptor.test.ts
+    ├── gateway-lock.test.ts
+    └── metrics.test.ts
+```
+
+## Veja também
+
+- [Adapters](/docs/packages/adapters) — Parsing de frames para diferentes protocolos de agente
+- [Core](/docs/packages/core) — O security pipeline que o proxy invoca
+- [Security pipeline](/docs/concepts/security-pipeline) — Como a avaliação funciona

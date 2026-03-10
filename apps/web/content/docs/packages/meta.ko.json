@@ -1,0 +1,6 @@
+{
+  "title": "패키지",
+  "icon": "Cube",
+  "defaultOpen": false,
+  "pages": ["...", "core", "rules", "adapters", "proxy"]
+}

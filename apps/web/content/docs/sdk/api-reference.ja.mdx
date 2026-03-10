@@ -1,0 +1,202 @@
+---
+title: API リファレンス
+description: SDK の全メソッドと型の完全なリファレンス。
+icon: Code
+---
+
+<Callout type="info" title="プレビュー">
+  SDK は現在活発に開発中です。ここに記載されている API は計画中の設計を反映しており、安定版リリース前に変更される可能性があります。
+</Callout>
+
+## SecurityLayer
+
+SDK のメインエントリーポイントです。
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer(options?: SecurityLayerOptions);
+```
+
+### オプション
+
+| オプション | 型 | デフォルト | 説明 |
+|---|---|---|---|
+| `configDir` | `string` | `~/.securitylayer` | Security Layer 設定ディレクトリのパス |
+| `caller` | `string` | 自動検出 | 呼び出し元アプリケーションの識別子 |
+| `sessionId` | `string` | 自動生成 | チェック用のデフォルトセッション ID |
+
+---
+
+## メソッド
+
+### `check()`
+
+実行前にアクションを 3 つの security layers すべてで評価します。
+
+```typescript
+const result = await sl.check(
+  tool: string,
+  params: Record<string, unknown>,
+  context?: ExecutionContext,
+): Promise<CheckResult>;
+```
+
+**パラメータ:**
+
+| パラメータ | 型 | 説明 |
+|---|---|---|
+| `tool` | `string` | 使用する capability: `"exec"`, `"file.read"`, `"file.write"`, `"web_fetch"` など |
+| `params` | `object` | ツール固有のパラメータ（例: exec の場合 `{ command: "ls -la" }`） |
+| `context` | `ExecutionContext` | チェック用のオプショナルなセッションコンテキスト |
+
+**戻り値:** `Promise<CheckResult>`
+
+### `waitForApproval()`
+
+`REQUIRE_APPROVAL` 判定に対して、人間が承認または拒否するまでブロックします。
+
+```typescript
+const approved = await sl.waitForApproval(
+  approvalId: string,
+  options?: ApprovalOptions,
+): Promise<boolean>;
+```
+
+**パラメータ:**
+
+| パラメータ | 型 | 説明 |
+|---|---|---|
+| `approvalId` | `string` | `REQUIRE_APPROVAL` 結果からの承認 ID |
+| `options.timeout` | `number` | タイムアウト（ミリ秒、デフォルト: 300000 / 5 分） |
+
+**戻り値:** 承認された場合 `true`、拒否またはタイムアウトの場合 `false`。
+
+### `ingestContent()`
+
+外部コンテンツがセッションに入った際に taint トラッカーを更新します。
+
+```typescript
+sl.ingestContent(
+  content: string,
+  metadata: ContentMetadata,
+): void;
+```
+
+**パラメータ:**
+
+| パラメータ | 型 | 説明 |
+|---|---|---|
+| `content` | `string` | 読み取り/フェッチされたコンテンツ |
+| `metadata.source` | `"web" \| "file"` | コンテンツの取得元 |
+| `metadata.path` | `string?` | ファイルパス（ファイルソースの場合） |
+| `metadata.url` | `string?` | URL（Web ソースの場合） |
+
+この呼び出しはソースに基づいてセッションの taint level を上昇させます。Web コンテンツは `WEB_CONTENT` に、信頼されていないプロジェクトのファイルは `UNTRUSTED_HUMAN` に上昇します。
+
+### `scanEgress()`
+
+送信前に、送信コンテンツに漏洩した秘密情報、PII、機密データがないかスキャンします。
+
+```typescript
+const result = sl.scanEgress(content: string): EgressScanResult;
+```
+
+**戻り値:** `clean: boolean` と `findings[]` を含む `EgressScanResult`。
+
+### `getSessionTaint()`
+
+現在のセッションの taint level を取得します。
+
+```typescript
+const taint = sl.getSessionTaint(): TaintLevel;
+```
+
+**戻り値:** `"owner"`, `"trusted"`, `"untrusted"`, `"web"`, `"skill"`, `"memory"` のいずれか。
+
+---
+
+## 型
+
+### CheckResult
+
+```typescript
+interface CheckResult {
+  decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL";
+  reason?: string;
+  approvalId?: string;
+  layers: {
+    capability: { allowed: boolean; reason?: string };
+    taint: { level: TaintLevel; allowed: boolean; reason?: string };
+    rules: { decision: string; reason?: string } | null;
+    llm: {
+      decision: string;
+      confidence: number;
+      reasoning?: string;
+    } | null;
+  };
+  degraded: boolean;
+  timing: {
+    capability_ms: number;
+    taint_ms: number;
+    normalize_ms: number;
+    rules_ms: number;
+    llm_ms: number | null;
+    total_ms: number;
+  };
+}
+```
+
+### EgressScanResult
+
+```typescript
+interface EgressScanResult {
+  clean: boolean;
+  findings: EgressFinding[];
+}
+
+interface EgressFinding {
+  type:
+    | "api_key"
+    | "pem_block"
+    | "private_key"
+    | "password"
+    | "high_entropy"
+    | "pii"
+    | "credential_pattern";
+  confidence: number;
+  location: { start: number; end: number };
+  redacted: string;
+}
+```
+
+### TaintLevel
+
+```typescript
+type TaintLevel =
+  | "owner"     // 認証済みオーナーから直接
+  | "trusted"   // 許可リストに登録されたコンタクトから
+  | "untrusted" // 不明または未確認の人物から
+  | "web"       // Web フェッチ、ブラウザ、メールから
+  | "skill"     // スキルによって生成
+  | "memory";   // 永続メモリから読み込み
+```
+
+### ExecutionContext
+
+```typescript
+interface ExecutionContext {
+  sessionId: string;
+  taint?: TaintLevel;
+  caller?: string;
+  skillId?: string;
+  channelId?: string;
+}
+```
+
+## 関連項目
+
+- [統合パターン](/docs/sdk/patterns) — フレームワークに適したパターンを選択する
+- [Capabilities](/docs/concepts/capabilities) — 15 の基本 capabilities
+- [Taint Levels](/docs/concepts/taint-levels) — taint tracking の仕組み
+- [Security Pipeline](/docs/concepts/security-pipeline) — 3 層パイプライン

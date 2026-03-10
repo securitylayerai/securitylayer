@@ -1,0 +1,133 @@
+---
+title: 統合パターン
+description: SDK を統合する 3 つの方法 — ダイレクトチェック、ミドルウェアラッパー、イベントベース。
+icon: GitBranch
+---
+
+<Callout type="info" title="プレビュー">
+  SDK は現在活発に開発中です。ここに記載されている API は計画中の設計を反映しており、安定版リリース前に変更される可能性があります。
+</Callout>
+
+SDK は 3 つの統合パターンをサポートしています。エージェントフレームワークがツール実行をどのように処理するかに基づいて選択してください。
+
+## ダイレクトチェック
+
+各ツール実行前に `sl.check()` を呼び出します。ツールディスパッチループを制御しているフレームワークに最適です。
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+async function executeTool(tool: string, params: Record<string, unknown>) {
+  const result = await sl.check(tool, params, {
+    sessionId: currentSession.id,
+    taint: sl.getSessionTaint(),
+    caller: "my-agent-framework",
+  });
+
+  if (result.decision === "DENY") {
+    throw new ToolBlockedError(result.reason);
+  }
+
+  if (result.decision === "REQUIRE_APPROVAL") {
+    const approved = await sl.waitForApproval(result.approvalId);
+    if (!approved) throw new ToolBlockedError("承認が拒否されました");
+  }
+
+  return actualToolExecution(tool, params);
+}
+```
+
+**使用場面:** ツールディスパッチループを所有しており、セキュリティ判定を明示的に制御したい場合。
+
+## ミドルウェアラッパー
+
+既存のツールエグゼキューターを `withSecurityLayer()` でラップします。ラッパーが呼び出しを透過的にインターセプトするため、呼び出し側のコードを変更する必要はありません。
+
+```typescript
+import { SecurityLayer, withSecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// 任意のツールエグゼキューターをラップ
+const protectedExec = withSecurityLayer(sl, originalExecFunction, "exec");
+const protectedWrite = withSecurityLayer(sl, originalWriteFunction, "file.write");
+
+// 使用方法 — API は同一、セキュリティチェックは透過的に実行
+await protectedExec("git push origin main");
+await protectedWrite("/tmp/output.txt", content);
+```
+
+**使用場面:** 既存のコードベースに最小限の変更でセキュリティを追加したい場合。ツールエグゼキューターを一度ラップすれば、残りのコードは変更不要です。
+
+## イベントベース
+
+フレームワークのライフサイクルイベントにフックします。`beforeToolUse` / `afterToolUse` イベントを発行するフレームワークに最適です。
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+const sl = new SecurityLayer();
+
+// 実行前: チェックし、必要に応じてブロック
+agentFramework.on("beforeToolUse", async (event) => {
+  const result = await sl.check(event.tool, event.params);
+  if (result.decision !== "ALLOW") {
+    event.preventDefault();
+    event.setError(`Security Layer: ${result.reason}`);
+  }
+});
+
+// 実行後: taint tracking を更新
+agentFramework.on("afterToolUse", (event) => {
+  if (event.tool === "file.read" || event.tool === "web_fetch") {
+    sl.ingestContent(event.output, {
+      source: event.tool === "web_fetch" ? "web" : "file",
+      path: event.params.path,
+      url: event.params.url,
+    });
+  }
+});
+```
+
+**使用場面:** フレームワークが既にプラグイン/イベントシステムを持っている場合。イベントベースのパターンはセキュリティロジックをツール実行から分離した状態に保ちます。
+
+## パターン比較
+
+| 観点 | ダイレクトチェック | ミドルウェア | イベントベース |
+|---|---|---|---|
+| コード変更 | 中程度 | 最小 | 最小 |
+| 制御 | 完全 | 透過的 | 分離 |
+| Taint tracking | 手動 | 自動 | 手動 |
+| 適したケース | カスタムフレームワーク | 既存コードベース | プラグインアーキテクチャ |
+| 承認フロー | 明示的 | 組み込み | 手動 |
+
+## パターンの組み合わせ
+
+同じアプリケーション内でパターンを組み合わせることができます:
+
+```typescript
+// 標準ツールにはミドルウェア
+const protectedExec = withSecurityLayer(sl, exec, "exec");
+const protectedWrite = withSecurityLayer(sl, writeFile, "file.write");
+
+// カスタムロジックにはダイレクトチェック
+async function handleDangerousOperation() {
+  const result = await sl.check("exec.elevated", {
+    command: "sudo systemctl restart nginx",
+  });
+  // カスタム処理...
+}
+
+// taint tracking にはイベントベース
+framework.on("afterToolUse", (event) => {
+  sl.ingestContent(event.output, { source: "file", path: event.params.path });
+});
+```
+
+## 関連項目
+
+- [はじめに](/docs/sdk/getting-started) — インストールと基本セットアップ
+- [API リファレンス](/docs/sdk/api-reference) — メソッドの完全なドキュメント
+- [Security Pipeline](/docs/concepts/security-pipeline) — 3 層パイプラインの仕組み

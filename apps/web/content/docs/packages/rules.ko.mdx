@@ -1,0 +1,132 @@
+---
+title: Rules
+description: 기본 보안 rules 및 capability 템플릿.
+icon: Gear
+---
+
+`@securitylayerai/rules`는 데이터 패키지입니다 — YAML rule 정의와 capability 템플릿을 얇은 TypeScript 로더와 함께 제공합니다. core에 대한 런타임 의존성이 없습니다. CLI 및 기타 패키지는 core의 `parseRulesYaml()`을 사용하여 런타임에 YAML을 소비합니다.
+
+## 내용
+
+### 기본 rules (`rules/baseline.yaml`)
+
+core의 내장 rules를 보완하는 14개의 결정적 rules입니다. 내장 rules가 다루지 않는 패턴을 처리합니다:
+
+| 카테고리 | Rule ID | 결정 | 감지 대상 |
+|---|---|---|---|
+| 파괴적 | `destructive-chmod-recursive-777` | DENY | `chmod -R 777 /` (루트에 대한 재귀적 전체 쓰기 권한) |
+| 파괴적 | `destructive-chown-recursive` | DENY | 시스템 경로(`/usr`, `/etc`, `/var` 등)에 대한 `chown -R` |
+| 자격 증명 | `cred-gnupg` | DENY | `~/.gnupg/**` 접근 (GnuPG 키링) |
+| 자격 증명 | `cred-pem-files` | DENY | `.pem` / `.key` 파일에 대한 `cat`, `cp`, `scp` 등 |
+| 자격 증명 | `cred-kube-config` | DENY | `~/.kube/config` 접근 |
+| 자격 증명 | `cred-docker-config` | DENY | `~/.docker/config.json` 접근 |
+| 유출 | `exfil-base64-to-curl` | DENY | `base64 \| curl` 파이프 패턴 |
+| 유출 | `exfil-tar-to-curl` | DENY | `tar \| curl` 파이프 패턴 (아카이브에서 네트워크로) |
+| RCE | `rce-python-pipe` | DENY | `curl \| python` 파이프 패턴 |
+| RCE | `rce-eval-command` | REQUIRE_APPROVAL | `eval` 사용 (임의 코드 실행 가능) |
+| RCE | `rce-netcat-listener` | DENY | `nc -l` (잠재적 리버스 셸) |
+| Git | `dangerous-git-force-push` | DENY | main/master에 대한 `git push --force` |
+| 패키지 | `dangerous-npm-publish` | REQUIRE_APPROVAL | `npm publish` |
+| 컨테이너 | `dangerous-docker-privileged` | DENY | `docker run --privileged` |
+
+### 세션 템플릿 (`capabilities/sessions.yaml`)
+
+사전 구성된 세션 capability 집합입니다:
+
+| 템플릿 | Capability | 기본 taint |
+|---|---|---|
+| `main` | 15개 전체 capability | `owner` |
+| `group` | `channel.send`, `file.read`, `memory.read.trusted`, `web_fetch` | `trusted` |
+| `dm-unknown` | `channel.send`만 | `untrusted` |
+
+### 채널 기본값 (`capabilities/channels.yaml`)
+
+채널별 capability 제한입니다:
+
+| 채널 | 최대 capability |
+|---|---|
+| `owner-terminal` | 전체 |
+| `whatsapp` | `channel.send`, `file.read`, `memory.read.trusted` |
+| `telegram` | `channel.send`, `file.read`, `memory.read.trusted`, `web_fetch` |
+| `slack` | `channel.send`, `file.read`, `web_fetch` |
+| `discord` | `channel.send`, `file.read` |
+| `email` | `channel.send` |
+| `webchat` | `channel.send`, `web_fetch` |
+
+### 스킬 기본값 (`capabilities/skills-defaults.yaml`)
+
+일반적인 스킬 capability 프로필입니다:
+
+| 프로필 | Capability |
+|---|---|
+| `read-only` | `file.read`, `web_fetch` |
+| `file-editor` | `file.read`, `file.write` |
+| `web-only` | `web_fetch` |
+| `full-access` | 권한 상승이 아닌 모든 capability |
+
+## TypeScript API
+
+```typescript
+import {
+  getPackMetadata,
+  loadBaselineRules,
+  loadSessionTemplates,
+  loadChannelDefaults,
+  loadSkillDefaults,
+} from "@securitylayerai/rules";
+
+// 팩 메타데이터
+const meta = getPackMetadata();
+// { name: "@securitylayerai/rules", version: "0.0.1", type: "rule-pack", ruleCount: 14 }
+
+// 기본 rules를 원시 YAML 문자열로 로드
+const rulesYaml = await loadBaselineRules();
+
+// 파싱된 capability 템플릿 로드
+const sessions = await loadSessionTemplates();
+const channels = await loadChannelDefaults();
+const skills = await loadSkillDefaults();
+```
+
+## 패키지 구조
+
+```
+packages/rules/
+├── src/
+│   ├── index.ts          # 로더 함수
+│   └── types.ts          # RulePackMetadata, 템플릿 타입
+├── rules/
+│   └── baseline.yaml     # 14개 보안 rules
+├── capabilities/
+│   ├── sessions.yaml     # 세션 템플릿
+│   ├── channels.yaml     # 채널 기본값
+│   └── skills-defaults.yaml  # 스킬 프로필
+└── test/
+    └── loader.test.ts    # YAML 로딩 + 정규식 정확도 테스트
+```
+
+## 커스텀 rule 작성
+
+기본 rules는 시작점입니다. 동일한 YAML 형식으로 자체 rules를 추가할 수 있습니다:
+
+```yaml
+version: 1
+rules:
+  - id: my-custom-rule
+    description: Block access to production database
+    match:
+      type: pattern
+      value: "\\bpsql\\s+.*production"
+    decision: DENY
+    reason: "Direct access to production database"
+```
+
+Rule 매칭 유형:
+- `pattern` — 전체 명령 문자열에 대한 정규식 매칭
+- `path` — 파일 경로에 대한 glob 매칭
+- `pipe_pair` — 파이프 명령 구조 매칭 (`from` → `to`)
+
+## 참고
+
+- [rules 명령어](/docs/commands/rules) — CLI rules 관리
+- [보안 파이프라인](/docs/concepts/security-pipeline) — rules가 레이어 3에서 작동하는 방식

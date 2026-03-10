@@ -1,0 +1,185 @@
+---
+title: Adapters
+description: 用于解析和拦截代理帧的代理协议适配器。
+icon: Plug
+---
+
+`@securitylayerai/adapters` 定义了 `AgentAdapter` 接口，并提供了不同代理协议的实现。代理使用适配器将代理通信帧解析为类型化的安全事件。
+
+## AgentAdapter 接口
+
+每个适配器都实现以下契约：
+
+```typescript
+interface AgentAdapter {
+  // 将客户端→代理的帧解析为类型化事件
+  parseInboundFrame(raw: Buffer): InboundEvent;
+
+  // 将代理→外部的帧解析为类型化操作
+  parseOutboundFrame(raw: Buffer): OutboundAction[];
+
+  // 创建拒绝响应并注入回代理
+  injectDenyResponse(
+    action: OutboundAction,
+    reason: string,
+    toolCallId?: string,
+  ): Buffer;
+
+  // 获取会话元数据（通道、信任级别、活跃技能）
+  getSessionMetadata(sessionId: string): SessionInfo | null;
+
+  // 从代理响应帧中提取工具调用
+  extractToolCalls(frame: Buffer): ToolCall[];
+
+  // 将已批准的操作包装后重新注入代理
+  wrapReplayAction(action: OutboundAction): Buffer;
+}
+```
+
+## 内置适配器
+
+### OpenClaw 适配器
+
+适用于 OpenClaw 的 WebSocket 协议，支持类型化帧类型（`req:send`、`req:agent`、`res:agent`、`event:chat` 等）。
+
+```typescript
+import { createOpenClawAdapter } from "@securitylayerai/adapters";
+
+const adapter = createOpenClawAdapter({
+  gatewayUrl: "ws://localhost:18789",
+});
+```
+
+处理 OpenClaw 特定的帧类型：
+
+| 帧类型 | 方向 | 描述 |
+|---|---|---|
+| `req:send` | 客户端 → 代理 | 发送消息请求 |
+| `req:agent` | 客户端 → 代理 | 代理指令 |
+| `res:agent` | 代理 → 客户端 | 包含工具调用的代理响应 |
+| `event:chat` | 代理 → 客户端 | 聊天消息事件 |
+| `event:skills.install` | 代理 → 客户端 | 技能安装事件 |
+
+### 通用适配器
+
+适用于不使用特定协议的简单 JSON 工具调用代理。
+
+```typescript
+import { createGenericAdapter } from "@securitylayerai/adapters";
+
+const adapter = createGenericAdapter({
+  parseToolCall: (data) => ({
+    id: data.id,
+    name: data.tool,
+    input: data.params,
+  }),
+});
+```
+
+## 类型
+
+### InboundEvent
+
+从客户端到代理的事件：
+
+```typescript
+interface InboundEvent {
+  type: InboundEventType;
+  sessionId: string;
+  sender?: string;
+  channel?: string;
+  data: Record<string, unknown>;
+}
+
+type InboundEventType =
+  | "message"
+  | "agent_instruction"
+  | "config_change"
+  | "cron_create"
+  | "skill_install"
+  | "chat";
+```
+
+### OutboundAction
+
+代理想要执行的操作：
+
+```typescript
+interface OutboundAction {
+  tool: string;
+  params: Record<string, unknown>;
+  requiredCapability: string;
+  toolCallId?: string;
+}
+```
+
+### FrameParseError
+
+帧无法解析时抛出的错误。代理捕获此错误以优雅地处理格式错误的帧，避免崩溃。
+
+```typescript
+class FrameParseError extends Error {
+  constructor(message: string);
+}
+```
+
+## 创建自定义适配器
+
+要支持新的代理协议，请实现 `AgentAdapter` 接口：
+
+```typescript
+import type { AgentAdapter } from "@securitylayerai/adapters";
+
+function createMyAdapter(config: MyConfig): AgentAdapter {
+  return {
+    parseInboundFrame(raw) {
+      const data = JSON.parse(raw.toString());
+      return {
+        type: "message",
+        sessionId: data.session,
+        data: data.payload,
+      };
+    },
+
+    parseOutboundFrame(raw) {
+      const data = JSON.parse(raw.toString());
+      return data.toolCalls.map((tc: any) => ({
+        tool: tc.name,
+        params: tc.arguments,
+        requiredCapability: mapToolToCapability(tc.name),
+        toolCallId: tc.id,
+      }));
+    },
+
+    injectDenyResponse(action, reason, toolCallId) {
+      return Buffer.from(JSON.stringify({
+        type: "error",
+        toolCallId,
+        error: reason,
+      }));
+    },
+
+    // ... 其余方法
+  };
+}
+```
+
+## 包结构
+
+```
+packages/adapters/
+├── src/
+│   ├── index.ts          # 统一导出
+│   ├── interface.ts      # AgentAdapter 接口
+│   ├── types.ts          # InboundEvent、OutboundAction 等
+│   ├── openclaw.ts       # OpenClaw 适配器
+│   └── generic.ts        # 通用 JSON 适配器
+└── test/
+    ├── openclaw.test.ts
+    └── generic.test.ts
+```
+
+## 另请参阅
+
+- [Proxy](/docs/packages/proxy) — 使用适配器拦截代理帧
+- [Security pipeline](/docs/concepts/security-pipeline) — 帧解析后的处理流程

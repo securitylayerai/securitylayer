@@ -1,0 +1,6 @@
+{
+  "title": "Paquetes",
+  "icon": "Cube",
+  "defaultOpen": false,
+  "pages": ["...", "core", "rules", "adapters", "proxy"]
+}

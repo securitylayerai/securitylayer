@@ -1,0 +1,6 @@
+{
+  "title": "Packages",
+  "icon": "Cube",
+  "defaultOpen": false,
+  "pages": ["...", "core", "rules", "adapters", "proxy"]
+}

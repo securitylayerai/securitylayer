@@ -1,0 +1,112 @@
+---
+title: 包
+description: Monorepo 包架构以及各包的协作方式。
+icon: Cube
+---
+
+Security Layer 是一个 Bun monorepo，包含五个包。每个包职责单一，边界清晰。
+
+## 架构
+
+```
+┌──────────────────────────────────────────────────────┐
+│                   securitylayer (CLI)                 │
+│          用户界面命令、设置、hooks                       │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
+│  │    proxy      │  │     sdk      │  │   rules    │ │
+│  │  WebSocket    │  │  进程内       │  │   YAML     │ │
+│  │  网关         │  │  检查        │  │  rule 包    │ │
+│  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
+│         │                 │                │         │
+│  ┌──────┴───────┐         │                │         │
+│  │   adapters    │         │                │         │
+│  │  代理框架     │         │                │         │
+│  │  帧解析       │         │                │         │
+│  └──────┬───────┘         │                │         │
+│         │                 │                │         │
+│  ┌──────┴─────────────────┴────────────────┴───────┐ │
+│  │                    core                          │ │
+│  │  Capabilities、taint、rules engine、pipeline、    │ │
+│  │  normalization、出站扫描、LLM 判断器               │ │
+│  └──────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────┘
+```
+
+## 包概览
+
+| 包 | npm | 描述 |
+|---|---|---|
+| [`@securitylayerai/core`](/docs/packages/core) | `@securitylayerai/core` | Security engine — capabilities、taint、rules、pipeline、normalization |
+| [`@securitylayerai/rules`](/docs/packages/rules) | `@securitylayerai/rules` | 基线 rules 和 capability 模板（YAML） |
+| [`@securitylayerai/adapters`](/docs/packages/adapters) | `@securitylayerai/adapters` | 代理协议适配器（OpenClaw、通用） |
+| [`@securitylayerai/proxy`](/docs/packages/proxy) | `@securitylayerai/proxy` | 客户端与代理网关之间的 WebSocket 安全代理 |
+| [`@securitylayerai/sdk`](/docs/sdk) | `@securitylayerai/sdk` | 用于进程内安全检查的 TypeScript SDK |
+| `securitylayer` | `securitylayer` | CLI — 用户界面命令、设置、hooks |
+
+## 依赖关系图
+
+```
+securitylayer (CLI)
+├── @securitylayerai/core
+├── @securitylayerai/rules
+└── @securitylayerai/proxy
+    └── @securitylayerai/adapters
+
+@securitylayerai/sdk
+└── @securitylayerai/core
+
+@securitylayerai/rules
+└── (独立 — 仅 YAML，无代码依赖)
+```
+
+关键约束：
+- **core** 没有内部依赖 — 它是基础
+- **rules** 仅包含数据 — YAML 文件和一个轻量加载器，运行时不依赖 core
+- **adapters** 是独立的 — 定义代理协议的接口和实现
+- **proxy** 依赖 adapters 进行帧解析
+- **sdk** 依赖 core 的 security pipeline
+
+## 开发
+
+```bash
+# 安装所有依赖
+bun install
+
+# 运行所有测试
+bun run test
+
+# 运行特定包的测试
+bun run test --filter=@securitylayerai/core
+
+# 类型检查
+bun run typecheck
+```
+
+<Cards>
+  <Card
+    title="Core"
+    description="Security engine、pipeline、capabilities、taint tracking。"
+    href="/docs/packages/core"
+    icon={<Shield weight="duotone" />}
+  />
+  <Card
+    title="Rules"
+    description="基线 rules 和 capability 模板。"
+    href="/docs/packages/rules"
+    icon={<Gear weight="duotone" />}
+  />
+  <Card
+    title="Adapters"
+    description="用于帧解析的代理协议适配器。"
+    href="/docs/packages/adapters"
+    icon={<Plug weight="duotone" />}
+  />
+  <Card
+    title="Proxy"
+    description="用于代理网关的 WebSocket 安全代理。"
+    href="/docs/packages/proxy"
+    icon={<Globe weight="duotone" />}
+  />
+</Cards>

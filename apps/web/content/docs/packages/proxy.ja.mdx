@@ -1,0 +1,177 @@
+---
+title: Proxy
+description: クライアントとエージェントゲートウェイ間の WebSocket セキュリティプロキシ。
+icon: Globe
+---
+
+`@securitylayerai/proxy` は、クライアントとエージェントゲートウェイの間に位置する WebSocket プロキシです。すべてのフレームをインターセプトし、アダプターを通じて security pipeline で処理し、評価結果に基づいてブロックまたは許可します。
+
+## アーキテクチャ
+
+```
+Client (port 18790) ──→ Proxy ──→ Agent Gateway (port 18789)
+                          │
+                          ├── Adapter（フレーム解析）
+                          ├── Interceptor（アクション評価）
+                          ├── Gateway Lock（バイパス防止）
+                          └── Metrics（/metrics エンドポイント）
+```
+
+プロキシは透過的です — クライアントはエージェントゲートウェイに直接接続する代わりにプロキシに接続します。ゲートウェイロックにより、エージェントゲートウェイはプロキシからの接続のみを受け入れ、バイパスを防止します。
+
+## コンポーネント
+
+### プロキシサーバー
+
+クライアント接続を受け付け、インターセプターを通じてフレームをリレーする Bun WebSocket サーバーです。
+
+```typescript
+import { createProxyServer } from "@securitylayerai/proxy";
+
+const server = createProxyServer({
+  port: 18790,
+  host: "127.0.0.1",
+  getMetricsText: () => metrics.toPrometheusText(),
+});
+```
+
+Prometheus スクレイピング用の HTTP `/metrics` エンドポイントも提供します。
+
+### アップストリーム接続
+
+自動再接続とエクスポネンシャルバックオフ付きでエージェントゲートウェイに接続する WebSocket クライアントです。
+
+```typescript
+import { createUpstreamConnection } from "@securitylayerai/proxy";
+
+const upstream = createUpstreamConnection({
+  url: "ws://127.0.0.1:18789",
+  maxRetries: 10,
+  retryDelayMs: 1000,
+  maxRetryDelayMs: 30000,
+  onMessage: handleUpstreamMessage,
+  onConnect: () => console.log("ゲートウェイに接続しました"),
+  onDisconnect: () => console.log("ゲートウェイから切断されました"),
+});
+```
+
+### インターセプター
+
+アダプターを使用して、解析されたフレームを security pipeline にルーティングします。
+
+```typescript
+import { createInterceptor } from "@securitylayerai/proxy";
+
+const interceptor = createInterceptor({
+  adapter,
+  evaluateAction: pipeline.evaluate,
+});
+
+const result = await interceptor.intercept(rawFrame);
+// result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+// result.denyResponse?: Buffer（拒否された場合）
+```
+
+### ゲートウェイロック
+
+クライアントがエージェントゲートウェイに直接接続するのを防ぎ、すべてのトラフィックがプロキシを経由することを保証します。
+
+3 つのロックダウン戦略:
+
+| 戦略 | 仕組み |
+|---|---|
+| `validation_token` | プロキシが秘密トークンを含み、ゲートウェイがトークンなしの接続を拒否 |
+| `unix_socket` | ゲートウェイがプロキシのみアクセス可能な Unix ソケットでリッスン |
+| `firewall` | ファイアウォールルールでゲートウェイポートを localhost に制限 |
+
+```typescript
+import { createGatewayLock } from "@securitylayerai/proxy";
+
+const lock = createGatewayLock({
+  strategy: "validation_token",
+  token: process.env.GATEWAY_TOKEN,
+});
+
+await lock.verify(); // ロックダウンがアクティブでない場合にスロー
+```
+
+### メトリクスコレクター
+
+プロキシのパフォーマンスとセキュリティ判定を追跡します。Prometheus 互換のテキスト出力を提供します。
+
+```typescript
+import { createMetricsCollector } from "@securitylayerai/proxy";
+
+const metrics = createMetricsCollector();
+
+metrics.recordDecision("ALLOW", 12);  // 判定, レイテンシー(ms)
+metrics.recordDecision("DENY", 3);
+metrics.recordTaintElevation("owner", "web");
+
+console.log(metrics.toPrometheusText());
+// securitylayer_decisions_total{decision="ALLOW"} 42
+// securitylayer_decisions_total{decision="DENY"} 3
+// securitylayer_latency_p50 8
+// securitylayer_latency_p95 45
+// securitylayer_latency_p99 120
+```
+
+## プロキシの起動
+
+`startProxy()` 関数がすべてを接続します:
+
+```typescript
+import { startProxy } from "@securitylayerai/proxy";
+
+const proxy = startProxy({
+  listenPort: 18790,
+  listenHost: "127.0.0.1",
+  upstreamUrl: "ws://127.0.0.1:18789",
+  adapter: openClawAdapter,
+  evaluateAction: pipeline.evaluate,
+  gatewayLock: {
+    strategy: "validation_token",
+    token: process.env.GATEWAY_TOKEN,
+  },
+});
+
+// 後で停止
+await proxy.stop();
+```
+
+## 設定
+
+```typescript
+interface ProxyConfig {
+  listenPort: number;        // デフォルト: 18790
+  listenHost: string;        // デフォルト: "127.0.0.1"
+  upstreamUrl: string;       // エージェントゲートウェイ URL
+  adapter: AgentAdapter;     // @securitylayerai/adapters から
+  evaluateAction: EvaluateActionFn;  // security pipeline
+  gatewayLock?: GatewayLockConfig;
+}
+```
+
+## パッケージ構造
+
+```
+packages/proxy/
+├── src/
+│   ├── index.ts           # startProxy() + バレルエクスポート
+│   ├── types.ts           # ProxyConfig, ProxyState など
+│   ├── server.ts          # WebSocket サーバー + /metrics
+│   ├── upstream.ts        # ゲートウェイ接続 + 再接続
+│   ├── interceptor.ts     # フレームインターセプトロジック
+│   ├── gateway-lock.ts    # バイパス防止
+│   └── metrics.ts         # Prometheus メトリクス
+└── test/
+    ├── interceptor.test.ts
+    ├── gateway-lock.test.ts
+    └── metrics.test.ts
+```
+
+## 関連項目
+
+- [Adapters](/docs/packages/adapters) — 異なるエージェントプロトコルのフレーム解析
+- [Core](/docs/packages/core) — プロキシが呼び出す security pipeline
+- [Security Pipeline](/docs/concepts/security-pipeline) — 評価の仕組み

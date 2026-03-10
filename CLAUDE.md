@@ -21,6 +21,16 @@ These files contain the authoritative architecture, design principles, monorepo 
 - **Packages:** `@securitylayerai/core`, `securitylayer` (cli), `@securitylayerai/proxy`, `@securitylayerai/sdk`, `@securitylayerai/adapters`, `@securitylayerai/rules`
 - **Core philosophy:** Don't detect bad actions. Make them impossible.
 
+## Translation Rules
+
+When translating documentation, the following product-specific terms must NEVER be translated — keep them in English across all locales:
+
+- **Product name:** Security Layer, SecurityLayer
+- **Architecture terms:** capabilities, capability gate, taint, taint level, taint tracking, rules, rules engine, pipeline, security pipeline, normalization, security engine, LLM judge
+- **Code identifiers:** All function names, type names, config keys stay as-is
+
+Generic security concepts (e.g., "firewall rules", "security policy") should be translated normally.
+
 ## Commit Messages
 
 - Do not include "Generated with" or co-authorship lines

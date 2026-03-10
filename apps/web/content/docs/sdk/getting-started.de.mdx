@@ -1,0 +1,145 @@
+---
+title: Erste Schritte
+description: Installiere das SDK und führe deine erste Sicherheitsprüfung durch.
+icon: Rocket
+---
+
+<Callout type="info" title="Vorschau">
+  Das SDK befindet sich in aktiver Entwicklung. Die hier gezeigten APIs spiegeln das geplante Design wider und können sich vor dem stabilen Release noch ändern.
+</Callout>
+
+## Voraussetzungen
+
+- Security Layer CLI installiert und initialisiert (`sl init`)
+- Node.js 18+ oder Bun 1.0+
+
+## Installation
+
+<Tabs items={["npm", "yarn", "pnpm", "bun"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @securitylayerai/sdk
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @securitylayerai/sdk
+    ```
+  </Tab>
+</Tabs>
+
+## Grundlegende Einrichtung
+
+```typescript
+import { SecurityLayer } from "@securitylayerai/sdk";
+
+// Initialisierung mit Standardkonfiguration (liest ~/.securitylayer/)
+const sl = new SecurityLayer();
+
+// Oder mit expliziter Konfiguration
+const sl = new SecurityLayer({
+  configDir: "/path/to/.securitylayer",
+  caller: "my-agent",
+  sessionId: "session-123",
+});
+```
+
+## Deine erste Prüfung
+
+Jeder Tool-Aufruf deines Agenten sollte vor der Ausführung durch `sl.check()` laufen:
+
+```typescript
+async function runTool(tool: string, params: Record<string, unknown>) {
+  const result = await sl.check(tool, params, {
+    sessionId: "current-session",
+    taint: sl.getSessionTaint(),
+    caller: "my-agent",
+  });
+
+  switch (result.decision) {
+    case "ALLOW":
+      // Sicher zur Ausführung
+      return executeToolCall(tool, params);
+
+    case "DENY":
+      // Strukturell blockiert — nicht ausführen
+      throw new Error(`Security Layer: ${result.reason}`);
+
+    case "REQUIRE_APPROVAL":
+      // Benötigt menschliche Genehmigung vor der Weiterarbeit
+      const approved = await sl.waitForApproval(result.approvalId);
+      if (!approved) throw new Error("Genehmigung verweigert oder Zeitüberschreitung");
+      return executeToolCall(tool, params);
+  }
+}
+```
+
+## Entscheidungen verstehen
+
+Jede Prüfung gibt ein `CheckResult` mit der Entscheidung aller drei Security Layers zurück:
+
+```typescript
+const result = await sl.check("exec", { command: "git push --force" });
+
+// Welche Schicht hat blockiert?
+console.log(result.layers.capability); // { allowed: true }
+console.log(result.layers.taint);      // { level: "owner", allowed: true }
+console.log(result.layers.rules);      // { decision: "DENY", reason: "Force push" }
+console.log(result.layers.llm);        // { decision: "NORMAL", confidence: 0.9 }
+
+// Leistung
+console.log(result.timing.total_ms);   // 12
+console.log(result.degraded);          // false (LLM war verfügbar)
+```
+
+## Taint verfolgen
+
+Wenn dein Agent externe Inhalte liest, aktualisiere den Taint-Tracker:
+
+```typescript
+// Nach dem Lesen einer Webseite
+const webContent = await fetch("https://example.com").then(r => r.text());
+sl.ingestContent(webContent, {
+  source: "web",
+  url: "https://example.com",
+});
+
+// Nach dem Lesen einer Datei aus einem nicht vertrauenswürdigen Projekt
+const fileContent = await readFile("/tmp/downloaded-project/config.js", "utf-8");
+sl.ingestContent(fileContent, {
+  source: "file",
+  path: "/tmp/downloaded-project/config.js",
+});
+
+// Nachfolgende Prüfungen spiegeln jetzt den erhöhten Taint wider
+const taint = sl.getSessionTaint(); // "web" (erhöht von "owner")
+```
+
+## Ausgehende Inhalte scannen
+
+Bevor dein Agent Daten extern sendet, scanne auf durchgesickerte Geheimnisse:
+
+```typescript
+const message = agent.generateResponse();
+
+const scan = sl.scanEgress(message);
+if (!scan.clean) {
+  console.error("Geheimnisse erkannt:", scan.findings.map(f => f.type));
+  // Nachricht nicht senden — sie enthält sensible Daten
+}
+```
+
+## Nächste Schritte
+
+- [Integrationsmuster](/docs/sdk/patterns) — Wähle das richtige Muster für dein Framework
+- [API-Referenz](/docs/sdk/api-reference) — Vollständige Methoden- und Typen-Dokumentation

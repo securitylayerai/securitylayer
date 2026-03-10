@@ -1,0 +1,6 @@
+{
+  "title": "SDK",
+  "icon": "Package",
+  "defaultOpen": true,
+  "pages": ["...", "getting-started", "patterns", "api-reference"]
+}
