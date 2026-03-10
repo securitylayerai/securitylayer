@@ -39,6 +39,7 @@ import {
   DocsTitle,
 } from "fumadocs-ui/layouts/notebook/page";
 import defaultMdxComponents from "fumadocs-ui/mdx";
+import { Mermaid } from "@/components/mdx/mermaid";
 import { Suspense } from "react";
 import { CopyButton, ViewOptions } from "@/components/page-actions";
 import { baseOptions } from "@/lib/layout.shared";
@@ -141,6 +142,7 @@ const clientLoader = browserCollections.docs.createClientLoader({
           <MDX
             components={{
               ...defaultMdxComponents,
+              Mermaid,
               a: LocaleLink,
               Card: LocaleCard,
               Tabs,

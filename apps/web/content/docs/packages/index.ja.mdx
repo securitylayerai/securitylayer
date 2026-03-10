@@ -8,30 +8,22 @@ Security Layer は 6 つのパッケージを持つ Bun モノレポです。各
 
 ## アーキテクチャ
 
-```
-┌──────────────────────────────────────────────────────┐
-│                   securitylayer (CLI)                 │
-│          ユーザー向けコマンド、セットアップ、フック          │
-├──────────────────────────────────────────────────────┤
-│                                                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
-│  │    proxy      │  │     sdk      │  │   rules    │ │
-│  │  WebSocket    │  │ インプロセス   │  │   YAML     │ │
-│  │  ゲートウェイ   │  │  チェック    │  │ rule パック │ │
-│  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
-│         │                 │                │         │
-│  ┌──────┴───────┐         │                │         │
-│  │   adapters    │         │                │         │
-│  │ エージェント    │         │                │         │
-│  │ フレーム解析   │         │                │         │
-│  └──────┬───────┘         │                │         │
-│         │                 │                │         │
-│  ┌──────┴─────────────────┴────────────────┴───────┐ │
-│  │                    core                          │ │
-│  │  capabilities、taint、rules engine、パイプライン、│ │
-│  │  normalization、Egress スキャニング、LLM judge          │ │
-│  └──────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    CLI["securitylayer (CLI)"]
+    proxy["proxy<br/>WebSocket ゲートウェイ"]
+    sdk["sdk<br/>インプロセスチェック"]
+    rules["rules<br/>YAML rule パック"]
+    adapters["adapters<br/>エージェントフレーム解析"]
+    core["core<br/>Capabilities, taint, rules engine, パイプライン,<br/>normalization, Egress スキャニング, LLM judge"]
+
+    CLI --> proxy
+    CLI --> sdk
+    CLI --> rules
+    proxy --> adapters
+    adapters --> core
+    sdk --> core
+    rules --> core
 ```
 
 ## パッケージ概要
@@ -47,18 +39,13 @@ Security Layer は 6 つのパッケージを持つ Bun モノレポです。各
 
 ## 依存関係グラフ
 
-```
-securitylayer (CLI)
-├── @securitylayerai/core
-├── @securitylayerai/rules
-└── @securitylayerai/proxy
-    └── @securitylayerai/adapters
-
-@securitylayerai/sdk
-└── @securitylayerai/core
-
-@securitylayerai/rules
-└── (スタンドアロン — YAML のみ、コード依存なし)
+```mermaid
+graph TD
+    CLI["securitylayer (CLI)"] --> core["@securitylayerai/core"]
+    CLI --> rules["@securitylayerai/rules"]
+    CLI --> proxy["@securitylayerai/proxy"]
+    proxy --> adapters["@securitylayerai/adapters"]
+    sdk["@securitylayerai/sdk"] --> core
 ```
 
 主要な制約:

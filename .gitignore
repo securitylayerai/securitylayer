@@ -6,8 +6,6 @@ dist/
 out/
 
 # environment
-.env
-.env.*
 !.env.example
 
 # coverage
@@ -38,3 +36,4 @@ todos/
 # debug
 *.pid
 *.seed
+config.bat

@@ -8,30 +8,22 @@ Security Layer는 6개의 패키지로 구성된 Bun 모노레포입니다. 각 
 
 ## 아키텍처
 
-```
-┌──────────────────────────────────────────────────────┐
-│                   securitylayer (CLI)                 │
-│          사용자 대상 명령어, 설정, hooks               │
-├──────────────────────────────────────────────────────┤
-│                                                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
-│  │    proxy      │  │     sdk      │  │   rules    │ │
-│  │  WebSocket    │  │  프로세스 내  │  │   YAML     │ │
-│  │  게이트웨이    │  │  검사        │  │  rule 팩    │ │
-│  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
-│         │                 │                │         │
-│  ┌──────┴───────┐         │                │         │
-│  │   adapters    │         │                │         │
-│  │  에이전트 프레 │         │                │         │
-│  │  임 파싱      │         │                │         │
-│  └──────┬───────┘         │                │         │
-│         │                 │                │         │
-│  ┌──────┴─────────────────┴────────────────┴───────┐ │
-│  │                    core                          │ │
-│  │  Capability, taint, rules engine, 파이프라인,      │ │
-│  │  normalization, 송신 스캔, LLM 심판               │ │
-│  └──────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    CLI["securitylayer (CLI)"]
+    proxy["proxy<br/>WebSocket 게이트웨이"]
+    sdk["sdk<br/>프로세스 내 검사"]
+    rules["rules<br/>YAML rule 팩"]
+    adapters["adapters<br/>에이전트 프레임 파싱"]
+    core["core<br/>Capability, taint, rules engine, 파이프라인,<br/>normalization, 송신 스캔, LLM 심판"]
+
+    CLI --> proxy
+    CLI --> sdk
+    CLI --> rules
+    proxy --> adapters
+    adapters --> core
+    sdk --> core
+    rules --> core
 ```
 
 ## 패키지 개요
@@ -47,18 +39,13 @@ Security Layer는 6개의 패키지로 구성된 Bun 모노레포입니다. 각 
 
 ## 의존성 그래프
 
-```
-securitylayer (CLI)
-├── @securitylayerai/core
-├── @securitylayerai/rules
-└── @securitylayerai/proxy
-    └── @securitylayerai/adapters
-
-@securitylayerai/sdk
-└── @securitylayerai/core
-
-@securitylayerai/rules
-└── (독립형 — YAML만, 코드 의존성 없음)
+```mermaid
+graph TD
+    CLI["securitylayer (CLI)"] --> core["@securitylayerai/core"]
+    CLI --> rules["@securitylayerai/rules"]
+    CLI --> proxy["@securitylayerai/proxy"]
+    proxy --> adapters["@securitylayerai/adapters"]
+    sdk["@securitylayerai/sdk"] --> core
 ```
 
 주요 제약 사항:

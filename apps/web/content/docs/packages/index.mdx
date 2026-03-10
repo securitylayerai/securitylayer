@@ -8,30 +8,22 @@ Security Layer is a Bun monorepo with six packages. Each package has a single re
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────┐
-│                   securitylayer (CLI)                 │
-│          User-facing commands, setup, hooks           │
-├──────────────────────────────────────────────────────┤
-│                                                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
-│  │    proxy      │  │     sdk      │  │   rules    │ │
-│  │  WebSocket    │  │  In-process  │  │   YAML     │ │
-│  │  gateway      │  │  checks     │  │  rule pack │ │
-│  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
-│         │                 │                │         │
-│  ┌──────┴───────┐         │                │         │
-│  │   adapters    │         │                │         │
-│  │  Agent frame  │         │                │         │
-│  │  parsing      │         │                │         │
-│  └──────┬───────┘         │                │         │
-│         │                 │                │         │
-│  ┌──────┴─────────────────┴────────────────┴───────┐ │
-│  │                    core                          │ │
-│  │  Capabilities, taint, rules engine, pipeline,   │ │
-│  │  normalization, egress scanning, LLM judge       │ │
-│  └──────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    CLI["securitylayer (CLI)"]
+    proxy["proxy<br/>WebSocket gateway"]
+    sdk["sdk<br/>In-process checks"]
+    rules["rules<br/>YAML rule pack"]
+    adapters["adapters<br/>Agent frame parsing"]
+    core["core<br/>Capabilities, taint, rules engine, pipeline,<br/>normalization, egress scanning, LLM judge"]
+
+    CLI --> proxy
+    CLI --> sdk
+    CLI --> rules
+    proxy --> adapters
+    adapters --> core
+    sdk --> core
+    rules --> core
 ```
 
 ## Package overview
@@ -47,18 +39,13 @@ Security Layer is a Bun monorepo with six packages. Each package has a single re
 
 ## Dependency graph
 
-```
-securitylayer (CLI)
-├── @securitylayerai/core
-├── @securitylayerai/rules
-└── @securitylayerai/proxy
-    └── @securitylayerai/adapters
-
-@securitylayerai/sdk
-└── @securitylayerai/core
-
-@securitylayerai/rules
-└── (standalone — YAML only, no code deps)
+```mermaid
+graph TD
+    CLI["securitylayer (CLI)"] --> core["@securitylayerai/core"]
+    CLI --> rules["@securitylayerai/rules"]
+    CLI --> proxy["@securitylayerai/proxy"]
+    proxy --> adapters["@securitylayerai/adapters"]
+    sdk["@securitylayerai/sdk"] --> core
 ```
 
 Key constraints:

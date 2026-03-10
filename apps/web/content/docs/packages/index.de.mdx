@@ -8,30 +8,22 @@ Security Layer ist ein Bun-Monorepo mit sechs Paketen. Jedes Paket hat eine einz
 
 ## Architektur
 
-```
-┌──────────────────────────────────────────────────────┐
-│                   securitylayer (CLI)                 │
-│        Benutzerorientierte Befehle, Setup, Hooks     │
-├──────────────────────────────────────────────────────┤
-│                                                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
-│  │    proxy      │  │     sdk      │  │   rules    │ │
-│  │  WebSocket    │  │  In-Process  │  │   YAML     │ │
-│  │  Gateway      │  │  Prüfungen  │  │  Rule-Paket│ │
-│  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
-│         │                 │                │         │
-│  ┌──────┴───────┐         │                │         │
-│  │   adapters    │         │                │         │
-│  │  Agent-Frame  │         │                │         │
-│  │  Parsing      │         │                │         │
-│  └──────┬───────┘         │                │         │
-│         │                 │                │         │
-│  ┌──────┴─────────────────┴────────────────┴───────┐ │
-│  │                    core                          │ │
-│  │  Capabilities, Taint, rules engine, Pipeline,    │ │
-│  │  Normalization, Egress-Scanning, LLM judge       │ │
-│  └──────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    CLI["securitylayer (CLI)"]
+    proxy["proxy<br/>WebSocket-Gateway"]
+    sdk["sdk<br/>In-Process-Prüfungen"]
+    rules["rules<br/>YAML Rule-Paket"]
+    adapters["adapters<br/>Agent-Frame-Parsing"]
+    core["core<br/>Capabilities, Taint, rules engine, Pipeline,<br/>Normalization, Egress-Scanning, LLM judge"]
+
+    CLI --> proxy
+    CLI --> sdk
+    CLI --> rules
+    proxy --> adapters
+    adapters --> core
+    sdk --> core
+    rules --> core
 ```
 
 ## Paketübersicht
@@ -47,18 +39,13 @@ Security Layer ist ein Bun-Monorepo mit sechs Paketen. Jedes Paket hat eine einz
 
 ## Abhängigkeitsgraph
 
-```
-securitylayer (CLI)
-├── @securitylayerai/core
-├── @securitylayerai/rules
-└── @securitylayerai/proxy
-    └── @securitylayerai/adapters
-
-@securitylayerai/sdk
-└── @securitylayerai/core
-
-@securitylayerai/rules
-└── (eigenständig — nur YAML, keine Code-Abhängigkeiten)
+```mermaid
+graph TD
+    CLI["securitylayer (CLI)"] --> core["@securitylayerai/core"]
+    CLI --> rules["@securitylayerai/rules"]
+    CLI --> proxy["@securitylayerai/proxy"]
+    proxy --> adapters["@securitylayerai/adapters"]
+    sdk["@securitylayerai/sdk"] --> core
 ```
 
 Zentrale Einschränkungen:
