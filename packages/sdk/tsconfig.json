@@ -4,7 +4,7 @@
     "outDir": "dist",
     "rootDir": ".",
     "paths": {
-      "@/*": ["./src/*", "./packages/sdk/src/*"]
+      "@/*": ["./src/*", "../core/src/*"]
     }
   },
   "include": ["src", "test"]
